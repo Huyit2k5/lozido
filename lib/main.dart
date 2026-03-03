@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lozido_app/presentation/pages/auth/login_page.dart';
 import 'package:lozido_app/presentation/pages/auth/register_page.dart';
 
 void main() =>
@@ -10,6 +11,6 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return RegisterScreen();
+    return LoginScreen();
   }
 }
