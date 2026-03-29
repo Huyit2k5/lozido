@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lozido_app/presentation/pages/auth/login_page.dart';
-import '../../widgets/form_widget.dart';
-
-// void main() => runApp(
-//   MaterialApp(home: RegisterScreen(), debugShowCheckedModeBanner: false),
-// );
+import '../../../data/datasources/firebase_auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,36 +9,89 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
   bool _isObscure = true;
   bool _isConfirmObscure = true;
+  bool _isLoading = false;
+
+  final FirebaseAuthService _authService = FirebaseAuthService();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _register() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _authService.registerWithPhoneNumber(
+        name: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đăng ký thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pop(context); // Trở về trang đăng nhập
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      const LoginScreen(), // Gọi class màn hình Đăng ký của bạn ở đây
-                ),
-              );
-            },
-          ),
-          title: Text(
-            "Đăng ký tài khoản",
-            style: TextStyle(color: Colors.black, fontSize: 18),
-          ),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20),
+        title: const Text(
+          "Đăng ký tài khoản",
+          style: TextStyle(color: Colors.black, fontSize: 18),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -53,14 +101,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 30),
                   child: Column(
                     children: [
-                      Row(
+                      const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.home_work_rounded,
                             color: Colors.green,
                             size: 40,
-                          ), // Thay bằng Image.asset nếu có logo
+                          ),
                           SizedBox(width: 10),
                           Text(
                             "LOZIDO",
@@ -72,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ],
                       ),
-                      Text(
+                      const Text(
                         "Quản lý NHÀ CHO THUÊ",
                         style: TextStyle(
                           color: Colors.green,
@@ -85,50 +133,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
 
               // Field: Tên hiển thị
-              CustomLabel(label: "Tên (Dùng hiển thị)", isRequired: true),
-              CustomTextField(hint: "Nhập tên của bạn"),
+              _buildLabel("Tên (Dùng hiển thị)"),
+              _buildTextField(
+                hint: "Nhập tên của bạn",
+                controller: _nameController,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return "Vui lòng nhập tên";
+                  return null;
+                },
+              ),
 
               // Field: Số điện thoại
-              CustomLabel(label: "SĐT (Dùng đăng nhập)", isRequired: true),
-              CustomTextField(
+              _buildLabel("SĐT (Dùng đăng nhập)"),
+              _buildTextField(
                 hint: "Nhập đúng SĐT của bạn",
+                controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return "Vui lòng nhập SĐT";
+                  if (val.length < 10 || val.length > 11) return "SĐT không hợp lệ";
+                  return null;
+                },
               ),
 
               // Row: Mật khẩu & Xác nhận mật khẩu
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CustomLabel(label: "Mật khẩu", isRequired: true),
-                        PasswordField(
+                        _buildLabel("Mật khẩu"),
+                        _buildPasswordField(
                           hint: "Nhập mật khẩu",
                           obscure: _isObscure,
-                          toggle: () {
-                            setState(() => _isObscure = !_isObscure);
+                          controller: _passwordController,
+                          toggle: () => setState(() => _isObscure = !_isObscure),
+                          validator: (val) {
+                            if (val == null || val.isEmpty) return "Nhập mật khẩu";
+                            if (val.length < 8) return "Quá ngắn";
+                            return null;
                           },
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: 15),
+                  const SizedBox(width: 15),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CustomLabel(
-                          label: "Xác nhận mật khẩu",
-                          isRequired: true,
-                        ),
-                        PasswordField(
+                        _buildLabel("Xác nhận mật khẩu"),
+                        _buildPasswordField(
                           hint: "Nhập mật khẩu",
                           obscure: _isConfirmObscure,
-                          toggle: () {
-                            setState(
-                              () => _isConfirmObscure = !_isConfirmObscure,
-                            );
+                          controller: _confirmPasswordController,
+                          toggle: () => setState(() => _isConfirmObscure = !_isConfirmObscure),
+                          validator: (val) {
+                            if (val == null || val.isEmpty) return "Xác nhận mk";
+                            if (val != _passwordController.text) return "Không khớp";
+                            return null;
                           },
                         ),
                       ],
@@ -139,17 +204,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Ghi chú mật khẩu
               Container(
-                margin: EdgeInsets.only(top: 15),
-                padding: EdgeInsets.all(12),
+                margin: const EdgeInsets.only(top: 15),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.green.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    RequirementItem(text: "Mật khẩu phải lớn hơn 8 ký tự"),
-                    SizedBox(height: 5),
-                    RequirementItem(text: "Chú ý đến hoa thường"),
+                    _buildRequirement("Mật khẩu phải lớn hơn 8 ký tự"),
+                    const SizedBox(height: 5),
+                    _buildRequirement("Chú ý đến hoa thường"),
                   ],
                 ),
               ),
@@ -160,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Center(
                   child: RichText(
                     textAlign: TextAlign.center,
-                    text: TextSpan(
+                    text: const TextSpan(
                       text: "Khi tạo tài khoản là bạn đã chấp nhận ",
                       style: TextStyle(color: Colors.black54, fontSize: 12),
                       children: [
@@ -191,25 +256,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF00A651),
+                    backgroundColor: const Color(0xFF00A651),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text(
-                    "Tạo tài khoản mới",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Tạo tài khoản mới",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                 ),
               ),
 
               // Nút Đăng nhập
               Center(
                 child: TextButton(
-                  onPressed: () {},
-                  child: Text(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
                     "Bạn đã có tài khoản, Đăng nhập?",
                     style: TextStyle(color: Colors.green),
                   ),
@@ -218,14 +292,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Phần hỗ trợ
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
-                    Row(
+                    const Row(
                       children: [
                         CircleAvatar(
                           backgroundColor: Colors.redAccent,
@@ -238,20 +312,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 15),
-                    SupportOption(
-                      icon: Icons.phone,
-                      text: "Gọi điện trực tiếp (sẵn sàng)",
+                    const SizedBox(height: 15),
+                    _buildSupportOption(
+                      Icons.phone,
+                      "Gọi điện trực tiếp (sẵn sàng)",
                     ),
-                    Divider(),
-                    SupportOption(
-                      icon: Icons.chat_bubble,
-                      text: "Chat/Gọi điện qua Zalo (sẵn sàng)",
+                    const Divider(),
+                    _buildSupportOption(
+                      Icons.chat_bubble,
+                      "Chat/Gọi điện qua Zalo (sẵn sàng)",
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -259,7 +333,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // --- Các Widget bổ trợ để code sạch hơn ---
+  // --- Các Widget bổ trợ ---
 
   Widget _buildLabel(String label) {
     return Padding(
@@ -267,8 +341,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: RichText(
         text: TextSpan(
           text: label,
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          children: [
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          children: const [
             TextSpan(
               text: " *",
               style: TextStyle(color: Colors.red),
@@ -279,27 +353,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(
-    String hint, {
+  Widget _buildTextField({
+    required String hint,
+    required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
+      controller: controller,
       keyboardType: keyboardType,
+      validator: validator,
       decoration: InputDecoration(
         hintText: hint,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 15),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15),
       ),
     );
   }
 
-  Widget _buildPasswordField(String hint, bool obscure, VoidCallback toggle) {
+  Widget _buildPasswordField({
+    required String hint,
+    required bool obscure,
+    required TextEditingController controller,
+    required VoidCallback toggle,
+    String? Function(String?)? validator,
+  }) {
     return TextFormField(
+      controller: controller,
       obscureText: obscure,
+      validator: validator,
       decoration: InputDecoration(
         hintText: hint,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 15),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15),
         suffixIcon: IconButton(
           icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
           onPressed: toggle,
@@ -311,9 +397,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildRequirement(String text) {
     return Row(
       children: [
-        Icon(Icons.check, color: Colors.green, size: 16),
-        SizedBox(width: 8),
-        Text(text, style: TextStyle(fontSize: 13, color: Colors.black87)),
+        const Icon(Icons.check, color: Colors.green, size: 16),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ],
     );
   }
@@ -323,7 +409,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Icon(icon, color: Colors.green),
-        Text(text, style: TextStyle(fontSize: 13)),
+        Text(text, style: const TextStyle(fontSize: 13)),
       ],
     );
   }
