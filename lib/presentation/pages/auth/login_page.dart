@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/datasources/firebase_auth_service.dart';
 import '../home/home_page.dart';
 import 'register_page.dart';
+import 'forgot_password_page.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -405,7 +406,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         InkWell(
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+            );
+          },
           child: const Text(
             "Quên tài khoản ?",
             style: TextStyle(
