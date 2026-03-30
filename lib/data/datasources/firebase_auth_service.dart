@@ -8,45 +8,66 @@ class FirebaseAuthService {
   // Domain giả định dùng để map số điện thoại sang email
   static const String _domain = '@lozido.com';
 
-  Future<User?> registerWithPhoneNumber({
+  Future<ConfirmationResult> verifyPhoneForRegistration({
+    required String phoneNumber,
+  }) async {
+    try {
+      // Format 098 -> +8498
+      String phone = phoneNumber;
+      if (phone.startsWith('0')) {
+        phone = '+84${phone.substring(1)}';
+      }
+      return await _auth.signInWithPhoneNumber(phone);
+    } catch (e) {
+      throw Exception('Lỗi xác thực số điện thoại: $e');
+    }
+  }
+
+  Future<User?> completeRegistration({
+    required ConfirmationResult confirmationResult,
+    required String smsCode,
     required String name,
     required String phoneNumber,
     required String password,
   }) async {
     try {
-      // 1. Tạo email giả lập từ số điện thoại
-      final String email = '$phoneNumber$_domain';
-
-      // 2. Tạo tài khoản trong Firebase Auth
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
+      // 1. Xác thực OTP để cấu thành Account gốc (Phone Auth)
+      UserCredential userCredential = await confirmationResult.confirm(smsCode);
       User? user = userCredential.user;
 
       if (user != null) {
-        // Cập nhật tên hiển thị cho user auth
+        // 2. Tạo liên kết Đăng nhập phụ (Fake Email + Password)
+        final String email = '$phoneNumber$_domain';
+        AuthCredential emailCredential = EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
+
+        // Khóa chặt 2 chuẩn thành 1 Identity
+        await user.linkWithCredential(emailCredential);
+
+        // 3. Cập nhật MetaData
         await user.updateDisplayName(name);
 
-        // 3. Thêm document mới vào collection 'users' trong Firestore
+        // 4. Lưu Firestore
         await _firestore.collection('users').doc(user.uid).set({
           'name': name,
           'phoneNumber': phoneNumber,
           'createdAt': FieldValue.serverTimestamp(),
         });
       }
-
       return user;
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
+      if (e.code == 'credential-already-in-use' || e.code == 'email-already-in-use') {
+        throw Exception('Số điện thoại hoặc thông tin này đã được đăng ký. Vui lòng đăng nhập.');
+      } else if (e.code == 'invalid-verification-code') {
+        throw Exception('Mã OTP không hợp lệ.');
+      } else if (e.code == 'weak-password') {
         throw Exception('Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.');
-      } else if (e.code == 'email-already-in-use') {
-        throw Exception('Số điện thoại này đã được đăng ký. Vui lòng đăng nhập.');
       }
       throw Exception('Lỗi đăng ký Firebase: ${e.message}');
     } catch (e) {
-      throw Exception('Đã xảy ra lỗi không xác định: $e');
+      throw Exception('Đã xảy ra lỗi hệ thống: $e');
     }
   }
 
