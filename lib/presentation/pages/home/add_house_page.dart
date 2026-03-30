@@ -11,6 +11,52 @@ class _AddHousePageState extends State<AddHousePage> {
   // Trạng thái (State) quản lý logic màn hình
   int _selectedRentType = 0; // 0: Thuê theo phòng, 1: Thuê theo giường
   bool _isAutoGenerate = true; // Switch trạng thái
+  String _selectedPropertyType = "Nhà trọ"; // Khởi tạo mặc định
+
+  final List<Map<String, String>> _propertyTypes = [
+    {"name": "Nhà trọ", "desc": "Cho thuê theo phòng", "type": "Room"},
+    {"name": "Ký túc xá/sleepbox", "desc": "Cho thuê theo giường", "type": "Bed"},
+    {"name": "Chung cư mini", "desc": "Cho thuê theo căn hộ", "type": "Room"},
+    {"name": "Tòa nhà chung cư", "desc": "Cho thuê hoặc quản lý cư dân theo căn hộ", "type": "Room"},
+    {"name": "Nhà nguyên căn", "desc": "Cho thuê theo phòng/nhà", "type": "Room"},
+    {"name": "Văn phòng cho thuê", "desc": "Tòa nhà văn phòng, dịch vụ văn phòng", "type": "Room"},
+  ];
+
+  String _selectedFloorCount = "Tầng trệt (không có tầng)";
+  final List<String> _floorOptions = [
+    "Tầng trệt (không có tầng)",
+    "2 tầng (Gồm 1 trệt + 1 tầng)",
+    "3 tầng (Gồm 1 trệt + 2 tầng)",
+    "4 tầng (Gồm 1 trệt + 3 tầng)",
+    "5 tầng (Gồm 1 trệt + 4 tầng)",
+    "6 tầng (Gồm 1 trệt + 5 tầng)",
+    "7 tầng (Gồm 1 trệt + 6 tầng)",
+    "8 tầng (Gồm 1 trệt + 7 tầng)",
+  ];
+
+  String _selectedMaxOccupants = "Chọn giá trị";
+  final List<String> _maxOccupantOptions = [
+    "1 người ở",
+    "2 người ở",
+    "3 người ở",
+    "4 người ở",
+    "5-6 người ở",
+    "7-10 người ở",
+    "Không giới hạn",
+  ];
+
+  int _currentStep = 0; // State cho bước hiện tại
+  String _dienOption = "Tính theo đồng hồ (phổ biến)";
+  String _nuocOption = "Tính theo đồng hồ (phổ biến)";
+  String _racOption = "Không sử dụng";
+  String _internetOption = "Không sử dụng";
+
+  final List<String> _serviceOptions = [
+    "Không sử dụng",
+    "Tính theo người",
+    "Tính theo tháng",
+    "Tính theo đồng hồ (phổ biến)",
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -33,20 +79,379 @@ class _AddHousePageState extends State<AddHousePage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildSection1(),
-                  _buildSection2(),
-                  _buildSection3(),
-                  _buildSection4(),
-                  const SizedBox(height: 20), // Khoảng cách tới footer
-                ],
-              ),
+              child: _currentStep == 0 
+                  ? Column(
+                      children: [
+                        _buildSection1(),
+                        _buildSection2(),
+                        _buildSection3(),
+                        _buildSection4(),
+                        const SizedBox(height: 20),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _buildServiceSection(),
+                        _buildFeatureSection(),
+                        _buildAddressSection(),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
             ),
           ),
           _buildFooter(),
         ],
       ),
+    );
+  }
+
+  // ================= LOGIC & MODALS =================
+
+  void _showPropertyTypeModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Colors.white,
+              insetPadding: const EdgeInsets.all(20), // Cách xa 4 cạnh màn hình
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header Modal
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.home_outlined, color: Colors.black87),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            "Loại hình cho thuê",
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    
+                    // Danh sách lựa chọn
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: _propertyTypes.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = _propertyTypes[index];
+                          final isSelected = _selectedPropertyType == item['name'];
+                          
+                          return InkWell(
+                            onTap: () {
+                              // Cập nhật state ở form chính
+                              setState(() {
+                                _selectedPropertyType = item['name']!;
+                                // Nếu chọn Ký túc xá => Thuê theo giường (1), ngược lại theo phòng (0)
+                                _selectedRentType = item['type'] == 'Bed' ? 1 : 0;
+                              });
+                              // Tự động đóng Dialog
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item['name']!,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          item['desc']!,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(Icons.check_circle, color: Color(0xFF28a745), size: 24),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    // Nút Đóng (trường hợp người dùng muốn huỷ, không chọn gì)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          "Đóng",
+                          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showFloorSelectionModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Colors.white,
+              insetPadding: const EdgeInsets.all(20), // Cách xa 4 cạnh
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header Modal
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.format_list_bulleted, color: Colors.black87),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            "Thiết lập số tầng (Gồm tầng triệt)",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), // Cỡ chữ phù hợp điện thoại
+                            maxLines: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    
+                    // Danh sách lựa chọn
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: _floorOptions.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = _floorOptions[index];
+                          final isSelected = _selectedFloorCount == item;
+                          
+                          return InkWell(
+                            onTap: () {
+                              // Cập nhật giá trị ra form
+                              setState(() {
+                                _selectedFloorCount = item;
+                              });
+                              // Đóng modal ngay
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(Icons.check_circle, color: Color(0xFF28a745), size: 24),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    // Nút Đóng
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          "Đóng",
+                          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showMaxOccupantModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Colors.white,
+              insetPadding: const EdgeInsets.all(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header Modal
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.format_list_bulleted, color: Colors.black87),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            "Tối đa người ở / phòng",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    
+                    // Danh sách lựa chọn
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: _maxOccupantOptions.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = _maxOccupantOptions[index];
+                          final isSelected = _selectedMaxOccupants == item;
+                          
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedMaxOccupants = item;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(Icons.check_circle, color: Color(0xFF28a745), size: 24),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    // Nút Đóng
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          "Đóng",
+                          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -70,12 +475,14 @@ class _AddHousePageState extends State<AddHousePage> {
           // Loại hình cho thuê
           _buildSelectionChip(
             label: "Loại hình cho thuê *",
-            value: "Nhà trọ",
+            value: _selectedPropertyType,
             onClear: () {},
+            onTap: _showPropertyTypeModal,
           ),
           const SizedBox(height: 16),
 
           // Lựa chọn MH Thuê theo phòng / giường
+          // Ghi chú: Đã tắt onTap theo yêu cầu, chỉ hiển thị tự động cập nhật
           Row(
             children: [
               Expanded(
@@ -84,7 +491,7 @@ class _AddHousePageState extends State<AddHousePage> {
                   subtitle: "Tính tiền thuê theo phòng",
                   icon: Icons.meeting_room_outlined,
                   isSelected: _selectedRentType == 0,
-                  onTap: () => setState(() => _selectedRentType = 0),
+                  onTap: () {}, // Không cho phép chọn thủ công
                 ),
               ),
               const SizedBox(width: 12),
@@ -94,19 +501,19 @@ class _AddHousePageState extends State<AddHousePage> {
                   subtitle: "Tính tiền theo giường",
                   icon: Icons.location_city_rounded,
                   isSelected: _selectedRentType == 1,
-                  onTap: () => setState(() => _selectedRentType = 1),
+                  onTap: () {}, // Không cho phép chọn thủ công
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
 
-          // TextField Tên Nhà trọ
-          _buildLabel("Tên Nhà trọ *"),
+          // TextField Tên loại hình
+          _buildLabel("Tên $_selectedPropertyType *"),
           const SizedBox(height: 8),
           _buildTextField(
             hintText: "Ví dụ: Nguyễn Thanh",
-            suffixTextWidget: _buildSuffixTag("Nhà trọ"),
+            suffixTextWidget: _buildSuffixTag(_selectedPropertyType),
           ),
         ],
       ),
@@ -160,8 +567,9 @@ class _AddHousePageState extends State<AddHousePage> {
           // Thiết lập số tầng
           _buildSelectionChip(
             label: "Thiết lập số tầng (Gồm tầng triệt) *",
-            value: "Tầng trệt (không có tầng)",
+            value: _selectedFloorCount,
             onClear: () {},
+            onTap: _showFloorSelectionModal,
           ),
           const SizedBox(height: 20),
 
@@ -232,18 +640,29 @@ class _AddHousePageState extends State<AddHousePage> {
           // Dropdown
           _buildLabel("Tối đa người ở / phòng"),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text("Chọn giá trị", style: TextStyle(fontWeight: FontWeight.bold)),
-                Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black),
-              ],
+          GestureDetector(
+            onTap: _showMaxOccupantModal,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _selectedMaxOccupants,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      // Nếu vẫn đang hiển thị placeholder ("Chọn giá trị") thì chữ sẽ mờ hơn
+                      color: _selectedMaxOccupants == "Chọn giá trị" ? Colors.black54 : Colors.black,
+                    ),
+                  ),
+                  const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black),
+                ],
+              ),
             ),
           ),
         ],
@@ -357,6 +776,287 @@ class _AddHousePageState extends State<AddHousePage> {
     );
   }
 
+  // ================= CÁC SECTION BƯỚC 2 =================
+
+  Widget _buildServiceSection() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      margin: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(
+            title: "Cài đặt dịch vụ Nhà trọ",
+            subtitle: "Thiết lập các dịch vụ khách thuê sử dụng khi thuê",
+          ),
+          const SizedBox(height: 16),
+          _buildServiceTile("Dịch vụ điện", _dienOption, (val) => _dienOption = val),
+          _buildServiceTile("Dịch vụ nước", _nuocOption, (val) => _nuocOption = val),
+          _buildServiceTile("Dịch vụ rác", _racOption, (val) => _racOption = val),
+          _buildServiceTile("Dịch vụ internet/mạng", _internetOption, (val) => _internetOption = val),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceTile(String title, String value, ValueChanged<String> onSelected) {
+    return GestureDetector(
+      onTap: () => _showServiceOptionModal(title, value, onSelected),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close_rounded, size: 16, color: Colors.black87),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showServiceOptionModal(String title, String currentValue, ValueChanged<String> onSelected) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Colors.white,
+              insetPadding: const EdgeInsets.all(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.settings_suggest_outlined, color: Colors.black87),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: _serviceOptions.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final item = _serviceOptions[index];
+                          final isSelected = currentValue == item;
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                onSelected(item);
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(Icons.check_circle, color: Color(0xFF28a745), size: 24),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          "Đóng",
+                          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFeatureSection() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      margin: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(
+            title: "Cài đặt tính năng",
+            subtitle: "Tùy chỉnh tính năng sử dụng cho Nhà trọ",
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                _buildFeatureTile("APP dành riêng cho khách thuê", "Tạo & kết nối dễ dàng, hoá đơn tự động, thanh toán online, ký hợp đồng online....\n* Hoàn toàn miễn phí", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Gửi hóa đơn tự động qua ZALO", "Dễ dàng gửi hóa đơn hàng loạt qua ZALO", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Chức năng quản lý tài sản", "Dùng để quản lý tài sản khi khách thuê sử dụng", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Chức năng quản lý xe", "Dùng để quản lý xe của khách thuê", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Tính năng đăng tin tiếp cận khách thuê", "Đăng tin tìm khách thuê, khách tiềm năng trên hệ thống LOZIDO", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Hình ảnh, File chứng từ hợp đồng", "Hình ảnh CCCD, hình ảnh hợp đồng giấy", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Quản lý môi giới", "Bạn có làm việc với môi giới? Bạn có thể lưu trữ, chi hoa hồng...", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Quản lý công việc", "Báo cáo sự cố, hệ thống tự động nhắc việc, tạo việc cá nhân, nhân viên", true),
+                const Divider(height: 1),
+                _buildFeatureTile("Gửi tin nhắn SMS tự động cho khách thuê", "Khi lập hóa đơn bạn có muốn gửi tin nhắn SMS tiền nhà cho khách thuê hay không?", false),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureTile(String title, String subtitle, bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.extension, color: Colors.blueGrey), // Icon gợi ý
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)),
+                const SizedBox(height: 4),
+                // Sử dụng text thường, xử lý đoạn có đánh dâu '*' (hoặc style đặc biệt ở app thuê thực tế)
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.black54, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: isActive,
+            onChanged: (val) {},
+            activeColor: const Color(0xFF8bc34a),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressSection() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(
+            title: "Địa chỉ & vị trí",
+            subtitle: "Địa chỉ giúp khách tìm đến chính xác để xem nhà cho thuê",
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.add, color: Colors.black87),
+              label: const Text(
+                "Thêm địa chỉ & vị trí trên bản đồ",
+                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.grey.shade300),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   // BOTTOM FOOTER CHỨA NÚT ACTION
   Widget _buildFooter() {
     return Container(
@@ -373,8 +1073,11 @@ class _AddHousePageState extends State<AddHousePage> {
                   child: Container(height: 4, color: const Color(0xFF28a745)),
                 ),
                 Expanded(
-                  flex: 1, // Màu xám
-                  child: Container(height: 4, color: Colors.grey.shade300),
+                  flex: 1, // Màu xám hoặc xanh
+                  child: Container(
+                    height: 4, 
+                    color: _currentStep == 0 ? Colors.grey.shade300 : const Color(0xFF28a745)
+                  ),
                 )
               ],
             ),
@@ -386,15 +1089,21 @@ class _AddHousePageState extends State<AddHousePage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          if (_currentStep == 0) {
+                            Navigator.pop(context);
+                          } else {
+                            setState(() => _currentStep = 0);
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey.shade200,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text(
-                          "Đóng",
-                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
+                        child: Text(
+                          _currentStep == 0 ? "Đóng" : "Quay lại trước",
+                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                       ),
                     ),
@@ -404,15 +1113,21 @@ class _AddHousePageState extends State<AddHousePage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          if (_currentStep == 0) {
+                            setState(() => _currentStep = 1);
+                          } else {
+                            // Lưu thông tin logic ở đây
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF28a745),
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text(
-                          "Tiếp theo",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                        child: Text(
+                          _currentStep == 0 ? "Tiếp theo" : "Lưu thông tin",
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                       ),
                     ),
@@ -467,43 +1182,52 @@ class _AddHousePageState extends State<AddHousePage> {
     );
   }
 
-  // Khung viền chọn (Chip) có nút X (cho Loại hình & Tầng)
-  Widget _buildSelectionChip({required String label, required String value, required VoidCallback onClear}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(color: Colors.black87, fontSize: 13),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-            ],
-          ),
-          GestureDetector(
-            onTap: onClear,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.close_rounded, size: 16, color: Colors.black87),
+  // Khung viền chọn (Chip) có nút X, có thể nhấn để mở pop-up (cho Loại hình & Tầng)
+  Widget _buildSelectionChip({
+    required String label, 
+    required String value, 
+    required VoidCallback onClear,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white, // Đảm bảo bắt được sự kiện tap nếu người dùng bấm vào vùng trống
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.black87, fontSize: 13),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ],
             ),
-          )
-        ],
+            GestureDetector(
+              onTap: onClear,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close_rounded, size: 16, color: Colors.black87),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
