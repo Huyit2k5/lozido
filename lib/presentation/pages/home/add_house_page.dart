@@ -51,6 +51,16 @@ class _AddHousePageState extends State<AddHousePage> {
   String _racOption = "Không sử dụng";
   String _internetOption = "Không sử dụng";
 
+  bool _featureAppKhachThue = true;
+  bool _featureZaloInvoice = true;
+  bool _featureAssetManagement = true;
+  bool _featureVehicleManagement = true;
+  bool _featurePostListing = true;
+  bool _featureContractFiles = true;
+  bool _featureBrokerageManagement = true;
+  bool _featureTaskManagement = true;
+  bool _featureSmsInvoice = false;
+
   final List<String> _serviceOptions = [
     "Không sử dụng",
     "Tính theo người",
@@ -959,23 +969,68 @@ class _AddHousePageState extends State<AddHousePage> {
             ),
             child: Column(
               children: [
-                _buildFeatureTile("APP dành riêng cho khách thuê", "Tạo & kết nối dễ dàng, hoá đơn tự động, thanh toán online, ký hợp đồng online....\n* Hoàn toàn miễn phí", true),
+                _buildFeatureTile(
+                  "APP dành riêng cho khách thuê",
+                  "Tạo & kết nối dễ dàng, hoá đơn tự động, thanh toán online, ký hợp đồng online....\n* Hoàn toàn miễn phí",
+                  _featureAppKhachThue,
+                  (val) => setState(() => _featureAppKhachThue = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Gửi hóa đơn tự động qua ZALO", "Dễ dàng gửi hóa đơn hàng loạt qua ZALO", true),
+                _buildFeatureTile(
+                  "Gửi hóa đơn tự động qua ZALO",
+                  "Dễ dàng gửi hóa đơn hàng loạt qua ZALO",
+                  _featureZaloInvoice,
+                  (val) => setState(() => _featureZaloInvoice = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Chức năng quản lý tài sản", "Dùng để quản lý tài sản khi khách thuê sử dụng", true),
+                _buildFeatureTile(
+                  "Chức năng quản lý tài sản",
+                  "Dùng để quản lý tài sản khi khách thuê sử dụng",
+                  _featureAssetManagement,
+                  (val) => setState(() => _featureAssetManagement = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Chức năng quản lý xe", "Dùng để quản lý xe của khách thuê", true),
+                _buildFeatureTile(
+                  "Chức năng quản lý xe",
+                  "Dùng để quản lý xe của khách thuê",
+                  _featureVehicleManagement,
+                  (val) => setState(() => _featureVehicleManagement = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Tính năng đăng tin tiếp cận khách thuê", "Đăng tin tìm khách thuê, khách tiềm năng trên hệ thống LOZIDO", true),
+                _buildFeatureTile(
+                  "Tính năng đăng tin tiếp cận khách thuê",
+                  "Đăng tin tìm khách thuê, khách tiềm năng trên hệ thống LOZIDO",
+                  _featurePostListing,
+                  (val) => setState(() => _featurePostListing = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Hình ảnh, File chứng từ hợp đồng", "Hình ảnh CCCD, hình ảnh hợp đồng giấy", true),
+                _buildFeatureTile(
+                  "Hình ảnh, File chứng từ hợp đồng",
+                  "Nhằm lưu giữ thông tin CCCD, hình ảnh phòng & hợp đồng giấy",
+                  _featureContractFiles,
+                  (val) => setState(() => _featureContractFiles = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Quản lý môi giới", "Bạn có làm việc với môi giới? Bạn có thể lưu trữ, chi hoa hồng...", true),
+                _buildFeatureTile(
+                  "Quản lý môi giới",
+                  "Bạn có làm việc với môi giới? Bạn có thể lưu trữ, chi hoa hồng...",
+                  _featureBrokerageManagement,
+                  (val) => setState(() => _featureBrokerageManagement = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Quản lý công việc", "Báo cáo sự cố, hệ thống tự động nhắc việc, tạo việc cá nhân, nhân viên", true),
+                _buildFeatureTile(
+                  "Quản lý công việc",
+                  "Báo cáo sự cố, hệ thống tự động nhắc việc, tạo việc cá nhân, nhân viên",
+                  _featureTaskManagement,
+                  (val) => setState(() => _featureTaskManagement = val),
+                ),
                 const Divider(height: 1),
-                _buildFeatureTile("Gửi tin nhắn SMS tự động cho khách thuê", "Khi lập hóa đơn bạn có muốn gửi tin nhắn SMS tiền nhà cho khách thuê hay không?", false),
+                _buildFeatureTile(
+                  "Gửi tin nhắn SMS tự động cho khách thuê",
+                  "Khi lập hóa đơn bạn có muốn gửi tin nhắn SMS tiền nhà cho khách thuê hay không?",
+                  _featureSmsInvoice,
+                  (val) => setState(() => _featureSmsInvoice = val),
+                ),
               ],
             ),
           )
@@ -984,7 +1039,7 @@ class _AddHousePageState extends State<AddHousePage> {
     );
   }
 
-  Widget _buildFeatureTile(String title, String subtitle, bool isActive) {
+  Widget _buildFeatureTile(String title, String subtitle, bool isActive, ValueChanged<bool> onChanged) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Row(
@@ -1016,7 +1071,7 @@ class _AddHousePageState extends State<AddHousePage> {
           ),
           Switch(
             value: isActive,
-            onChanged: (val) {},
+            onChanged: onChanged,
             activeColor: const Color(0xFF8bc34a),
           ),
         ],
