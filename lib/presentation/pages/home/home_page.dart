@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'add_house_page.dart';
+import 'mail_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -100,51 +101,6 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
 
-      // 5. Thanh điều hướng dưới cùng
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF00A651),
-          unselectedItemColor: Colors.grey.shade500,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.home_rounded),
-              ),
-              label: 'Trang chủ',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.chat_bubble_outline_rounded),
-              ),
-              label: 'Hộp thư',
-            ),
-            BottomNavigationBarItem(
-              icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.grid_view_rounded),
-              ),
-              label: 'Thêm +',
-            ),
-          ],
-        ),
-      ),
     );
   }
 
