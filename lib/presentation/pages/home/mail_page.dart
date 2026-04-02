@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
+import '../../../services/chat_service.dart';
+import '../../pages/chat/chat_room_page.dart';
 
 // ==========================================================
 // MODELS (Chuẩn bị cho Firestore Realtime Message/Notification)
@@ -66,67 +70,29 @@ class _MailPageState extends State<MailPage> {
   // 0: Tin nhắn, 1: Thông báo
   int _selectedTabIndex = 0; 
 
-  // StreamControllers giả lập hoạt động của Firestore stream.
-  // Sắp tới có thể đổi thành: FirebaseFirestore.instance.collection('chats').snapshots()
-  final StreamController<List<ChatMessageModel>> _chatStreamController = StreamController.broadcast();
   final StreamController<List<NotificationModel>> _notiStreamController = StreamController.broadcast();
 
   @override
   void initState() {
     super.initState();
-    _loadMockData();
+    _ensureCSKHExists();
+    _loadNotificationMockData();
   }
 
-  void _loadMockData() {
-    // Dữ liệu mẫu (mock) dựa trên ảnh màn hình thiết kế để làm placeholder
-    _chatStreamController.add([
-      ChatMessageModel(
-        id: '1',
-        senderName: 'LOZIDO BOT - Tin từ hệ thống',
-        senderRole: 'BOT',
-        roleColorHex: 0xFF26A69A, // Xanh lá
-        avatarType: 'bot',
-        messagePreview: 'Nhãn dán',
-        timestamp: DateTime(2026, 3, 15),
-        isPinned: true,
-        isRead: false,
-      ),
-      ChatMessageModel(
-        id: '2',
-        senderName: 'LOZIDO CSKH',
-        senderRole: 'CSKH',
-        roleColorHex: 0xFF3F51B5, // Xanh dương đậm
-        avatarType: 'cskh',
-        messagePreview: 'Xin chào! Đây là nhóm hỗ trợ CSKH. Vui lòng đặt câu hỏi của bạn tại đây.',
-        timestamp: DateTime(2026, 2, 3),
-        isPinned: true,
-        isRead: true,
-      ),
-      ChatMessageModel(
-        id: '3',
-        senderName: 'Nhà trọ 198 Phan Văn Trị',
-        senderRole: 'Nhà trọ',
-        roleColorHex: 0xFF673AB7, // Tím
-        avatarType: 'house',
-        messagePreview: 'Trả nợ đi em',
-        timestamp: DateTime(2026, 2, 4),
-        isPinned: true,
-        isRead: false,
-      ),
-      ChatMessageModel(
-        id: '4',
-        senderName: 'Phòng 4',
-        senderRole: 'H.đồng thuê nhà',
-        roleColorHex: 0xFF3F51B5, // Xanh dương đậm
-        avatarType: 'group',
-        messagePreview: 'Dùng để gửi/nhận hóa đơn thuê nhà, thanh toán hóa đơn online, ký hợp đồng...',
-        timestamp: DateTime(2026, 2, 3),
-        isPinned: false,
-        isRead: true,
-        extraBadgeText: '198 Phan Văn Trị',
-      ),
-    ]);
+  Future<void> _ensureCSKHExists() async {
+    final ChatService chatService = ChatService();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('chatRooms')
+        .where('roomName', isEqualTo: 'LOZIDO CSKH')
+        .limit(1)
+        .get();
 
+    if (snapshot.docs.isEmpty) {
+      await chatService.createNewChatRoom('LOZIDO CSKH');
+    }
+  }
+
+  void _loadNotificationMockData() {
     _notiStreamController.add([
       NotificationModel(
         id: '1',
@@ -149,7 +115,6 @@ class _MailPageState extends State<MailPage> {
 
   @override
   void dispose() {
-    _chatStreamController.close();
     _notiStreamController.close();
     super.dispose();
   }
@@ -169,6 +134,28 @@ class _MailPageState extends State<MailPage> {
                   _selectedTabIndex = index;
                 });
               },
+              onAddPressed: () async {
+                final ChatService chatService = ChatService();
+                final user = FirebaseAuth.instance.currentUser;
+                final String currentUserId = user?.uid ?? "anonymous";
+                final String currentUserName = user?.displayName ?? "Người dùng";
+
+                // Tạo phòng chat mới với tên mặc định hoặc yêu cầu nhập
+                String roomId = await chatService.createNewChatRoom("Nhà trọ 198 Phan Văn Trị");
+                if (mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatRoomPage(
+                        roomId: roomId,
+                        roomName: "Nhà trọ 198 Phan Văn Trị",
+                        userId: currentUserId,
+                        userName: currentUserName,
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
             
@@ -186,23 +173,36 @@ class _MailPageState extends State<MailPage> {
 
   // Giao diện khi chọn tab Tin Nhắn (áp dụng StreamBuilder chuẩn bị cho Firestore)
   Widget _buildMessagesTab() {
-    return StreamBuilder<List<ChatMessageModel>>(
-      stream: _chatStreamController.stream,
-      // Nơi thay thế bằng stream thật từ Firebase: FirebaseFirestore.instance.collection('chats').snapshots()
+    final user = FirebaseAuth.instance.currentUser;
+    final String currentUserId = user?.uid ?? "anonymous";
+    final String currentUserName = user?.displayName ?? "Người dùng";
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('chatRooms').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(child: Text("Không có tin nhắn nào."));
         }
 
-        final items = snapshot.data!;
+        final docs = snapshot.data!.docs;
         return ListView.separated(
-          itemCount: items.length,
+          itemCount: docs.length,
           separatorBuilder: (_, __) => const Divider(height: 1, indent: 80, color: Color(0xFFEEEEEE)),
           itemBuilder: (context, index) {
-            return MessageItemWidget(model: items[index]);
+            final data = docs[index].data() as Map<String, dynamic>;
+            final roomId = docs[index].id;
+            final roomName = data['roomName'] ?? 'Không tên';
+
+            return MessageItemWidget(
+              roomId: roomId,
+              roomName: roomName,
+              userId: currentUserId,
+              userName: currentUserName,
+              lastMessage: "Nhấn để xem chi tiết",
+            );
           },
         );
       },
@@ -248,11 +248,13 @@ class _MailPageState extends State<MailPage> {
 class CustomHeader extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onTabChanged;
+  final VoidCallback onAddPressed;
 
   const CustomHeader({
     Key? key,
     required this.selectedIndex,
     required this.onTabChanged,
+    required this.onAddPressed,
   }) : super(key: key);
 
   @override
@@ -263,13 +265,16 @@ class CustomHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Nút CộNG (+)
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300),
+          GestureDetector(
+            onTap: onAddPressed,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: const Icon(Icons.add, color: Color(0xFF26A69A), size: 20),
             ),
-            child: const Icon(Icons.add, color: Color(0xFF26A69A), size: 20),
           ),
 
           // Hai Tab (Tin nhắn / Thông báo) với animation nằm ngay trung tâm
@@ -464,15 +469,36 @@ class _BounceTabItemState extends State<BounceTabItem> with SingleTickerProvider
 
 // Custom ListItem Layout hiển thị mỗi tin nhắn Chat theo mẫu
 class MessageItemWidget extends StatelessWidget {
-  final ChatMessageModel model;
+  final String roomId;
+  final String roomName;
+  final String userId;
+  final String userName;
+  final String lastMessage;
 
-  const MessageItemWidget({Key? key, required this.model}) : super(key: key);
+  const MessageItemWidget({
+    Key? key,
+    required this.roomId,
+    required this.roomName,
+    required this.userId,
+    required this.userName,
+    required this.lastMessage,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Todo: Chuyển hướng sang Chat Detail bằng Navigator (Chuẩn bị cho Firestore direct chat)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatRoomPage(
+              roomId: roomId,
+              roomName: roomName,
+              userId: userId,
+              userName: userName,
+            ),
+          ),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -482,10 +508,10 @@ class MessageItemWidget extends StatelessWidget {
             // Avatar giả định
             CircleAvatar(
               radius: 24,
-              backgroundColor: Color(model.roleColorHex).withOpacity(0.1),
-              child: Icon(
-                _getIconForAvatar(model.avatarType), 
-                color: Color(model.roleColorHex), 
+              backgroundColor: const Color(0xFFFF5722).withOpacity(0.1),
+              child: const Icon(
+                Icons.home, 
+                color: Color(0xFFFF5722), 
                 size: 28
               ),
             ),
@@ -496,7 +522,7 @@ class MessageItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    model.senderName,
+                    roomName,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -508,37 +534,22 @@ class MessageItemWidget extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Color(model.roleColorHex),
+                          color: const Color(0xFFFF5722),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(
-                          model.senderRole,
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        child: const Text(
+                          "Nhà trọ",
+                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      if (model.extraBadgeText != null) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            model.extraBadgeText!,
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ]
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    model.messagePreview,
+                    lastMessage,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 13,
-                      fontWeight: model.isRead ? FontWeight.normal : FontWeight.w500,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -546,28 +557,6 @@ class MessageItemWidget extends StatelessWidget {
                 ],
               ),
             ),
-            // Trailing: Date and Pin
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (model.isPinned)
-                  Row(
-                    children: [
-                       const Icon(Icons.push_pin, color: Colors.redAccent, size: 14),
-                       const SizedBox(width: 4),
-                       Text(
-                         "${model.timestamp.day}/${model.timestamp.month}/${model.timestamp.year}",
-                         style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                       ),
-                    ],
-                  )
-                else
-                  Text(
-                    "${model.timestamp.day}/${model.timestamp.month}/${model.timestamp.year}",
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                  ),
-              ],
-            )
           ],
         ),
       ),
