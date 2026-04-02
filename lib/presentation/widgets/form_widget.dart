@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-
 class CustomLabel extends StatelessWidget {
   final String label;
   final bool isRequired;
