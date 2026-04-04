@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
+import '../room/room_list_page.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -422,7 +423,23 @@ class _HomePageState extends State<HomePage> {
                         crossAxisSpacing: 12,
                         childAspectRatio: 0.95,
                         children: [
-                          _buildGridItem(icon: Icons.fact_check_outlined, color: Colors.green, title: "Quản lý\nphòng", badge: "0/5"),
+                          _buildGridItem(
+                            icon: Icons.fact_check_outlined, 
+                            color: Colors.green, 
+                            title: "Quản lý\nphòng", 
+                            badge: "0/5",
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RoomListPage(
+                                    houseId: selectedDoc.id,
+                                    houseData: houseData,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                           _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
                           _buildGridItem(icon: Icons.edit_document, color: Colors.green, title: "Quản lý\ndịch vụ"),
                           _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
@@ -477,9 +494,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildGridItem({required IconData icon, required Color color, required String title, String? badge}) {
-    return Container(
-      decoration: BoxDecoration(
+  Widget _buildGridItem({required IconData icon, required Color color, required String title, String? badge, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
@@ -520,7 +539,7 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-    );
+    ));
   }
 
   void _showHouseSwitcher(List<QueryDocumentSnapshot> docs, String currentHouseId) {
