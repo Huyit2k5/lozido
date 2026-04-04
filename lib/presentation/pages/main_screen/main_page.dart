@@ -15,6 +15,8 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _pages = [
     const HomePage(),
     const MailPage(),
+    const Center(child: Text("Màn hình Công việc", style: TextStyle(fontSize: 18))),
+    const Center(child: Text("Màn hình Tìm khách", style: TextStyle(fontSize: 18))),
     const Center(child: Text("Màn hình Thêm", style: TextStyle(fontSize: 18))),
   ];
 
@@ -49,25 +51,46 @@ class _MainPageState extends State<MainPage> {
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
           elevation: 0,
-          items: const [
+          items: [
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.home_rounded),
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _selectedIndex == 0 ? const Color(0xFFE0F2F1) : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.home_rounded, color: _selectedIndex == 0 ? const Color(0xFF00A651) : Colors.grey.shade500),
+                ),
               ),
               label: 'Trang chủ',
             ),
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.chat_bubble_outline_rounded),
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.chat_bubble_outline_rounded, color: _selectedIndex == 1 ? const Color(0xFF00A651) : Colors.grey.shade500),
               ),
               label: 'Hộp thư',
             ),
             BottomNavigationBarItem(
               icon: Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.grid_view_rounded),
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.assignment_outlined, color: _selectedIndex == 2 ? const Color(0xFF00A651) : Colors.grey.shade500),
+              ),
+              label: 'Công việc',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.folder_shared_outlined, color: _selectedIndex == 3 ? const Color(0xFF00A651) : Colors.grey.shade500),
+              ),
+              label: 'Tìm khách',
+            ),
+            BottomNavigationBarItem(
+              icon: Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Icon(Icons.grid_view_rounded, color: _selectedIndex == 4 ? const Color(0xFF00A651) : Colors.grey.shade500),
               ),
               label: 'Thêm +',
             ),

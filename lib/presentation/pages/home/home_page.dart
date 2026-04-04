@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
-
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -13,6 +13,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  String? _selectedHouseId;
+  bool _hasPushedToAdd = false;
 
   // ĐƯỜNG LINK FILE EXCEL MẪU CỦA BẠN SẼ ĐƯỢC CHÈN VÀO ĐÂY (Google Drive, Dropbox, Server riêng, v.v.)
   // Ví dụ: https://storage.googleapis.com/your-bucket/mau_lozido_v1.xlsx
@@ -41,6 +43,64 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Scaffold(body: Center(child: Text("Đang yêu cầu đăng nhập...")));
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('houses')
+          .where('userId', isEqualTo: user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF00A651))));
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(body: Center(child: Text("Lỗi tải dữ liệu. Vui lòng thử lại sau!")));
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+
+        // Trường hợp 1: Chưa có nhà -> hiển thị Empty State và tự động chuyển trang 1 lần
+        if (docs.isEmpty) {
+          if (!_hasPushedToAdd) {
+            _hasPushedToAdd = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddHousePage()),
+              );
+            });
+          }
+          return _buildEmptyState();
+        }
+
+        // Trường hợp 2: Đã có nhà
+        // Mặc định chọn nhà đầu tiên trong danh sách nếu chưa có chọn lựa
+        if (_selectedHouseId == null || !docs.any((d) => d.id == _selectedHouseId)) {
+          // Tránh setState ngay trong builder, dùng addPostFrameCallback
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _selectedHouseId = docs.first.id;
+              });
+            }
+          });
+          return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF00A651))));
+        }
+
+        final selectedDoc = docs.firstWhere((d) => d.id == _selectedHouseId);
+        final houseData = selectedDoc.data() as Map<String, dynamic>;
+
+        return _buildDashboard(docs, selectedDoc, houseData);
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -100,7 +160,473 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
 
+  Widget _buildDashboard(List<QueryDocumentSnapshot> docs, QueryDocumentSnapshot selectedDoc, Map<String, dynamic> houseData) {
+    // Ưu tiên houseName (hoặc propertyName) thay vì Hello World
+    final propertyName = (houseData['houseName'] ?? houseData['propertyName'] ?? "Hello World").toString(); 
+    
+    return Scaffold(
+      backgroundColor: const Color(0xFFF0F2F5), // Nền xám nhạt
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 1. Header xanh lá mượt mà
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00A651),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.home_outlined, color: Colors.black87, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Đang quản lý Nhà trọ", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const SizedBox(height: 2),
+                          GestureDetector(
+                            onTap: () => _showHouseSwitcher(docs, selectedDoc.id),
+                            child: Row(
+                              children: [
+                                Text(
+                                  propertyName.isEmpty ? "Hello World" : propertyName,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(width: 4),
+                                Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.3),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF00A651), size: 20),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.menu_rounded, color: Colors.black87, size: 20),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+            
+            // 2. Tab Switcher
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  ]
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF1877F2), // Màu xanh dương
+                          borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.inventory_2_outlined, color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text("Quản lý", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.horizontal(right: Radius.circular(8)),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.show_chart_rounded, color: Colors.black87, size: 18),
+                              SizedBox(width: 8),
+                              Text("Tổng quan", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 3. Nội dung cuộn được
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Notification Banner
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF5F5), // Cam/hồng nhẹ
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFE0E0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.notifications_active_rounded, color: Colors.orange, size: 28),
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Text("1", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ),
+                                  )
+                                ],
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text("Cho phép điện thoại nhận thông báo!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                    SizedBox(height: 6),
+                                    Text("Phần mềm sẽ không hoạt động đúng nếu bạn không cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontSize: 13, height: 1.3)),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: ElevatedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.settings, color: Colors.black87, size: 18),
+                              label: const Text("Cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                surfaceTintColor: Colors.white,
+                                elevation: 0,
+                                side: BorderSide(color: Colors.grey.shade300),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Section: Thao tác thường dùng
+                    _buildSectionHeader("Thao tác thường dùng", "Thực hiện tác vụ nhanh để quản lý nhà trọ"),
+                    
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.count(
+                        crossAxisCount: 3,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.95,
+                        children: [
+                          _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cọc giữ chỗ"),
+                          _buildGridItem(icon: Icons.post_add_rounded, color: Colors.green, title: "Lập hợp đồng\nmới", badge: "5"),
+                          _buildGridItem(icon: Icons.find_replace_rounded, color: Colors.green, title: "Thanh lý\n(Trả phòng)"),
+                          _buildGridItem(icon: Icons.receipt_long_outlined, color: Colors.green, title: "Lập hóa đơn"),
+                          _buildGridItem(icon: Icons.calculate_outlined, color: Colors.green, title: "Chốt & Lập\nhóa đơn"),
+                          _buildGridItem(icon: Icons.request_quote_outlined, color: Colors.green, title: "Hóa đơn\ncần thu tiền"),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 24),
+
+                    // Section: Menu quản lý nhà trọ
+                    _buildSectionHeader("Menu quản lý nhà trọ", "Quản lý đối tượng nghiệp vụ trong nhà trọ"),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.count(
+                        crossAxisCount: 3,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.95,
+                        children: [
+                          _buildGridItem(icon: Icons.fact_check_outlined, color: Colors.green, title: "Quản lý\nphòng", badge: "0/5"),
+                          _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
+                          _buildGridItem(icon: Icons.edit_document, color: Colors.green, title: "Quản lý\ndịch vụ"),
+                          _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
+                          _buildGridItem(icon: Icons.support_agent_rounded, color: Colors.green, title: "Quản lý\nkhách thuê"),
+                          _buildGridItem(icon: Icons.local_mall_outlined, color: Colors.green, title: "Quản lý\ntài sản"),
+                          _buildGridItem(icon: Icons.local_parking_rounded, color: Colors.green, title: "Danh sách\nxe"),
+                          _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cài đặt APP\nkhách thuê"),
+                          _buildGridItem(icon: Icons.settings_applications_outlined, color: Colors.green, title: "Cài đặt\nhóa đơn"),
+                          _buildGridItem(icon: Icons.home_repair_service_outlined, color: Colors.grey, title: "Cài đặt\nnhà trọ"),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 4,
+            height: 18,
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00A651),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridItem({required IconData icon, required Color color, required String title, String? badge}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 38, color: color.withOpacity(0.7)),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
+              ),
+            ],
+          ),
+          if (badge != null)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade700,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showHouseSwitcher(List<QueryDocumentSnapshot> docs, String currentHouseId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  "Chọn nhà trọ muốn quản lý",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    final isSelected = doc.id == currentHouseId;
+                    
+                    final displayTitle = (data['houseName'] ?? data['propertyName'] ?? "Hello World").toString();
+                    
+                    return ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFFE8F5E9) : Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.home_work_rounded,
+                          color: isSelected ? const Color(0xFF00A651) : Colors.grey,
+                        ),
+                      ),
+                      title: Text(
+                        displayTitle.isEmpty ? 'Hello World' : displayTitle,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? const Color(0xFF00A651) : Colors.black87,
+                        ),
+                      ),
+                      subtitle: Text(
+                        data['address'] != null ? (data['address']['summary'] ?? 'Chưa có địa chỉ') : 'Chưa có địa chỉ',
+                        style: const TextStyle(fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: isSelected 
+                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFF00A651))
+                        : null,
+                      onTap: () {
+                        setState(() {
+                          _selectedHouseId = doc.id;
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.add, color: Colors.blue.shade700),
+                ),
+                title: Text(
+                  "Thêm nhà trọ mới",
+                  style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AddHousePage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 
