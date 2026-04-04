@@ -40,6 +40,7 @@ dependencies:
   url_launcher: ^6.3.2
   intl: ^0.20.2
   dvhcvn: 2.1.20250301
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:

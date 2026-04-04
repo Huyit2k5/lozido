@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dvhcvn/dvhcvn.dart' as dvhcvn;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddHousePage extends StatefulWidget {
   const AddHousePage({super.key});
@@ -74,6 +76,26 @@ class _AddHousePageState extends State<AddHousePage> {
   // Biến điều khiển hiển thị lỗi trong modal địa chỉ
   bool _showAddressErrors = false;
 
+  bool _isLoading = false;
+  final TextEditingController _propertyNameController = TextEditingController();
+  final TextEditingController _roomCountController = TextEditingController(text: "5");
+  final TextEditingController _areaController = TextEditingController(text: "15");
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _invoiceDateController = TextEditingController(text: "1");
+  final TextEditingController _dueDateController = TextEditingController(text: "5");
+
+  @override
+  void dispose() {
+    _detailAddressController.dispose();
+    _propertyNameController.dispose();
+    _roomCountController.dispose();
+    _areaController.dispose();
+    _priceController.dispose();
+    _invoiceDateController.dispose();
+    _dueDateController.dispose();
+    super.dispose();
+  }
+
   final List<String> _serviceOptions = [
     "Không sử dụng",
     "Tính theo người",
@@ -129,6 +151,93 @@ class _AddHousePageState extends State<AddHousePage> {
   }
 
   // ================= LOGIC & MODALS =================
+
+  Future<void> _saveHouseData() async {
+    if (_confirmedAddressSummary.isEmpty || _selectedProvince == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn địa chỉ & vị trí'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (_propertyNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập tên nhà cho thuê'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đăng nhập để thực hiện'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final houseData = {
+        'userId': user.uid,
+        'propertyType': _selectedPropertyType,
+        'rentType': _selectedRentType,
+        'propertyName': _propertyNameController.text.trim(),
+        'isAutoGenerate': _isAutoGenerate,
+        'floorCount': _selectedFloorCount,
+        'roomCount': int.tryParse(_roomCountController.text) ?? 5,
+        'area': double.tryParse(_areaController.text) ?? 15.0,
+        'price': double.tryParse(_priceController.text) ?? 0.0,
+        'maxOccupants': _selectedMaxOccupants,
+        'invoiceDate': int.tryParse(_invoiceDateController.text) ?? 1,
+        'dueDate': int.tryParse(_dueDateController.text) ?? 5,
+        'dienOption': _dienOption,
+        'nuocOption': _nuocOption,
+        'racOption': _racOption,
+        'internetOption': _internetOption,
+        'features': {
+          'appKhachThue': _featureAppKhachThue,
+          'zaloInvoice': _featureZaloInvoice,
+          'assetManagement': _featureAssetManagement,
+          'vehicleManagement': _featureVehicleManagement,
+          'postListing': _featurePostListing,
+          'contractFiles': _featureContractFiles,
+          'brokerageManagement': _featureBrokerageManagement,
+          'taskManagement': _featureTaskManagement,
+          'smsInvoice': _featureSmsInvoice,
+        },
+        'address': {
+          'province': _selectedProvince?.name,
+          'district': _selectedDistrict?.name,
+          'ward': _selectedWard?.name,
+          'detail': _detailAddressController.text,
+          'summary': _confirmedAddressSummary,
+        },
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance.collection('houses').add(houseData);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thêm mới thành công!'), backgroundColor: Colors.green),
+      );
+      Navigator.pop(context); // Trở về trang trước
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _showPropertyTypeModal() {
     showDialog(
@@ -536,6 +645,7 @@ class _AddHousePageState extends State<AddHousePage> {
           const SizedBox(height: 8),
           _buildTextField(
             hintText: "Ví dụ: Nguyễn Thanh",
+            controller: _propertyNameController,
             suffixTextWidget: _buildSuffixTag(_selectedPropertyType),
           ),
         ],
@@ -600,7 +710,7 @@ class _AddHousePageState extends State<AddHousePage> {
           _buildLabel("Số lượng phòng mẫu *"),
           const SizedBox(height: 8),
           _buildTextField(
-            initialValue: "5",
+            controller: _roomCountController,
             keyboardType: TextInputType.number,
             suffixTextWidget: _buildSuffixTag("phòng"),
           ),
@@ -627,7 +737,7 @@ class _AddHousePageState extends State<AddHousePage> {
                     _buildLabel("Diện tích mẫu *"),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      initialValue: "15",
+                      controller: _areaController,
                       keyboardType: TextInputType.number,
                       suffixTextWidget: _buildSuffixTag("m2"),
                     ),
@@ -643,6 +753,7 @@ class _AddHousePageState extends State<AddHousePage> {
                     const SizedBox(height: 8),
                     _buildTextField(
                       hintText: "Nhập giá",
+                      controller: _priceController,
                       keyboardType: TextInputType.number,
                       suffixTextWidget: _buildSuffixTag("đ/tháng"),
                     ),
@@ -717,7 +828,7 @@ class _AddHousePageState extends State<AddHousePage> {
                     _buildLabel("Ngày lập hóa đơn thu tiền *"),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      initialValue: "1",
+                      controller: _invoiceDateController,
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 6),
@@ -736,7 +847,7 @@ class _AddHousePageState extends State<AddHousePage> {
                     _buildLabel("Hạn đóng tiền *"),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      initialValue: "5",
+                      controller: _dueDateController,
                       keyboardType: TextInputType.number,
                       suffixTextWidget: _buildSuffixTag("Ngày"),
                     ),
@@ -1611,11 +1722,11 @@ class _AddHousePageState extends State<AddHousePage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: _isLoading ? null : () {
                           if (_currentStep == 0) {
                             setState(() => _currentStep = 1);
                           } else {
-                            // Lưu thông tin logic ở đây
+                            _saveHouseData();
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -1623,10 +1734,16 @@ class _AddHousePageState extends State<AddHousePage> {
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text(
-                          _currentStep == 0 ? "Tiếp theo" : "Lưu thông tin",
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
+                        child: _isLoading && _currentStep == 1
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : Text(
+                                _currentStep == 0 ? "Tiếp theo" : "Lưu thông tin",
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
                       ),
                     ),
                   ),
@@ -1797,7 +1914,7 @@ class _AddHousePageState extends State<AddHousePage> {
     Widget? suffixTextWidget,
   }) {
     return TextFormField(
-      initialValue: initialValue,
+      initialValue: controller != null ? null : initialValue,
       controller: controller,
       keyboardType: keyboardType,
       decoration: InputDecoration(

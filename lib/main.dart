@@ -27,9 +27,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    return const RegisterScreen();
-=======
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -49,6 +46,5 @@ class MyApp extends StatelessWidget {
         return const LoginScreen();
       },
     );
->>>>>>> c229880500651dba14fcb36a3d830456b515b391
   }
 }
