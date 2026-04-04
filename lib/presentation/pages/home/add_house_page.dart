@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dvhcvn/dvhcvn.dart' as dvhcvn;
 
 class AddHousePage extends StatefulWidget {
   const AddHousePage({super.key});
@@ -60,6 +61,18 @@ class _AddHousePageState extends State<AddHousePage> {
   bool _featureBrokerageManagement = true;
   bool _featureTaskManagement = true;
   bool _featureSmsInvoice = false;
+
+  // State cho địa chỉ & vị trí
+  dvhcvn.Level1? _selectedProvince;
+  dvhcvn.Level2? _selectedDistrict;
+  dvhcvn.Level3? _selectedWard;
+  final TextEditingController _detailAddressController = TextEditingController();
+  
+  // Biến lưu trữ hiển thị ngoài trang chính sau khi xác nhận
+  String _confirmedAddressSummary = "";
+
+  // Biến điều khiển hiển thị lỗi trong modal địa chỉ
+  bool _showAddressErrors = false;
 
   final List<String> _serviceOptions = [
     "Không sử dụng",
@@ -1091,15 +1104,39 @@ class _AddHousePageState extends State<AddHousePage> {
             subtitle: "Địa chỉ giúp khách tìm đến chính xác để xem nhà cho thuê",
           ),
           const SizedBox(height: 16),
+          if (_confirmedAddressSummary.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F4F3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF28a745).withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                   const Icon(Icons.location_on, color: Color(0xFF28a745)),
+                   const SizedBox(width: 8),
+                   Expanded(
+                     child: Text(
+                       _confirmedAddressSummary,
+                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                     ),
+                   ),
+                ],
+              ),
+            ),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.add, color: Colors.black87),
-              label: const Text(
-                "Thêm địa chỉ & vị trí trên bản đồ",
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+              onPressed: _showAddressSelectionModal,
+              icon: Icon(_confirmedAddressSummary.isEmpty ? Icons.add : Icons.edit, color: Colors.black87),
+              label: Text(
+                _confirmedAddressSummary.isEmpty 
+                    ? "Thêm địa chỉ & vị trí trên bản đồ" 
+                    : "Thay đổi địa chỉ",
+                style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
               ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.grey.shade300),
@@ -1108,6 +1145,412 @@ class _AddHousePageState extends State<AddHousePage> {
             ),
           )
         ],
+      ),
+    );
+  }
+
+  void _showAddressSelectionModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter modalSetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 28),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                "Địa chỉ & vị trí",
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                              ),
+                              Text(
+                                "Vui lòng cung cấp chính xác",
+                                style: TextStyle(color: Colors.black54, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            if (_selectedProvince != null && _selectedDistrict != null && _selectedWard != null) {
+                              _confirmAddress();
+                              Navigator.pop(context);
+                            } else {
+                              modalSetState(() => _showAddressErrors = true);
+                            }
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text(
+                                "Tiếp tục",
+                                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              Icon(Icons.chevron_right, color: Colors.blue),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Info Box (Orange)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3E0),
+                              border: Border.all(color: Colors.orange.shade700),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.warning_rounded, color: Colors.orange.shade800),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    "Thông tin: Nếu địa chỉ của bạn không có trong danh sách bên dưới. Vui lòng liên hệ với nhân viên để được hỗ trợ!",
+                                    style: TextStyle(fontSize: 14, color: Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Province Selection
+                          _buildAddressPickerItem(
+                            label: "Tỉnh/Thành phố *",
+                            value: _selectedProvince?.name ?? "Chọn giá trị",
+                            errorText: _showAddressErrors && _selectedProvince == null ? "Tỉnh/Thành phố là yêu cầu" : null,
+                            onTap: () async {
+                              final selected = await _showProvincePicker();
+                              if (selected != null) {
+                                modalSetState(() {
+                                  _selectedProvince = selected;
+                                  _selectedDistrict = null;
+                                  _selectedWard = null;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // District Selection
+                          _buildAddressPickerItem(
+                            label: "Quận/Huyện *",
+                            value: _selectedDistrict?.name ?? "Chọn giá trị",
+                            errorText: _showAddressErrors && _selectedDistrict == null && _selectedProvince != null ? "Quận/Huyện là yêu cầu" : null,
+                            isEnabled: _selectedProvince != null,
+                            onTap: () async {
+                              final selected = await _showDistrictPicker();
+                              if (selected != null) {
+                                modalSetState(() {
+                                  _selectedDistrict = selected;
+                                  _selectedWard = null;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Ward Selection
+                          _buildAddressPickerItem(
+                            label: "Phường/Xã *",
+                            value: _selectedWard?.name ?? "Chọn giá trị",
+                            errorText: _showAddressErrors && _selectedWard == null && _selectedDistrict != null ? "Phường/Xã là yêu cầu" : null,
+                            isEnabled: _selectedDistrict != null,
+                            onTap: () async {
+                              final selected = await _showWardPicker();
+                              if (selected != null) {
+                                modalSetState(() {
+                                  _selectedWard = selected;
+                                });
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Detailed Address
+                          const Text(
+                            "Địa chỉ chi tiết *",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          const Text(
+                            "Số nhà, hẻm, đường",
+                            style: TextStyle(color: Colors.black54, fontSize: 13),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildTextField(
+                            hintText: "Địa chỉ chi tiết",
+                            controller: _detailAddressController,
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Footer Button
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_selectedProvince != null && _selectedDistrict != null && _selectedWard != null) {
+                            _confirmAddress();
+                            Navigator.pop(context);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00A651),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          "Xác nhận địa chỉ & tiếp tục",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _confirmAddress() {
+    setState(() {
+      _confirmedAddressSummary = "";
+      if (_detailAddressController.text.isNotEmpty) {
+        _confirmedAddressSummary += "${_detailAddressController.text}, ";
+      }
+      if (_selectedWard != null) _confirmedAddressSummary += "${_selectedWard!.name}, ";
+      if (_selectedDistrict != null) _confirmedAddressSummary += "${_selectedDistrict!.name}, ";
+      if (_selectedProvince != null) _confirmedAddressSummary += _selectedProvince!.name;
+      
+      // Xoá dấu phẩy ở cuối nếu có
+      if (_confirmedAddressSummary.endsWith(", ")) {
+        _confirmedAddressSummary = _confirmedAddressSummary.substring(0, _confirmedAddressSummary.length - 2);
+      }
+    });
+  }
+
+  Widget _buildAddressPickerItem({
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+    String? errorText,
+    bool isEnabled = true,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: isEnabled ? onTap : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: isEnabled ? Colors.white : Colors.grey.shade50,
+              border: Border.all(color: errorText != null ? Colors.red : Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 13,
+                        fontWeight: FontWeight.normal,
+                        decoration: isEnabled ? null : TextDecoration.none,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: value == "Chọn giá trị" ? Colors.black38 : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+              ],
+            ),
+          ),
+        ),
+        if (errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              errorText,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<dvhcvn.Level1?> _showProvincePicker() {
+    return showDialog<dvhcvn.Level1>(
+      context: context,
+      builder: (BuildContext context) {
+        final provinces = dvhcvn.level1s;
+        return _buildPickerModal<dvhcvn.Level1>(
+          title: "Chọn Tỉnh/Thành phố",
+          items: provinces,
+          itemLabel: (p) => p.name,
+          selectedValue: _selectedProvince,
+        );
+      },
+    );
+  }
+
+  Future<dvhcvn.Level2?> _showDistrictPicker() {
+    return showDialog<dvhcvn.Level2>(
+      context: context,
+      builder: (BuildContext context) {
+        final districts = _selectedProvince?.children ?? [];
+        return _buildPickerModal<dvhcvn.Level2>(
+          title: "Chọn Quận/Huyện",
+          items: districts,
+          itemLabel: (d) => d.name,
+          selectedValue: _selectedDistrict,
+        );
+      },
+    );
+  }
+
+  Future<dvhcvn.Level3?> _showWardPicker() {
+    return showDialog<dvhcvn.Level3>(
+      context: context,
+      builder: (BuildContext context) {
+        final wards = _selectedDistrict?.children ?? [];
+        return _buildPickerModal<dvhcvn.Level3>(
+          title: "Chọn Phường/Xã",
+          items: wards,
+          itemLabel: (w) => w.name,
+          selectedValue: _selectedWard,
+        );
+      },
+    );
+  }
+
+  Widget _buildPickerModal<T>({
+    required String title,
+    required List<T> items,
+    required String Function(T) itemLabel,
+    required T? selectedValue,
+  }) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  final isSelected = selectedValue == item;
+                  return InkWell(
+                    onTap: () => Navigator.pop(context, item),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              itemLabel(item),
+                              style: TextStyle(
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 15,
+                                color: isSelected ? const Color(0xFF28a745) : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle, color: Color(0xFF28a745), size: 24),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade200,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text("Đóng", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1349,11 +1792,13 @@ class _AddHousePageState extends State<AddHousePage> {
   Widget _buildTextField({
     String? hintText,
     String? initialValue,
+    TextEditingController? controller,
     TextInputType keyboardType = TextInputType.text,
     Widget? suffixTextWidget,
   }) {
     return TextFormField(
       initialValue: initialValue,
+      controller: controller,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hintText,

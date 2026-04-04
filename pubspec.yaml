@@ -38,6 +38,7 @@ dependencies:
   firebase_auth: ^6.3.0
   cloud_firestore: ^6.2.0
   url_launcher: ^6.3.2
+  dvhcvn: 2.1.20250301
 
 dev_dependencies:
   flutter_test:
