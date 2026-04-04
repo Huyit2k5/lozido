@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
+import 'empty_rooms_page.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -48,12 +49,14 @@ class _HomePageState extends State<HomePage> {
       return const Scaffold(body: Center(child: Text("Đang yêu cầu đăng nhập...")));
     }
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .where('userId', isEqualTo: user.uid)
-          .snapshots(),
-      builder: (context, snapshot) {
+    return DefaultTabController(
+      length: 2,
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('houses')
+            .where('userId', isEqualTo: user.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF00A651))));
         }
@@ -97,7 +100,7 @@ class _HomePageState extends State<HomePage> {
 
         return _buildDashboard(docs, selectedDoc, houseData);
       },
-    );
+    ));
   }
 
   Widget _buildEmptyState() {
@@ -261,45 +264,38 @@ class _HomePageState extends State<HomePage> {
                     BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
                   ]
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1877F2), // Màu xanh dương
-                          borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
-                        ),
-                        child: Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.inventory_2_outlined, color: Colors.white, size: 18),
-                              SizedBox(width: 8),
-                              Text("Quản lý", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: TabBar(
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: const BoxDecoration(
+                      color: Color(0xFF1877F2), // Màu xanh dương highlight
+                    ),
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.black87,
+                    tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.inventory_2_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text("Quản lý", style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.horizontal(right: Radius.circular(8)),
-                        ),
-                        child: Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.show_chart_rounded, color: Colors.black87, size: 18),
-                              SizedBox(width: 8),
-                              Text("Tổng quan", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
-                            ],
-                          ),
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.show_chart_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text("Tổng quan", style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -307,143 +303,324 @@ class _HomePageState extends State<HomePage> {
 
             // 3. Nội dung cuộn được
             Expanded(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    // Notification Banner
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF5F5), // Cam/hồng nhẹ
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFFFE0E0)),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Stack(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.withOpacity(0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.notifications_active_rounded, color: Colors.orange, size: 28),
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    top: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Text("1", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                    ),
-                                  )
-                                ],
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text("Cho phép điện thoại nhận thông báo!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                    SizedBox(height: 6),
-                                    Text("Phần mềm sẽ không hoạt động đúng nếu bạn không cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontSize: 13, height: 1.3)),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 40,
-                            child: ElevatedButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.settings, color: Colors.black87, size: 18),
-                              label: const Text("Cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                surfaceTintColor: Colors.white,
-                                elevation: 0,
-                                side: BorderSide(color: Colors.grey.shade300),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Section: Thao tác thường dùng
-                    _buildSectionHeader("Thao tác thường dùng", "Thực hiện tác vụ nhanh để quản lý nhà trọ"),
-                    
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.count(
-                        crossAxisCount: 3,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.95,
-                        children: [
-                          _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cọc giữ chỗ"),
-                          _buildGridItem(icon: Icons.post_add_rounded, color: Colors.green, title: "Lập hợp đồng\nmới", badge: "5"),
-                          _buildGridItem(icon: Icons.find_replace_rounded, color: Colors.green, title: "Thanh lý\n(Trả phòng)"),
-                          _buildGridItem(icon: Icons.receipt_long_outlined, color: Colors.green, title: "Lập hóa đơn"),
-                          _buildGridItem(icon: Icons.calculate_outlined, color: Colors.green, title: "Chốt & Lập\nhóa đơn"),
-                          _buildGridItem(icon: Icons.request_quote_outlined, color: Colors.green, title: "Hóa đơn\ncần thu tiền"),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 24),
-
-                    // Section: Menu quản lý nhà trọ
-                    _buildSectionHeader("Menu quản lý nhà trọ", "Quản lý đối tượng nghiệp vụ trong nhà trọ"),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: GridView.count(
-                        crossAxisCount: 3,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.95,
-                        children: [
-                          _buildGridItem(icon: Icons.fact_check_outlined, color: Colors.green, title: "Quản lý\nphòng", badge: "0/5"),
-                          _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
-                          _buildGridItem(icon: Icons.edit_document, color: Colors.green, title: "Quản lý\ndịch vụ"),
-                          _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
-                          _buildGridItem(icon: Icons.support_agent_rounded, color: Colors.green, title: "Quản lý\nkhách thuê"),
-                          _buildGridItem(icon: Icons.local_mall_outlined, color: Colors.green, title: "Quản lý\ntài sản"),
-                          _buildGridItem(icon: Icons.local_parking_rounded, color: Colors.green, title: "Danh sách\nxe"),
-                          _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cài đặt APP\nkhách thuê"),
-                          _buildGridItem(icon: Icons.settings_applications_outlined, color: Colors.green, title: "Cài đặt\nhóa đơn"),
-                          _buildGridItem(icon: Icons.home_repair_service_outlined, color: Colors.grey, title: "Cài đặt\nnhà trọ"),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
+              child: TabBarView(
+                children: [
+                  SingleChildScrollView(
+                    key: const ValueKey('ManagementTab'),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: _buildManagementTab(),
+                  ),
+                  SingleChildScrollView(
+                    key: const ValueKey('OverviewTab'),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: _buildOverviewTab(houseData, propertyName),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildManagementTab() {
+    return Column(
+      children: [
+        // Notification Banner
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF5F5), // Cam/hồng nhẹ
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFFE0E0)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.notifications_active_rounded, color: Colors.orange, size: 28),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Text("1", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      )
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text("Cho phép điện thoại nhận thông báo!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        SizedBox(height: 6),
+                        Text("Phần mềm sẽ không hoạt động đúng nếu bạn không cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontSize: 13, height: 1.3)),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.settings, color: Colors.black87, size: 18),
+                  label: const Text("Cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    surfaceTintColor: Colors.white,
+                    elevation: 0,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Section: Thao tác thường dùng
+        _buildSectionHeader("Thao tác thường dùng", "Thực hiện tác vụ nhanh để quản lý nhà trọ"),
+        
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.95,
+            children: [
+              _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cọc giữ chỗ"),
+              _buildGridItem(icon: Icons.post_add_rounded, color: Colors.green, title: "Lập hợp đồng\nmới", badge: "5"),
+              _buildGridItem(icon: Icons.find_replace_rounded, color: Colors.green, title: "Thanh lý\n(Trả phòng)"),
+              _buildGridItem(icon: Icons.receipt_long_outlined, color: Colors.green, title: "Lập hóa đơn"),
+              _buildGridItem(icon: Icons.calculate_outlined, color: Colors.green, title: "Chốt & Lập\nhóa đơn"),
+              _buildGridItem(icon: Icons.request_quote_outlined, color: Colors.green, title: "Hóa đơn\ncần thu tiền"),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 24),
+
+        // Section: Menu quản lý nhà trọ
+        _buildSectionHeader("Menu quản lý nhà trọ", "Quản lý đối tượng nghiệp vụ trong nhà trọ"),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.95,
+            children: [
+              _buildGridItem(icon: Icons.fact_check_outlined, color: Colors.green, title: "Quản lý\nphòng", badge: "0/5"),
+              _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
+              _buildGridItem(icon: Icons.edit_document, color: Colors.green, title: "Quản lý\ndịch vụ"),
+              _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
+              _buildGridItem(icon: Icons.support_agent_rounded, color: Colors.green, title: "Quản lý\nkhách thuê"),
+              _buildGridItem(icon: Icons.local_mall_outlined, color: Colors.green, title: "Quản lý\ntài sản"),
+              _buildGridItem(icon: Icons.local_parking_rounded, color: Colors.green, title: "Danh sách\nxe"),
+              _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cài đặt APP\nkhách thuê"),
+              _buildGridItem(icon: Icons.settings_applications_outlined, color: Colors.green, title: "Cài đặt\nhóa đơn"),
+              _buildGridItem(icon: Icons.home_repair_service_outlined, color: Colors.grey, title: "Cài đặt\nnhà trọ"),
+            ],
+          ),
+        ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  Widget _buildOverviewTab(Map<String, dynamic> houseData, String propertyName) {
+    int totalRooms = houseData['roomCount'] ?? 0;
+    
+    return Column(
+      children: [
+        // Thống kê hiện trạng Card
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Thống kê hiện trạng", style: TextStyle(color: Colors.black54, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Text(propertyName, style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 15)),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text("Tổng số phòng", style: TextStyle(color: Colors.black54, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text("$totalRooms", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Text(" phòng", style: TextStyle(fontSize: 15)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        
+        // Tình trạng phòng Header
+        _buildSectionHeader("Tình trạng phòng", "Tình trạng phòng đang thuê trong hệ thống"),
+        
+        // Grid
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.shopping_cart_outlined, iconColor: Colors.red.shade400, iconBgColor: Colors.red.shade50, title: "Số phòng có thể cho thuê", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildOverviewStatCard(
+                    icon: Icons.inventory_2_outlined,
+                    iconColor: Colors.white,
+                    iconBgColor: Colors.red.shade400,
+                    title: "Số phòng đang trống",
+                    count: totalRooms,
+                    percent: "100%",
+                    percentColor: Colors.orange.shade700,
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => EmptyRoomsPage(houseData: houseData)));
+                    },
+                  )),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.inventory_2, iconColor: Colors.white, iconBgColor: Colors.blue.shade600, title: "Số phòng đang thuê", count: 0, percent: "0%", percentColor: Colors.green.shade600)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.warning_amber_rounded, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng sắp kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.assignment_outlined, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng báo kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.access_time_rounded, iconColor: Colors.white, iconBgColor: Colors.black87, title: "Số phòng quá hạn hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.attach_money_rounded, iconColor: Colors.white, iconBgColor: Colors.green.shade500, title: "Số phòng đang nợ", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _buildOverviewStatCard(icon: Icons.anchor_rounded, iconColor: Colors.white, iconBgColor: Colors.blueGrey.shade500, title: "Số phòng đang cọc", count: 0, percent: "0%", percentColor: Colors.green.shade600)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  Widget _buildOverviewStatCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBgColor,
+    required String title,
+    required int count,
+    required String percent,
+    required Color percentColor,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: iconBgColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: iconColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text("$count", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: percentColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(percent, style: TextStyle(color: percentColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right_rounded, color: Colors.black54, size: 20),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(color: Colors.black87, fontSize: 13, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    ));
   }
 
   Widget _buildSectionHeader(String title, String subtitle) {
