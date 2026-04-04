@@ -75,22 +75,9 @@ class _MailPageState extends State<MailPage> {
   @override
   void initState() {
     super.initState();
-    _ensureCSKHExists();
     _loadNotificationMockData();
   }
 
-  Future<void> _ensureCSKHExists() async {
-    final ChatService chatService = ChatService();
-    final snapshot = await FirebaseFirestore.instance
-        .collection('chatRooms')
-        .where('roomName', isEqualTo: 'LOZIDO CSKH')
-        .limit(1)
-        .get();
-
-    if (snapshot.docs.isEmpty) {
-      await chatService.createNewChatRoom('LOZIDO CSKH');
-    }
-  }
 
   void _loadNotificationMockData() {
     _notiStreamController.add([
@@ -111,6 +98,69 @@ class _MailPageState extends State<MailPage> {
         isUnread: true,
       ),
     ]);
+  }
+
+  void _showCreateChatRoomDialog(BuildContext context, String currentUserId) async {
+    final housesSnapshot = await FirebaseFirestore.instance
+        .collection('houses')
+        .where('userId', isEqualTo: currentUserId)
+        .get();
+
+    if (housesSnapshot.docs.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bạn chưa quản lý nhà trọ nào!')),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Chọn nhà trọ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: housesSnapshot.docs.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final doc = housesSnapshot.docs[index];
+                final data = doc.data();
+                final displayTitle = (data['houseName'] ?? data['propertyName'] ?? "Nhà trọ của tôi").toString();
+                final String roomName = displayTitle.isEmpty ? "Nhà trọ của tôi" : displayTitle;
+
+                return ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.blue,
+                    child: Icon(Icons.home, color: Colors.white, size: 20),
+                  ),
+                  title: Text(roomName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(context); // Đóng dialog
+                    final chatService = ChatService();
+                    await chatService.createNewChatRoom(roomName, userId: currentUserId);
+
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Đã tạo nhóm chat cho $roomName!'), backgroundColor: Colors.green),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -177,35 +227,159 @@ class _MailPageState extends State<MailPage> {
     final String currentUserId = user?.uid ?? "anonymous";
     final String currentUserName = user?.displayName ?? "Người dùng";
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('chatRooms').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text("Không có tin nhắn nào."));
-        }
+    return ListView(
+      children: [
+        // 1. LOZIDO Chatbot section (Luôn hiển thị trên cùng)
+        ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: CircleAvatar(
+            radius: 24,
+            backgroundColor: Colors.blue.withOpacity(0.1),
+            child: const Icon(Icons.smart_toy, color: Colors.blue, size: 28),
+          ),
+          title: Row(
+            children: [
+              const Text(
+                "LOZIDO Chatbot",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  border: Border.all(color: Colors.green),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  "Chatbot CSKH",
+                  style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          subtitle: const Text("Nhấn để xem chi tiết"),
+          onTap: () {
+            // Logic điều hướng đến Chatbot nếu có
+          },
+        ),
+        const Divider(height: 1, indent: 80, color: Color(0xFFEEEEEE)),
 
-        final docs = snapshot.data!.docs;
-        return ListView.separated(
-          itemCount: docs.length,
-          separatorBuilder: (_, __) => const Divider(height: 1, indent: 80, color: Color(0xFFEEEEEE)),
-          itemBuilder: (context, index) {
-            final data = docs[index].data() as Map<String, dynamic>;
-            final roomId = docs[index].id;
-            final roomName = data['roomName'] ?? 'Không tên';
+        // 2. Danh sách Phòng chat từ Firestore 'chatRooms'
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('chatRooms')
+              .where('userId', isEqualTo: user?.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return const Center(child: Text("Đã xảy ra lỗi khi tải dữ liệu."));
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              // Empty State: Hiển thị Banner/Card thông báo
+              return Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.house_siding, size: 48, color: Colors.orange.shade300),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "Chưa có nhóm chat, vui lòng tạo nhóm chat cho nhà trọ",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        _showCreateChatRoomDialog(context, currentUserId);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      icon: const Icon(Icons.add_circle_outline, size: 20),
+                      label: const Text("Tạo nhóm chat", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-            return MessageItemWidget(
-              roomId: roomId,
-              roomName: roomName,
-              userId: currentUserId,
-              userName: currentUserName,
-              lastMessage: "Nhấn để xem chi tiết",
+            final docs = snapshot.data!.docs;
+            return Column(
+              children: docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final String roomName = data['roomName'] ?? 'Không tên';
+                final String roomId = doc.id;
+
+                return Column(
+                  children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      leading: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: const Color(0xFFFF5722).withOpacity(0.1),
+                        child: const Icon(Icons.home, color: Color(0xFFFF5722), size: 28),
+                      ),
+                      title: Text(
+                        roomName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF5722),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              "Nhà trọ",
+                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const Text("Nhấn để xem chi tiết"),
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatRoomPage(
+                              roomId: roomId,
+                              roomName: roomName,
+                              userId: currentUserId,
+                              userName: currentUserName,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, indent: 80, color: Color(0xFFEEEEEE)),
+                  ],
+                );
+              }).toList(),
             );
           },
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -265,15 +439,18 @@ class CustomHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Nút CộNG (+)
-          GestureDetector(
-            onTap: onAddPressed,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey.shade300),
+          Opacity(
+            opacity: 0.5,
+            child: GestureDetector(
+              onTap: null, // Vô hiệu hóa hành động
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: const Icon(Icons.add, color: Color(0xFF26A69A), size: 20),
               ),
-              child: const Icon(Icons.add, color: Color(0xFF26A69A), size: 20),
             ),
           ),
 
@@ -408,7 +585,6 @@ class _BounceTabItemState extends State<BounceTabItem> with SingleTickerProvider
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Icon với hiệu ứng Scale nảy lên mượt mà (chỉ icon nảy)
             ScaleTransition(
@@ -467,110 +643,7 @@ class _BounceTabItemState extends State<BounceTabItem> with SingleTickerProvider
   }
 }
 
-// Custom ListItem Layout hiển thị mỗi tin nhắn Chat theo mẫu
-class MessageItemWidget extends StatelessWidget {
-  final String roomId;
-  final String roomName;
-  final String userId;
-  final String userName;
-  final String lastMessage;
-
-  const MessageItemWidget({
-    Key? key,
-    required this.roomId,
-    required this.roomName,
-    required this.userId,
-    required this.userName,
-    required this.lastMessage,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatRoomPage(
-              roomId: roomId,
-              roomName: roomName,
-              userId: userId,
-              userName: userName,
-            ),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar giả định
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: const Color(0xFFFF5722).withOpacity(0.1),
-              child: const Icon(
-                Icons.home, 
-                color: Color(0xFFFF5722), 
-                size: 28
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Middle Content: Name, Role Badge, Preview
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    roomName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      // Badge Role
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF5722),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          "Nhà trọ",
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    lastMessage,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getIconForAvatar(String type) {
-    if (type == 'bot') return Icons.smart_toy;
-    if (type == 'cskh') return Icons.support_agent;
-    if (type == 'house') return Icons.home;
-    if (type == 'group') return Icons.group;
-    return Icons.person;
-  }
-}
+// MessageItemWidget đã được thay thế bằng ListTile trực tiếp trong _buildMessagesTab để đồng bộ giao diện.
 
 // Custom ListItem Layout cho Thông Báo với dạng Card nhẹ
 class NotificationItemWidget extends StatelessWidget {
