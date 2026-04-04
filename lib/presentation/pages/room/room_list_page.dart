@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_room_page.dart';
 import 'room_detail_page.dart';
+import 'package:provider/provider.dart';
+import 'contract_provider.dart';
+import 'create_contract_page.dart';
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
@@ -206,7 +209,27 @@ class _RoomListPageState extends State<RoomListPage> {
                 leading: const Icon(Icons.assignment_outlined, color: Colors.black87),
                 title: const Text('Lập hợp đồng mới', style: TextStyle(fontWeight: FontWeight.w500)),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => ChangeNotifierProvider(
+                        create: (_) => ContractProvider(),
+                        child: CreateContractPage(
+                          houseId: widget.houseId,
+                          roomId: roomId,
+                          houseData: widget.houseData,
+                          roomData: roomData,
+                        ),
+                      ),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeInOut));
+                        return SlideTransition(position: animation.drive(tween), child: child);
+                      },
+                    ),
+                  );
+                },
               ),
               const Divider(height: 1),
               ListTile(
