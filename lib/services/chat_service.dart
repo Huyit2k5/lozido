@@ -9,12 +9,13 @@ class ChatService {
   CollectionReference get _chatRoomsRef => _firestore.collection('chatRooms');
 
   // Create new chat room
-  Future<String> createNewChatRoom(String roomName) async {
+  Future<String> createNewChatRoom(String roomName, {String? userId}) async {
     try {
       DocumentReference docRef = await _chatRoomsRef.add({
         'roomName': roomName,
         'memberCount': 1, // Default starting value
         'createdAt': FieldValue.serverTimestamp(),
+        'userId': userId ?? 'system',
       });
       return docRef.id;
     } catch (e) {
