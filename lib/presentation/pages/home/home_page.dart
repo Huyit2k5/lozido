@@ -6,6 +6,7 @@ import 'add_house_page.dart';
 import 'mail_page.dart';
 import '../room/room_list_page.dart';
 import 'empty_rooms_page.dart';
+import '../service/service_management_page.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -457,7 +458,22 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
-              _buildGridItem(icon: Icons.edit_document, color: Colors.green, title: "Quản lý\ndịch vụ"),
+              _buildGridItem(
+                icon: Icons.edit_document,
+                color: Colors.green,
+                title: "Quản lý\ndịch vụ",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ServiceManagementPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
               _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
               _buildGridItem(icon: Icons.support_agent_rounded, color: Colors.green, title: "Quản lý\nkhách thuê"),
               _buildGridItem(icon: Icons.local_mall_outlined, color: Colors.green, title: "Quản lý\ntài sản"),
