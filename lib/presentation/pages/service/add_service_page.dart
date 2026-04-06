@@ -36,10 +36,18 @@ class _AddServicePageState extends State<AddServicePage> {
   // Chip suggestions
   final List<String> _suggestions = ['Tiền giữ xe', 'Tiền wifi', 'Tiền nước (người)'];
 
-  // Unit options
-  final List<String> _unitOptions = [
-    'KWh', 'Khối', 'Tháng', 'Người', 'Chiếc',
-    'Lần', 'Cái', 'Bình', 'm2', 'Giờ',
+  // Unit options with descriptions
+  final List<Map<String, String>> _unitOptions = [
+    {'unit': 'KWh', 'desc': 'Tính chênh lệch đồng hồ điện'},
+    {'unit': 'Khối', 'desc': 'Tính chênh lệch đồng hồ nước'},
+    {'unit': 'Tháng', 'desc': 'Dịch tính theo tháng như wifi, rác, vệ sinh...'},
+    {'unit': 'Người', 'desc': 'Dịch tính theo số thành viên đang thuê'},
+    {'unit': 'Chiếc', 'desc': 'Có thể là dịch vụ xe'},
+    {'unit': 'Lần', 'desc': ''},
+    {'unit': 'Cái', 'desc': ''},
+    {'unit': 'Bình', 'desc': ''},
+    {'unit': 'm2', 'desc': ''},
+    {'unit': 'Giờ', 'desc': ''},
   ];
 
   @override
@@ -52,44 +60,140 @@ class _AddServicePageState extends State<AddServicePage> {
   void _showUnitSelector() {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Text(
-                  'Chọn đơn vị',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                ),
-              ),
-              const Divider(height: 1),
-              ..._unitOptions.map((unit) => ListTile(
-                title: Text(
-                  unit,
-                  style: TextStyle(
-                    fontWeight: _selectedUnit == unit ? FontWeight.bold : FontWeight.normal,
-                    color: _selectedUnit == unit ? const Color(0xFF00A651) : Colors.black87,
+      builder: (ctx) {
+        String? tempSelected = _selectedUnit;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.list, color: Colors.black87, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Đơn vị',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                trailing: _selectedUnit == unit
-                    ? const Icon(Icons.check, color: Color(0xFF00A651))
-                    : null,
-                onTap: () {
-                  setState(() {
-                    _selectedUnit = unit;
-                    _unitError = null;
-                  });
-                  Navigator.pop(ctx);
-                },
-              )),
-            ],
-          ),
-        ),
-      ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, thickness: 1),
+                  // List
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 380),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: _unitOptions.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16),
+                      itemBuilder: (_, i) {
+                        final item = _unitOptions[i];
+                        final unit = item['unit']!;
+                        final desc = item['desc']!;
+                        final isSelected = tempSelected == unit;
+                        return InkWell(
+                          onTap: () {
+                            setModalState(() => tempSelected = unit);
+                            setState(() {
+                              _selectedUnit = unit;
+                              _unitError = null;
+                            });
+                            Navigator.pop(ctx);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        unit,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: isSelected ? const Color(0xFF00A651) : Colors.black87,
+                                        ),
+                                      ),
+                                      if (desc.isNotEmpty) ...
+                                        [
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            desc,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                    ],
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF00A651),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.check, color: Colors.white, size: 18),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(height: 1, thickness: 1),
+                  // Close button
+                  InkWell(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Đóng',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -122,18 +226,55 @@ class _AddServicePageState extends State<AddServicePage> {
     setState(() => _isLoading = true);
 
     try {
+      final serviceName = _nameController.text.trim();
+      final price = double.tryParse(_priceController.text.trim()) ?? 0;
+      final unit = _selectedUnit;
+
       await FirebaseFirestore.instance
           .collection('houses')
           .doc(widget.houseId)
           .collection('services')
           .add({
-        'serviceName': _nameController.text.trim(),
-        'price': double.tryParse(_priceController.text.trim()) ?? 0,
-        'unit': _selectedUnit,
+        'serviceName': serviceName,
+        'price': price,
+        'unit': unit,
         'isMetered': _isMetered,
         'appliedRooms': _selectedRoomIds.toList(),
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // Thêm dịch vụ vào danh sách services của các phòng được chọn
+      if (_selectedRoomIds.isNotEmpty) {
+        final newServiceEntry = {
+          'name': serviceName,
+          'price': price,
+          'unit': unit,
+          'currentIndex': 0,
+        };
+
+        final roomsSnapshot = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('rooms')
+            .get();
+
+        final batch = FirebaseFirestore.instance.batch();
+        for (final doc in roomsSnapshot.docs) {
+          if (_selectedRoomIds.contains(doc.id)) {
+            final roomData = doc.data();
+            final existingServices = List<dynamic>.from(roomData['services'] ?? []);
+            final alreadyExists = existingServices.any(
+              (s) => (s as Map<dynamic, dynamic>)['name'] == serviceName,
+            );
+            if (!alreadyExists) {
+              batch.update(doc.reference, {
+                'services': FieldValue.arrayUnion([newServiceEntry]),
+              });
+            }
+          }
+        }
+        await batch.commit();
+      }
 
       if (mounted) {
         // Show success dialog
@@ -550,6 +691,7 @@ class _AddServicePageState extends State<AddServicePage> {
       ),
     );
   }
+
 
   Widget _buildRoomSelector() {
     return StreamBuilder<QuerySnapshot>(

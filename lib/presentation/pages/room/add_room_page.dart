@@ -562,6 +562,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => ServiceSelectionPage(
+                                    houseId: widget.houseId,
                                     initialSelectedServices: _selectedServices,
                                   ),
                                 ),
