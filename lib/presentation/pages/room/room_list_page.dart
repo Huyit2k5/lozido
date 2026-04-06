@@ -5,6 +5,7 @@ import 'room_detail_page.dart';
 import 'package:provider/provider.dart';
 import 'contract_provider.dart';
 import 'create_contract_page.dart';
+import 'service_selection_page.dart';
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
@@ -244,7 +245,19 @@ class _RoomListPageState extends State<RoomListPage> {
                 title: const Text('Thiết lập dịch vụ', style: TextStyle(fontWeight: FontWeight.w500)),
                 subtitle: const Text('Dịch vụ điện, nước... của phòng'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.pop(context),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ServiceSelectionPage(
+                        houseId: widget.houseId,
+                        roomId: roomId,
+                        initialSelectedServices: List<Map<String, dynamic>>.from(roomData['services'] ?? []),
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
