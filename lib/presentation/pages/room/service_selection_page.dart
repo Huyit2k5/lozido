@@ -4,11 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ServiceSelectionPage extends StatefulWidget {
   final String houseId;
+  final String? roomId;
   final List<Map<String, dynamic>> initialSelectedServices;
 
   const ServiceSelectionPage({
     super.key,
     required this.houseId,
+    this.roomId,
     required this.initialSelectedServices,
   });
 
@@ -17,6 +19,7 @@ class ServiceSelectionPage extends StatefulWidget {
 }
 
 class _ServiceItemModel {
+  final String id;
   final String name;
   final double price;
   final String unit;
@@ -26,6 +29,7 @@ class _ServiceItemModel {
   String? errorText;
 
   _ServiceItemModel({
+    required this.id,
     required this.name,
     required this.price,
     required this.unit,
@@ -60,6 +64,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
+        final id = doc.id;
         final name = data['serviceName'] ?? '';
         final price = (data['price'] as num?)?.toDouble() ?? 0;
         final unit = data['unit'] ?? '';
@@ -73,6 +78,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         if (existingSelected.isNotEmpty) {
           final existing = existingSelected.first;
           _services.add(_ServiceItemModel(
+            id: id,
             name: name,
             price: price,
             unit: unit,
@@ -82,6 +88,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
           ));
         } else {
           _services.add(_ServiceItemModel(
+            id: id,
             name: name,
             price: price,
             unit: unit,
@@ -120,7 +127,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     return Icons.miscellaneous_services;
   }
 
-  void _applyServices() {
+  Future<void> _applyServices() async {
     bool hasError = false;
     List<Map<String, dynamic>> finalSelection = [];
 
@@ -145,7 +152,61 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
       }
     });
 
-    if (!hasError) {
+    if (hasError) return;
+
+    if (widget.roomId != null) {
+      setState(() => _isLoading = true);
+      try {
+        final batch = FirebaseFirestore.instance.batch();
+        final roomRef = FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('rooms')
+            .doc(widget.roomId);
+
+        // 1. Cập nhật mảng services trong Room
+        batch.update(roomRef, {
+          'services': finalSelection,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        // 2. Inverse Update: Cập nhật appliedRooms trong từng Service
+        for (var svc in _services) {
+          final serviceRef = FirebaseFirestore.instance
+              .collection('houses')
+              .doc(widget.houseId)
+              .collection('services')
+              .doc(svc.id);
+
+          if (svc.isSelected) {
+            batch.update(serviceRef, {
+              'appliedRooms': FieldValue.arrayUnion([widget.roomId]),
+            });
+          } else {
+            batch.update(serviceRef, {
+              'appliedRooms': FieldValue.arrayRemove([widget.roomId]),
+            });
+          }
+        }
+
+        await batch.commit();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cập nhật dịch vụ thành công'), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi khi cập nhật dịch vụ: $e'), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } else {
       Navigator.pop(context, finalSelection);
     }
   }
