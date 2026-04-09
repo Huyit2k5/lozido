@@ -166,8 +166,29 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'status': 'Active',
       };
 
-      // Create contract document
-      await FirebaseFirestore.instance.collection('contracts').add(contractData);
+      // Check if active contract already exists for this room
+      final activeContracts = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('contracts')
+          .where('roomId', isEqualTo: widget.roomId)
+          .where('status', isEqualTo: 'Active')
+          .get();
+
+      if (activeContracts.docs.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Phòng này đã có hợp đồng đang hoạt động!")));
+          setState(() => _isSubmitting = false);
+        }
+        return;
+      }
+
+      // Create contract document inside houses/{houseId}/contracts
+      await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('contracts')
+          .add(contractData);
 
       // Update room status
       await FirebaseFirestore.instance

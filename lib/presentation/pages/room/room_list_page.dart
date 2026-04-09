@@ -143,6 +143,57 @@ class _RoomListPageState extends State<RoomListPage> {
     );
   }
 
+  Future<void> _endContract(String roomId) async {
+    final act = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận kết thúc'),
+        content: const Text('Bạn có chắc chắn muốn kết thúc hợp đồng cho phòng này không? Hợp đồng sẽ được lưu lại hệ thống với trạng thái đã kết thúc.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Đồng ý', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (act == true) {
+      try {
+        final activeContracts = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .where('roomId', isEqualTo: roomId)
+            .where('status', isEqualTo: 'Active')
+            .get();
+
+        if (activeContracts.docs.isNotEmpty) {
+          final docId = activeContracts.docs.first.id;
+          await FirebaseFirestore.instance
+              .collection('houses')
+              .doc(widget.houseId)
+              .collection('contracts')
+              .doc(docId)
+              .update({'status': 'Đã kết thúc', 'endedAt': FieldValue.serverTimestamp()});
+        }
+
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('rooms')
+            .doc(roomId)
+            .update({'status': 'Đang trống'});
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã kết thúc hợp đồng thành công!')));
+        }
+      } catch (e) {
+         if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+         }
+      }
+    }
+  }
+
   void _showRoomActionModal(String roomId, Map<String, dynamic> roomData) {
     showModalBottomSheet(
       context: context,
@@ -206,32 +257,43 @@ class _RoomListPageState extends State<RoomListPage> {
                 },
               ),
               const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.assignment_outlined, color: Colors.black87),
-                title: const Text('Lập hợp đồng mới', style: TextStyle(fontWeight: FontWeight.w500)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => ChangeNotifierProvider(
-                        create: (_) => ContractProvider(),
-                        child: CreateContractPage(
-                          houseId: widget.houseId,
-                          roomId: roomId,
-                          houseData: widget.houseData,
-                          roomData: roomData,
+              if (roomData['status'] == 'Đã thuê')
+                ListTile(
+                  leading: const Icon(Icons.block, color: Colors.red),
+                  title: const Text('Kết thúc hợp đồng', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.red)),
+                  trailing: const Icon(Icons.chevron_right, color: Colors.red),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _endContract(roomId);
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.assignment_outlined, color: Colors.black87),
+                  title: const Text('Lập hợp đồng mới', style: TextStyle(fontWeight: FontWeight.w500)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => ChangeNotifierProvider(
+                          create: (_) => ContractProvider(),
+                          child: CreateContractPage(
+                            houseId: widget.houseId,
+                            roomId: roomId,
+                            houseData: widget.houseData,
+                            roomData: roomData,
+                          ),
                         ),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeInOut));
+                          return SlideTransition(position: animation.drive(tween), child: child);
+                        },
                       ),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeInOut));
-                        return SlideTransition(position: animation.drive(tween), child: child);
-                      },
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.anchor, color: Colors.black87),
