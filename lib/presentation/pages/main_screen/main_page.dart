@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../home/mail_page.dart';
+import '../more/more_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -17,7 +18,7 @@ class _MainPageState extends State<MainPage> {
     const MailPage(),
     const Center(child: Text("Màn hình Công việc", style: TextStyle(fontSize: 18))),
     const Center(child: Text("Màn hình Tìm khách", style: TextStyle(fontSize: 18))),
-    const Center(child: Text("Màn hình Thêm", style: TextStyle(fontSize: 18))),
+    const MorePage(),
   ];
 
   @override

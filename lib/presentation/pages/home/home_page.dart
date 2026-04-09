@@ -4,8 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
+import '../room/room_list_page.dart';
 import 'empty_rooms_page.dart';
+<<<<<<< HEAD
 import 'house_settings_page.dart';
+=======
+import '../service/service_management_page.dart';
+>>>>>>> 59d418de502fed77f988242dbbb707130d75e414
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -309,12 +314,16 @@ class _HomePageState extends State<HomePage> {
                   SingleChildScrollView(
                     key: const ValueKey('ManagementTab'),
                     physics: const AlwaysScrollableScrollPhysics(),
+<<<<<<< HEAD
                     child: _buildManagementTab(houseData, selectedDoc.id),
+=======
+                    child: _buildManagementTab(selectedDoc.id, houseData),
+>>>>>>> 59d418de502fed77f988242dbbb707130d75e414
                   ),
                   SingleChildScrollView(
                     key: const ValueKey('OverviewTab'),
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: _buildOverviewTab(houseData, propertyName),
+                    child: _buildOverviewTab(selectedDoc.id, houseData, propertyName),
                   ),
                 ],
               ),
@@ -325,7 +334,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildManagementTab(Map<String, dynamic> houseData, String houseId) {
+=======
+  Widget _buildManagementTab(String houseId, Map<String, dynamic> houseData) {
+>>>>>>> 59d418de502fed77f988242dbbb707130d75e414
     return Column(
       children: [
         // Notification Banner
@@ -439,9 +452,40 @@ class _HomePageState extends State<HomePage> {
             crossAxisSpacing: 12,
             childAspectRatio: 0.95,
             children: [
-              _buildGridItem(icon: Icons.fact_check_outlined, color: Colors.green, title: "Quản lý\nphòng", badge: "0/5"),
+              _buildGridItem(
+                icon: Icons.fact_check_outlined, 
+                color: Colors.green, 
+                title: "Quản lý\nphòng", 
+                badge: "0/5",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RoomListPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
               _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
-              _buildGridItem(icon: Icons.edit_document, color: Colors.green, title: "Quản lý\ndịch vụ"),
+              _buildGridItem(
+                icon: Icons.edit_document,
+                color: Colors.green,
+                title: "Quản lý\ndịch vụ",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ServiceManagementPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
               _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
               _buildGridItem(icon: Icons.support_agent_rounded, color: Colors.green, title: "Quản lý\nkhách thuê"),
               _buildGridItem(icon: Icons.local_mall_outlined, color: Colors.green, title: "Quản lý\ntài sản"),
@@ -472,104 +516,123 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildOverviewTab(Map<String, dynamic> houseData, String propertyName) {
-    int totalRooms = houseData['roomCount'] ?? 0;
-    
-    return Column(
-      children: [
-        // Thống kê hiện trạng Card
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Thống kê hiện trạng", style: TextStyle(color: Colors.black54, fontSize: 13)),
-                  const SizedBox(height: 6),
-                  Text(propertyName, style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 15)),
-                ],
+  Widget _buildOverviewTab(String houseId, Map<String, dynamic> houseData, String propertyName) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('houses')
+          .doc(houseId)
+          .collection('rooms')
+          .snapshots(),
+      builder: (context, snapshot) {
+        // Mặc định ban đầu lấy từ houseData nếu stream chưa có data
+        int totalRooms = houseData['roomCount'] ?? 0;
+        int emptyRooms = totalRooms; // Giả định ban đầu
+        int rentedRooms = 0;
+
+        if (snapshot.hasData) {
+          final docs = snapshot.data!.docs;
+          totalRooms = docs.length;
+          emptyRooms = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'Đang trống').length;
+          rentedRooms = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'Đã thuê').length;
+        }
+
+        return Column(
+          children: [
+            // Thống kê hiện trạng Card
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Tổng số phòng", style: TextStyle(color: Colors.black54, fontSize: 13)),
-                  const SizedBox(height: 6),
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("$totalRooms", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const Text(" phòng", style: TextStyle(fontSize: 15)),
+                      const Text("Thống kê hiện trạng", style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      const SizedBox(height: 6),
+                      Text(propertyName, style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 15)),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text("Tổng số phòng", style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text("$totalRooms", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          const Text(" phòng", style: TextStyle(fontSize: 15)),
+                        ],
+                      ),
                     ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        
-        // Tình trạng phòng Header
-        _buildSectionHeader("Tình trạng phòng", "Tình trạng phòng đang thuê trong hệ thống"),
-        
-        // Grid
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Row(
+            ),
+            const SizedBox(height: 20),
+            
+            // Tình trạng phòng Header
+            _buildSectionHeader("Tình trạng phòng", "Tình trạng phòng đang thuê trong hệ thống"),
+            
+            // Grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
                 children: [
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.shopping_cart_outlined, iconColor: Colors.red.shade400, iconBgColor: Colors.red.shade50, title: "Số phòng có thể cho thuê", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildOverviewStatCard(
-                    icon: Icons.inventory_2_outlined,
-                    iconColor: Colors.white,
-                    iconBgColor: Colors.red.shade400,
-                    title: "Số phòng đang trống",
-                    count: totalRooms,
-                    percent: "100%",
-                    percentColor: Colors.orange.shade700,
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => EmptyRoomsPage(houseData: houseData)));
-                    },
-                  )),
+                  Row(
+                    children: [
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.shopping_cart_outlined, iconColor: Colors.red.shade400, iconBgColor: Colors.red.shade50, title: "Số phòng có thể cho thuê", count: emptyRooms, percent: totalRooms > 0 ? "${((emptyRooms / totalRooms) * 100).toInt()}%" : "0%", percentColor: Colors.orange.shade700)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildOverviewStatCard(
+                        icon: Icons.inventory_2_outlined,
+                        iconColor: Colors.white,
+                        iconBgColor: Colors.red.shade400,
+                        title: "Số phòng đang trống",
+                        count: emptyRooms,
+                        percent: totalRooms > 0 ? "${((emptyRooms / totalRooms) * 100).toInt()}%" : "0%",
+                        percentColor: Colors.orange.shade700,
+                        onTap: () {
+                          // Navigator.push(context, MaterialPageRoute(builder: (context) => EmptyRoomsPage(houseId: houseId, houseData: houseData)));
+                        },
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.inventory_2, iconColor: Colors.white, iconBgColor: Colors.blue.shade600, title: "Số phòng đang thuê", count: rentedRooms, percent: totalRooms > 0 ? "${((rentedRooms / totalRooms) * 100).toInt()}%" : "0%", percentColor: Colors.green.shade600)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.warning_amber_rounded, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng sắp kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.assignment_outlined, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng báo kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.access_time_rounded, iconColor: Colors.white, iconBgColor: Colors.black87, title: "Số phòng quá hạn hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.attach_money_rounded, iconColor: Colors.white, iconBgColor: Colors.green.shade500, title: "Số phòng đang nợ", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildOverviewStatCard(icon: Icons.anchor_rounded, iconColor: Colors.white, iconBgColor: Colors.blueGrey.shade500, title: "Số phòng đang cọc", count: 0, percent: "0%", percentColor: Colors.green.shade600)),
+                    ],
+                  ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.inventory_2, iconColor: Colors.white, iconBgColor: Colors.blue.shade600, title: "Số phòng đang thuê", count: 0, percent: "0%", percentColor: Colors.green.shade600)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.warning_amber_rounded, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng sắp kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.assignment_outlined, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng báo kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.access_time_rounded, iconColor: Colors.white, iconBgColor: Colors.black87, title: "Số phòng quá hạn hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.attach_money_rounded, iconColor: Colors.white, iconBgColor: Colors.green.shade500, title: "Số phòng đang nợ", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildOverviewStatCard(icon: Icons.anchor_rounded, iconColor: Colors.white, iconBgColor: Colors.blueGrey.shade500, title: "Số phòng đang cọc", count: 0, percent: "0%", percentColor: Colors.green.shade600)),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 30),
-      ],
+            ),
+            const SizedBox(height: 30),
+          ],
+        );
+      }
     );
   }
 
@@ -674,7 +737,11 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+<<<<<<< HEAD
       decoration: BoxDecoration(
+=======
+        decoration: BoxDecoration(
+>>>>>>> 59d418de502fed77f988242dbbb707130d75e414
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
