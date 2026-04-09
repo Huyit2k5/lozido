@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
 import 'empty_rooms_page.dart';
+import 'house_settings_page.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -308,7 +309,7 @@ class _HomePageState extends State<HomePage> {
                   SingleChildScrollView(
                     key: const ValueKey('ManagementTab'),
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: _buildManagementTab(),
+                    child: _buildManagementTab(houseData, selectedDoc.id),
                   ),
                   SingleChildScrollView(
                     key: const ValueKey('OverviewTab'),
@@ -324,7 +325,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildManagementTab() {
+  Widget _buildManagementTab(Map<String, dynamic> houseData, String houseId) {
     return Column(
       children: [
         // Notification Banner
@@ -447,7 +448,22 @@ class _HomePageState extends State<HomePage> {
               _buildGridItem(icon: Icons.local_parking_rounded, color: Colors.green, title: "Danh sách\nxe"),
               _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cài đặt APP\nkhách thuê"),
               _buildGridItem(icon: Icons.settings_applications_outlined, color: Colors.green, title: "Cài đặt\nhóa đơn"),
-              _buildGridItem(icon: Icons.home_repair_service_outlined, color: Colors.grey, title: "Cài đặt\nnhà trọ"),
+              _buildGridItem(
+                icon: Icons.home_repair_service_outlined, 
+                color: Colors.grey, 
+                title: "Cài đặt\nnhà trọ",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HouseSettingsPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -654,8 +670,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildGridItem({required IconData icon, required Color color, required String title, String? badge}) {
-    return Container(
+  Widget _buildGridItem({required IconData icon, required Color color, required String title, String? badge, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -697,7 +715,7 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-    );
+    ));
   }
 
   void _showHouseSwitcher(List<QueryDocumentSnapshot> docs, String currentHouseId) {
