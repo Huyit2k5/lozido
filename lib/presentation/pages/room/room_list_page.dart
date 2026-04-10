@@ -219,7 +219,7 @@ class _RoomListPageState extends State<RoomListPage> {
                           style: const TextStyle(color: Colors.black87, fontSize: 14),
                           children: [
                             TextSpan(text: '${roomData['roomName']}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            TextSpan(text: 'Trạng thái "${roomData['status'] ?? 'Đang trống'}"'),
+                            TextSpan(text: 'Trạng thái "${roomData['status'] == 'Đã thuê' ? 'Đã có người' : (roomData['status'] ?? 'Đang trống')}"'),
                           ],
                         ),
                       ),
@@ -331,6 +331,8 @@ class _RoomListPageState extends State<RoomListPage> {
   Widget _buildRoomCard(String roomId, Map<String, dynamic> roomData) {
     final name = roomData['roomName'] ?? 'Phòng';
     final priceInfo = _formatCurrency((roomData['price'] as num?)?.toDouble() ?? 0);
+    final displayStatus = roomData['status'] == 'Đã thuê' ? 'Đã có người' : (roomData['status'] ?? 'Đang trống');
+    final statusColor = displayStatus == 'Đã có người' ? Colors.blue : Colors.deepOrange;
 
     return InkWell(
       onTap: () => _showRoomActionModal(roomId, roomData),
@@ -349,9 +351,9 @@ class _RoomListPageState extends State<RoomListPage> {
             Container(
               width: 4,
               height: 180, // Match typical card height
-              decoration: const BoxDecoration(
-                color: Colors.deepOrange,
-                borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
               ),
             ),
             
@@ -423,9 +425,9 @@ class _RoomListPageState extends State<RoomListPage> {
                               ),
                               child: Row(
                                 children: [
-                                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle)),
+                                  Container(width: 8, height: 8, decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle)),
                                   const SizedBox(width: 6),
-                                  const Text("Đang trống", style: TextStyle(fontSize: 12)),
+                                  Text(displayStatus, style: const TextStyle(fontSize: 12)),
                                 ],
                               ),
                             ),
