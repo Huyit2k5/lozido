@@ -123,9 +123,29 @@ class _CreateContractPageState extends State<CreateContractPage> {
     _electricPriceCtrl.text = _formatNumber((widget.roomData['electricityPrice'] ?? widget.houseData['electricityPrice'] ?? 3500).toString());
     _waterPriceCtrl.text = _formatNumber((widget.roomData['waterPrice'] ?? widget.houseData['waterPrice'] ?? 20000).toString());
     
-    // Clear old assets when opening
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ContractProvider>(context, listen: false).updateAssets([]);
+      if (widget.initialContractData != null && widget.initialContractData!['assets'] != null) {
+        final assetsList = widget.initialContractData!['assets'] as List<dynamic>;
+        final parsedAssets = assetsList.map((a) {
+          if (a is Map) {
+            return ContractAsset(
+              assetId: a['assetId'],
+              assetName: a['assetName'] ?? '',
+              iconTag: a['iconTag'] ?? 'category',
+              value: (a['value'] ?? 0).toDouble(),
+              importPrice: (a['importPrice'] ?? 0).toDouble(),
+              quantity: a['quantity'] ?? 1,
+              supplier: a['supplier'] ?? '',
+              unit: a['unit'] ?? 'Cái',
+              status: a['status'] ?? 'Bình thường',
+            );
+          }
+          return null;
+        }).where((e) => e != null).cast<ContractAsset>().toList();
+        Provider.of<ContractProvider>(context, listen: false).updateAssets(parsedAssets);
+      } else {
+        Provider.of<ContractProvider>(context, listen: false).updateAssets([]);
+      }
     });
 
     if (widget.initialContractData != null) {
@@ -300,7 +320,12 @@ class _CreateContractPageState extends State<CreateContractPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Lập hợp đồng mới", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: Text(
+          widget.contractId != null 
+            ? 'Chỉnh sửa hợp đồng ${widget.roomData['name'] ?? widget.roomData['roomName'] ?? ''}'
+            : 'Thêm hợp đồng mới',
+          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -330,15 +355,19 @@ class _CreateContractPageState extends State<CreateContractPage> {
             color: Colors.white,
             border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
           ),
-          child: ElevatedButton.icon(
+          child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00A651),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: _isSubmitting ? null : _submitContract,
-            icon: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.add, color: Colors.white),
-            label: Text(_isSubmitting ? "Đang xử lý..." : "Thêm hợp đồng mới", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            child: _isSubmitting
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                : Text(
+                    widget.contractId != null ? "Cập nhật hợp đồng" : "Thêm hợp đồng mới", 
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)
+                  ),
           ),
         ),
       ),
@@ -667,7 +696,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                   MaterialPageRoute(
                     builder: (context) => ChangeNotifierProvider.value(
                       value: provider,
-                      child: const ManageAssetsPage(),
+                      child: ManageAssetsPage(houseId: widget.houseId),
                     ),
                   ),
                 );

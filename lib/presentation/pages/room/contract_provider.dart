@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ContractAsset {
+  final String? assetId;
   final String assetName;
   final String iconTag;
   final double value;
@@ -11,6 +12,7 @@ class ContractAsset {
   final String status;
 
   ContractAsset({
+    this.assetId,
     required this.assetName,
     required this.iconTag,
     required this.value,
@@ -23,6 +25,7 @@ class ContractAsset {
 
   Map<String, dynamic> toMap() {
     return {
+      if (assetId != null) 'assetId': assetId,
       'assetName': assetName,
       'iconTag': iconTag,
       'value': value,

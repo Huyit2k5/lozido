@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import 'contract_detail_page.dart';
 import 'contract_pdf_preview_page.dart';
 import 'create_contract_page.dart';
+import 'contract_provider.dart';
 
 class ContractListPage extends StatefulWidget {
   final String houseId;
@@ -349,6 +351,7 @@ class _ContractListPageState extends State<ContractListPage> {
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final data = docs[index].data() as Map<String, dynamic>;
+            data['id'] = docs[index].id;
             return _buildContractCard(data);
           },
         );
@@ -442,13 +445,16 @@ class _ContractListPageState extends State<ContractListPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CreateContractPage(
-                          houseId: widget.houseId,
-                          roomId: roomId ?? '',
-                          houseData: widget.houseData,
-                          roomData: room,
-                          contractId: data['id'],
-                          initialContractData: data,
+                        builder: (_) => ChangeNotifierProvider(
+                          create: (_) => ContractProvider(),
+                          child: CreateContractPage(
+                            houseId: widget.houseId,
+                            roomId: roomId ?? '',
+                            houseData: widget.houseData,
+                            roomData: room,
+                            contractId: data['id'],
+                            initialContractData: data,
+                          ),
                         ),
                       ),
                     );
