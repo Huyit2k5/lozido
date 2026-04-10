@@ -79,12 +79,43 @@ class _CreateContractPageState extends State<CreateContractPage> {
 
   bool _isSubmitting = false;
 
+  Future<void> _checkActiveDeposit() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('deposits')
+          .where('roomId', isEqualTo: widget.roomId)
+          .where('status', isEqualTo: 'Active')
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data();
+        if (mounted) {
+          setState(() {
+            _nameCtrl.text = data['tenantName'] ?? '';
+            _phoneCtrl.text = data['phoneNumber'] ?? '';
+            if (data['depositAmount'] != null) {
+              _depositCtrl.text = _formatNumber(data['depositAmount'].toString());
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Lỗi kiểm tra cọc giữ chỗ: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     // Pre-fill fields if any
+    _checkActiveDeposit();
     
-    // Pre-fill electric/water price
+    // Pre-fill rent/electric/water price
+    if (widget.roomData['price'] != null) {
+      _rentPriceCtrl.text = _formatNumber(widget.roomData['price'].toString());
+    }
     _electricPriceCtrl.text = _formatNumber((widget.roomData['electricityPrice'] ?? widget.houseData['electricityPrice'] ?? 3500).toString());
     _waterPriceCtrl.text = _formatNumber((widget.roomData['waterPrice'] ?? widget.houseData['waterPrice'] ?? 20000).toString());
     
@@ -194,7 +225,18 @@ class _CreateContractPageState extends State<CreateContractPage> {
       await FirebaseFirestore.instance
           .collection('houses').doc(widget.houseId)
           .collection('rooms').doc(widget.roomId)
-          .update({'status': 'Đã thuê'});
+          .update({
+        'status': 'Đã thuê',
+        'tenantName': _nameCtrl.text.trim(),
+        'tenantPhone': _phoneCtrl.text.trim(),
+        'contractStartDate': _startDateCtrl.text,
+        'contractEndDate': _endDateCtrl.text,
+        'useApp': _useApp,
+        'rentPrice': _parseCurrency(_rentPriceCtrl.text),
+        'depositAmount': _parseCurrency(_depositCtrl.text),
+        'totalMembers': int.tryParse(_membersCtrl.text) ?? 1,
+        'contractSigned': false,
+      });
 
       // Create new chat room for the joined person
       final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
