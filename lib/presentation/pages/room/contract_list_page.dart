@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
+import 'contract_detail_page.dart';
+import 'contract_pdf_preview_page.dart';
+import 'create_contract_page.dart';
+
 class ContractListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
@@ -32,6 +36,7 @@ class _ContractListPageState extends State<ContractListPage> {
   ];
 
   List<Map<String, dynamic>> _rooms = [];
+  Set<String> _roomsWithContracts = {};
 
   @override
   void initState() {
@@ -46,8 +51,33 @@ class _ContractListPageState extends State<ContractListPage> {
           .doc(widget.houseId)
           .collection('rooms')
           .get();
+          
+      final Set<String> usedRoomIds = {};
+      try {
+        final contractsQs = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .get();
+
+        for (var doc in contractsQs.docs) {
+          try {
+            final data = doc.data();
+            if (data is Map) {
+              final rId = data['roomId']?.toString();
+              if (rId != null && rId.isNotEmpty) {
+                usedRoomIds.add(rId.trim());
+              }
+            }
+          } catch (_) {}
+        }
+      } catch (e) {
+        debugPrint("Lỗi tải contracts để lọc dropdown: $e");
+      }
+
       if (mounted) {
         setState(() {
+          _roomsWithContracts = usedRoomIds;
           _rooms = qs.docs.map((d) {
             final data = d.data();
             data['id'] = d.id;
@@ -60,8 +90,13 @@ class _ContractListPageState extends State<ContractListPage> {
     }
   }
 
-  int get _floorCount {
-    return int.tryParse(widget.houseData['floorCount']?.toString() ?? '1') ?? 1;
+  List<dynamic> get _availableFloors {
+    final floors = _rooms.map((r) => r['floor']).where((f) => f != null && f.toString().isNotEmpty).toSet().toList();
+    floors.sort((a, b) {
+      if (a is num && b is num) return a.compareTo(b);
+      return a.toString().compareTo(b.toString());
+    });
+    return floors;
   }
 
   String _formatCurrency(double amount) {
@@ -114,8 +149,7 @@ class _ContractListPageState extends State<ContractListPage> {
                   child: Row(
                     children: [
                       _buildFloorChip('Tất cả'),
-                      _buildFloorChip(0), // Assumed 0 is Tầng trệt
-                      for (int i = 1; i <= _floorCount; i++) _buildFloorChip(i),
+                      ..._availableFloors.map((f) => _buildFloorChip(f)),
                     ],
                   ),
                 ),
@@ -140,7 +174,7 @@ class _ContractListPageState extends State<ContractListPage> {
     final isSelected = _selectedFloor == floorValue;
     String label = floorValue == 'Tất cả'
         ? 'Tất cả'
-        : floorValue == 0
+        : (floorValue == 0 || floorValue.toString().toLowerCase() == 'trệt')
             ? 'Tầng trệt'
             : 'Tầng $floorValue';
 
@@ -194,12 +228,22 @@ class _ContractListPageState extends State<ContractListPage> {
                   value: null,
                   child: Text('Tất cả phòng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
-                ..._rooms.map((room) {
+                ..._rooms.where((room) {
+                  final rId = room['id']?.toString().trim();
+                  if (rId == null || !_roomsWithContracts.contains(rId)) {
+                    return false;
+                  }
+
+                  if (_selectedFloor != 'Tất cả' && _selectedFloor != null) {
+                    return room['floor']?.toString() == _selectedFloor.toString();
+                  }
+                  return true;
+                }).map((room) {
                   return DropdownMenuItem<String?>(
                     value: room['id'],
                     child: Text(room['roomName'] ?? 'Phòng (không tên)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                   );
-                }).toList(),
+                }),
               ],
               onChanged: (val) {
                 setState(() {
@@ -256,7 +300,10 @@ class _ContractListPageState extends State<ContractListPage> {
         .collection('contracts');
 
     // 1. Logic Filter: Floor
-    if (_selectedFloor != 'Tất cả' && _selectedFloor != null) {
+    // NOTE: Old contracts might not have 'floor' saved in their Firestore document.
+    // If a floor is selected, we filter by it. Since we select the room via dropdown, 
+    // omitting the floor filter if a precise room is already selected makes it perfectly safe for old contracts!
+    if (_selectedFloor != 'Tất cả' && _selectedFloor != null && _selectedRoomId == null) {
       query = query.where('floor', isEqualTo: _selectedFloor);
     }
 
@@ -270,7 +317,12 @@ class _ContractListPageState extends State<ContractListPage> {
       String dbStatus = _selectedStatus == 'Còn hạn' ? 'Active' : _selectedStatus!;
       query = query.where('status', isEqualTo: dbStatus);
     } else {
-      query = query.where('status', whereIn: ['Còn hạn', 'Đang hiệu lực', 'Active']);
+      if (_selectedRoomId != null) {
+        // Lấy tất cả các hợp đồng (cả cũ và mới) nếu đã chọn đích danh một phòng
+      } else {
+        // Mặc định chỉ lấy các hợp đồng đang hoạt động
+        query = query.where('status', whereIn: ['Còn hạn', 'Đang hiệu lực', 'Active']);
+      }
     }
 
     return StreamBuilder<QuerySnapshot>(
@@ -331,6 +383,104 @@ class _ContractListPageState extends State<ContractListPage> {
     );
   }
 
+  void _showContractActionModal(Map<String, dynamic> data, String roomName) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final status = data['status'] == 'Active' ? 'Trong thời hạn hợp đồng' : (data['status'] ?? 'Không xác định');
+        
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  border: Border.all(color: Colors.green.shade300),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text('Trạng thái "$status"', style: const TextStyle(color: Colors.black87, fontSize: 14)),
+                    ),
+                  ],
+                ),
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.visibility_outlined, color: Colors.black87),
+                title: const Text('Xem thông tin hợp đồng', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ContractDetailPage(contractData: data, roomName: roomName),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+
+              if (data['status'] != 'Đã kết thúc') ...[
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined, color: Colors.black87),
+                  title: const Text('Chỉnh sửa hợp đồng', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final roomId = data['roomId'];
+                    final room = roomId != null ? _rooms.firstWhere((r) => r['id'] == roomId, orElse: () => <String, dynamic>{}) : <String, dynamic>{};
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateContractPage(
+                          houseId: widget.houseId,
+                          roomId: roomId ?? '',
+                          houseData: widget.houseData,
+                          roomData: room,
+                          contractId: data['id'],
+                          initialContractData: data,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+              ],
+
+              ListTile(
+                leading: const Icon(Icons.description_outlined, color: Colors.black87),
+                title: const Text('Xem văn bản hợp đồng', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Xem mẫu thông tin chi tiết hợp đồng, lưu & in file PDF', style: TextStyle(fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ContractPdfPreviewPage(contractData: data, roomName: roomName),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildContractCard(Map<String, dynamic> data) {
     String roomName = data['roomName'] ?? '';
     if (roomName.isEmpty) {
@@ -356,6 +506,9 @@ class _ContractListPageState extends State<ContractListPage> {
     final createdAtMs = (data['createdAt'] as Timestamp?)?.toDate();
     final createdAtStr = createdAtMs != null ? DateFormat('dd/MM/yyyy').format(createdAtMs) : '';
 
+    final isEnded = status == 'Đã kết thúc';
+    final statusColor = isEnded ? Colors.red : const Color(0xFF00A651);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -379,8 +532,8 @@ class _ContractListPageState extends State<ContractListPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF00A651),
+                  decoration: BoxDecoration(
+                    color: statusColor,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 24),
@@ -402,22 +555,26 @@ class _ContractListPageState extends State<ContractListPage> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(color: Color(0xFF00A651), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                           ),
                           const SizedBox(width: 6),
-                          Text(status == 'Active' ? 'Trong thời hạn hợp đồng' : status, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                          Text(status == 'Active' ? 'Trong thời hạn hợp đồng' : status, style: TextStyle(color: isEnded ? Colors.red : Colors.black54, fontSize: 13, fontWeight: isEnded ? FontWeight.bold : FontWeight.normal)),
                         ],
                       )
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    shape: BoxShape.circle,
+                InkWell(
+                  onTap: () => _showContractActionModal(data, roomName),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.more_vert, size: 20),
                   ),
-                  child: const Icon(Icons.more_vert, size: 20),
                 )
               ],
             ),

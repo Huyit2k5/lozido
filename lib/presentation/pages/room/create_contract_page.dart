@@ -36,6 +36,8 @@ class CreateContractPage extends StatefulWidget {
   final String roomId;
   final Map<String, dynamic> houseData;
   final Map<String, dynamic> roomData;
+  final String? contractId;
+  final Map<String, dynamic>? initialContractData;
 
   const CreateContractPage({
     super.key,
@@ -43,6 +45,8 @@ class CreateContractPage extends StatefulWidget {
     required this.roomId,
     required this.houseData,
     required this.roomData,
+    this.contractId,
+    this.initialContractData,
   });
 
   @override
@@ -124,8 +128,26 @@ class _CreateContractPageState extends State<CreateContractPage> {
       Provider.of<ContractProvider>(context, listen: false).updateAssets([]);
     });
 
-    _startDateCtrl.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
-    _updateEndDate();
+    if (widget.initialContractData != null) {
+      final initial = widget.initialContractData!;
+      _selectedDuration = initial['duration'] ?? '6 Tháng';
+      _startDateCtrl.text = initial['startDate'] ?? '';
+      _endDateCtrl.text = initial['endDate'] ?? '';
+      _membersCtrl.text = (initial['totalMembers'] ?? 1).toString();
+      _nameCtrl.text = initial['tenantName'] ?? '';
+      _phoneCtrl.text = initial['phoneNumber'] ?? '';
+      _useApp = initial['useApp'] ?? false;
+      _rentPriceCtrl.text = _formatNumber((initial['rentPrice'] ?? 0).toString());
+      _depositCtrl.text = _formatNumber((initial['depositAmount'] ?? 0).toString());
+      _paymentCycleCtrl.text = (initial['paymentCycle'] ?? 1).toString();
+      _billingDateCtrl.text = initial['billingDate'] ?? '';
+      _contractTemplate = initial['contractTemplate'] ?? 'Mẫu mặc định';
+      _electricPriceCtrl.text = _formatNumber((initial['electricityPrice'] ?? 0).toString());
+      _waterPriceCtrl.text = _formatNumber((initial['waterPrice'] ?? 0).toString());
+    } else {
+      _startDateCtrl.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+      _updateEndDate();
+    }
   }
 
   void _updateEndDate() {
@@ -195,40 +217,42 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'waterPrice': _parseCurrency(_waterPriceCtrl.text),
         'assets': assets.map((a) => a.toMap()).toList(),
         'idCardImages': _imageUrls,
-        'createdAt': FieldValue.serverTimestamp(),
         'status': 'Active',
       };
 
-      // Check if active contract already exists for this room
-      final activeContracts = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('contracts')
-          .where('roomId', isEqualTo: widget.roomId)
-          .where('status', isEqualTo: 'Active')
-          .get();
-
-      if (activeContracts.docs.isNotEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Phòng này đã có hợp đồng đang hoạt động!")));
-          setState(() => _isSubmitting = false);
-        }
-        return;
+      if (widget.contractId == null) {
+        contractData['createdAt'] = FieldValue.serverTimestamp();
       }
 
-      // Create contract document inside houses/{houseId}/contracts
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('contracts')
-          .add(contractData);
+      if (widget.contractId == null) {
+        // Create new contract
+        final activeContracts = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .where('roomId', isEqualTo: widget.roomId)
+            .where('status', isEqualTo: 'Active')
+            .get();
 
-      // Update room status
-      await FirebaseFirestore.instance
-          .collection('houses').doc(widget.houseId)
-          .collection('rooms').doc(widget.roomId)
-          .update({
-        'status': 'Đã thuê',
+        if (activeContracts.docs.isNotEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Phòng này đã có hợp đồng đang hoạt động!")));
+            setState(() => _isSubmitting = false);
+          }
+          return;
+        }
+
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .add(contractData);
+
+        await FirebaseFirestore.instance
+            .collection('houses').doc(widget.houseId)
+            .collection('rooms').doc(widget.roomId)
+            .update({
+        'status': 'Đã có người',
         'tenantName': _nameCtrl.text.trim(),
         'tenantPhone': _phoneCtrl.text.trim(),
         'contractStartDate': _startDateCtrl.text,
@@ -240,12 +264,20 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'contractSigned': false,
       });
 
-      // Create new chat room for the joined person
-      final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
-      await ChatService().createNewChatRoom(roomName, userId: FirebaseAuth.instance.currentUser?.uid);
+        final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
+        await ChatService().createNewChatRoom(roomName, userId: FirebaseAuth.instance.currentUser?.uid);
+      } else {
+        // Update existing contract
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .doc(widget.contractId)
+            .update(contractData);
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lập hợp đồng thành công!")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.contractId == null ? "Lập hợp đồng thành công!" : "Cập nhật thành công!")));
         Navigator.pop(context); // Trở về màn hình trước
       }
     } catch (e) {
