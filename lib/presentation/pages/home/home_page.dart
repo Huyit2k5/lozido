@@ -5,8 +5,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
 import '../room/room_list_page.dart';
+import '../deposit/deposit_room_list_page.dart';
 import 'empty_rooms_page.dart';
+import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -21,7 +24,8 @@ class _HomePageState extends State<HomePage> {
 
   // ĐƯỜNG LINK FILE EXCEL MẪU CỦA BẠN SẼ ĐƯỢC CHÈN VÀO ĐÂY (Google Drive, Dropbox, Server riêng, v.v.)
   // Ví dụ: https://storage.googleapis.com/your-bucket/mau_lozido_v1.xlsx
-  final String _sampleExcelLink = "https://drive.google.com/uc?export=download&id=1Ujo6y-soKobWUjp0l6qZCljGy7RbDU2F";
+  final String _sampleExcelLink =
+      "https://drive.google.com/uc?export=download&id=1Ujo6y-soKobWUjp0l6qZCljGy7RbDU2F";
 
   // Hàm xử lý việc tải/mở Web Browser để Download File Excel
   Future<void> _downloadExcel() async {
@@ -33,14 +37,16 @@ class _HomePageState extends State<HomePage> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể mở đường dẫn tải file Excel')),
+          const SnackBar(
+            content: Text('Không thể mở đường dẫn tải file Excel'),
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
     }
   }
 
@@ -48,7 +54,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text("Đang yêu cầu đăng nhập...")));
+      return const Scaffold(
+        body: Center(child: Text("Đang yêu cầu đăng nhập...")),
+      );
     }
 
     return DefaultTabController(
@@ -59,50 +67,64 @@ class _HomePageState extends State<HomePage> {
             .where('userId', isEqualTo: user.uid)
             .snapshots(),
         builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF00A651))));
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(body: Center(child: Text("Lỗi tải dữ liệu. Vui lòng thử lại sau!")));
-        }
-
-        final docs = snapshot.data?.docs ?? [];
-
-        // Trường hợp 1: Chưa có nhà -> hiển thị Empty State và tự động chuyển trang 1 lần
-        if (docs.isEmpty) {
-          if (!_hasPushedToAdd) {
-            _hasPushedToAdd = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddHousePage()),
-              );
-            });
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(color: Color(0xFF00A651)),
+              ),
+            );
           }
-          return _buildEmptyState();
-        }
 
-        // Trường hợp 2: Đã có nhà
-        // Mặc định chọn nhà đầu tiên trong danh sách nếu chưa có chọn lựa
-        if (_selectedHouseId == null || !docs.any((d) => d.id == _selectedHouseId)) {
-          // Tránh setState ngay trong builder, dùng addPostFrameCallback
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              setState(() {
-                _selectedHouseId = docs.first.id;
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text("Lỗi tải dữ liệu. Vui lòng thử lại sau!"),
+              ),
+            );
+          }
+
+          final docs = snapshot.data?.docs ?? [];
+
+          // Trường hợp 1: Chưa có nhà -> hiển thị Empty State và tự động chuyển trang 1 lần
+          if (docs.isEmpty) {
+            if (!_hasPushedToAdd) {
+              _hasPushedToAdd = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddHousePage()),
+                );
               });
             }
-          });
-          return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF00A651))));
-        }
+            return _buildEmptyState();
+          }
 
-        final selectedDoc = docs.firstWhere((d) => d.id == _selectedHouseId);
-        final houseData = selectedDoc.data() as Map<String, dynamic>;
+          // Trường hợp 2: Đã có nhà
+          // Mặc định chọn nhà đầu tiên trong danh sách nếu chưa có chọn lựa
+          if (_selectedHouseId == null ||
+              !docs.any((d) => d.id == _selectedHouseId)) {
+            // Tránh setState ngay trong builder, dùng addPostFrameCallback
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _selectedHouseId = docs.first.id;
+                });
+              }
+            });
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(color: Color(0xFF00A651)),
+              ),
+            );
+          }
 
-        return _buildDashboard(docs, selectedDoc, houseData);
-      },
-    ));
+          final selectedDoc = docs.firstWhere((d) => d.id == _selectedHouseId);
+          final houseData = selectedDoc.data() as Map<String, dynamic>;
+
+          return _buildDashboard(docs, selectedDoc, houseData);
+        },
+      ),
+    );
   }
 
   Widget _buildEmptyState() {
@@ -168,10 +190,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDashboard(List<QueryDocumentSnapshot> docs, QueryDocumentSnapshot selectedDoc, Map<String, dynamic> houseData) {
+  Widget _buildDashboard(
+    List<QueryDocumentSnapshot> docs,
+    QueryDocumentSnapshot selectedDoc,
+    Map<String, dynamic> houseData,
+  ) {
     // Ưu tiên houseName (hoặc propertyName) thay vì Hello World
-    final propertyName = (houseData['houseName'] ?? houseData['propertyName'] ?? "Hello World").toString(); 
-    
+    final propertyName =
+        (houseData['houseName'] ?? houseData['propertyName'] ?? "Hello World")
+            .toString();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5), // Nền xám nhạt
       body: SafeArea(
@@ -196,21 +224,38 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.home_outlined, color: Colors.black87, size: 24),
+                        child: const Icon(
+                          Icons.home_outlined,
+                          color: Colors.black87,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Đang quản lý Nhà trọ", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          const Text(
+                            "Đang quản lý Nhà trọ",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
                           const SizedBox(height: 2),
                           GestureDetector(
-                            onTap: () => _showHouseSwitcher(docs, selectedDoc.id),
+                            onTap: () =>
+                                _showHouseSwitcher(docs, selectedDoc.id),
                             child: Row(
                               children: [
                                 Text(
-                                  propertyName.isEmpty ? "Hello World" : propertyName,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  propertyName.isEmpty
+                                      ? "Hello World"
+                                      : propertyName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 const SizedBox(width: 4),
                                 Container(
@@ -219,8 +264,12 @@ class _HomePageState extends State<HomePage> {
                                     color: Colors.white.withOpacity(0.3),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
-                                )
+                                  child: const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -236,7 +285,11 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.white.withOpacity(0.8),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF00A651), size: 20),
+                        child: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          color: Color(0xFF00A651),
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Container(
@@ -245,14 +298,18 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.white.withOpacity(0.8),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.menu_rounded, color: Colors.black87, size: 20),
+                        child: const Icon(
+                          Icons.menu_rounded,
+                          color: Colors.black87,
+                          size: 20,
+                        ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
-            
+
             // 2. Tab Switcher
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -263,8 +320,12 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade300),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
-                  ]
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -282,7 +343,10 @@ class _HomePageState extends State<HomePage> {
                           children: const [
                             Icon(Icons.inventory_2_outlined, size: 18),
                             SizedBox(width: 8),
-                            Text("Quản lý", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              "Quản lý",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
                       ),
@@ -292,7 +356,10 @@ class _HomePageState extends State<HomePage> {
                           children: const [
                             Icon(Icons.show_chart_rounded, size: 18),
                             SizedBox(width: 8),
-                            Text("Tổng quan", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              "Tổng quan",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
                       ),
@@ -315,7 +382,11 @@ class _HomePageState extends State<HomePage> {
                   SingleChildScrollView(
                     key: const ValueKey('OverviewTab'),
                     physics: const AlwaysScrollableScrollPhysics(),
-                    child: _buildOverviewTab(selectedDoc.id, houseData, propertyName),
+                    child: _buildOverviewTab(
+                      selectedDoc.id,
+                      houseData,
+                      propertyName,
+                    ),
                   ),
                 ],
               ),
@@ -351,7 +422,11 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.orange.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.notifications_active_rounded, color: Colors.orange, size: 28),
+                        child: const Icon(
+                          Icons.notifications_active_rounded,
+                          color: Colors.orange,
+                          size: 28,
+                        ),
                       ),
                       Positioned(
                         right: 0,
@@ -362,9 +437,16 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.red,
                             shape: BoxShape.circle,
                           ),
-                          child: const Text("1", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            "1",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                   const SizedBox(width: 12),
@@ -372,12 +454,25 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text("Cho phép điện thoại nhận thông báo!", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          "Cho phép điện thoại nhận thông báo!",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         SizedBox(height: 6),
-                        Text("Phần mềm sẽ không hoạt động đúng nếu bạn không cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontSize: 13, height: 1.3)),
+                        Text(
+                          "Phần mềm sẽ không hoạt động đúng nếu bạn không cho phép nhận thông báo",
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 13,
+                            height: 1.3,
+                          ),
+                        ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -386,49 +481,39 @@ class _HomePageState extends State<HomePage> {
                 height: 40,
                 child: ElevatedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.settings, color: Colors.black87, size: 18),
-                  label: const Text("Cho phép nhận thông báo", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                  icon: const Icon(
+                    Icons.settings,
+                    color: Colors.black87,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    "Cho phép nhận thông báo",
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     surfaceTintColor: Colors.white,
                     elevation: 0,
                     side: BorderSide(color: Colors.grey.shade300),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
         // Section: Thao tác thường dùng
-        _buildSectionHeader("Thao tác thường dùng", "Thực hiện tác vụ nhanh để quản lý nhà trọ"),
-        
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.95,
-            children: [
-              _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cọc giữ chỗ"),
-              _buildGridItem(icon: Icons.post_add_rounded, color: Colors.green, title: "Lập hợp đồng\nmới", badge: "5"),
-              _buildGridItem(icon: Icons.find_replace_rounded, color: Colors.green, title: "Thanh lý\n(Trả phòng)"),
-              _buildGridItem(icon: Icons.receipt_long_outlined, color: Colors.green, title: "Lập hóa đơn"),
-              _buildGridItem(icon: Icons.calculate_outlined, color: Colors.green, title: "Chốt & Lập\nhóa đơn"),
-              _buildGridItem(icon: Icons.request_quote_outlined, color: Colors.green, title: "Hóa đơn\ncần thu tiền"),
-            ],
-          ),
+        _buildSectionHeader(
+          "Thao tác thường dùng",
+          "Thực hiện tác vụ nhanh để quản lý nhà trọ",
         ),
-        
-        const SizedBox(height: 24),
-
-        // Section: Menu quản lý nhà trọ
-        _buildSectionHeader("Menu quản lý nhà trọ", "Quản lý đối tượng nghiệp vụ trong nhà trọ"),
 
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -441,15 +526,14 @@ class _HomePageState extends State<HomePage> {
             childAspectRatio: 0.95,
             children: [
               _buildGridItem(
-                icon: Icons.fact_check_outlined, 
-                color: Colors.green, 
-                title: "Quản lý\nphòng", 
-                badge: "0/5",
+                icon: Icons.handshake_outlined,
+                color: Colors.green,
+                title: "Cọc giữ chỗ",
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => RoomListPage(
+                      builder: (context) => DepositRoomListPage(
                         houseId: houseId,
                         houseData: houseData,
                       ),
@@ -457,7 +541,74 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              _buildGridItem(icon: Icons.receipt_outlined, color: Colors.green, title: "Quản lý\nhóa đơn"),
+              _buildGridItem(
+                icon: Icons.post_add_rounded,
+                color: Colors.green,
+                title: "Lập hợp đồng\nmới",
+                badge: "5",
+              ),
+              _buildGridItem(
+                icon: Icons.find_replace_rounded,
+                color: Colors.green,
+                title: "Thanh lý\n(Trả phòng)",
+              ),
+              _buildGridItem(
+                icon: Icons.receipt_long_outlined,
+                color: Colors.green,
+                title: "Lập hóa đơn",
+              ),
+              _buildGridItem(
+                icon: Icons.calculate_outlined,
+                color: Colors.green,
+                title: "Chốt & Lập\nhóa đơn",
+              ),
+              _buildGridItem(
+                icon: Icons.request_quote_outlined,
+                color: Colors.green,
+                title: "Hóa đơn\ncần thu tiền",
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Section: Menu quản lý nhà trọ
+        _buildSectionHeader(
+          "Menu quản lý nhà trọ",
+          "Quản lý đối tượng nghiệp vụ trong nhà trọ",
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.95,
+            children: [
+              _buildGridItem(
+                icon: Icons.fact_check_outlined,
+                color: Colors.green,
+                title: "Quản lý\nphòng",
+                badge: "0/5",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          RoomListPage(houseId: houseId, houseData: houseData),
+                    ),
+                  );
+                },
+              ),
+              _buildGridItem(
+                icon: Icons.receipt_outlined,
+                color: Colors.green,
+                title: "Quản lý\nhóa đơn",
+              ),
               _buildGridItem(
                 icon: Icons.edit_document,
                 color: Colors.green,
@@ -474,13 +625,52 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              _buildGridItem(icon: Icons.analytics_outlined, color: Colors.green, title: "Quản lý\nhợp đồng"),
-              _buildGridItem(icon: Icons.support_agent_rounded, color: Colors.green, title: "Quản lý\nkhách thuê"),
-              _buildGridItem(icon: Icons.local_mall_outlined, color: Colors.green, title: "Quản lý\ntài sản"),
-              _buildGridItem(icon: Icons.local_parking_rounded, color: Colors.green, title: "Danh sách\nxe"),
-              _buildGridItem(icon: Icons.handshake_outlined, color: Colors.green, title: "Cài đặt APP\nkhách thuê"),
-              _buildGridItem(icon: Icons.settings_applications_outlined, color: Colors.green, title: "Cài đặt\nhóa đơn"),
-              _buildGridItem(icon: Icons.home_repair_service_outlined, color: Colors.grey, title: "Cài đặt\nnhà trọ"),
+              _buildGridItem(
+                icon: Icons.analytics_outlined,
+                color: Colors.green,
+                title: "Quản lý\nhợp đồng",
+              ),
+              _buildGridItem(
+                icon: Icons.support_agent_rounded,
+                color: Colors.green,
+                title: "Quản lý\nkhách thuê",
+              ),
+              _buildGridItem(
+                icon: Icons.local_mall_outlined,
+                color: Colors.green,
+                title: "Quản lý\ntài sản",
+              ),
+              _buildGridItem(
+                icon: Icons.local_parking_rounded,
+                color: Colors.green,
+                title: "Danh sách\nxe",
+              ),
+              _buildGridItem(
+                icon: Icons.handshake_outlined,
+                color: Colors.green,
+                title: "Cài đặt APP\nkhách thuê",
+              ),
+              _buildGridItem(
+                icon: Icons.settings_applications_outlined,
+                color: Colors.green,
+                title: "Cài đặt\nhóa đơn",
+              ),
+              _buildGridItem(
+                icon: Icons.home_repair_service_outlined,
+                color: Colors.grey,
+                title: "Cài đặt\nnhà trọ",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HouseSettingsPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -489,7 +679,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildOverviewTab(String houseId, Map<String, dynamic> houseData, String propertyName) {
+  Widget _buildOverviewTab(
+    String houseId,
+    Map<String, dynamic> houseData,
+    String propertyName,
+  ) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('houses')
@@ -505,8 +699,19 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.hasData) {
           final docs = snapshot.data!.docs;
           totalRooms = docs.length;
-          emptyRooms = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'Đang trống').length;
-          rentedRooms = docs.where((d) => (d.data() as Map<String, dynamic>)['status'] == 'Đã thuê').length;
+          emptyRooms = docs
+              .where(
+                (d) =>
+                    (d.data() as Map<String, dynamic>)['status'] ==
+                    'Đang trống',
+              )
+              .length;
+          rentedRooms = docs
+              .where(
+                (d) =>
+                    (d.data() as Map<String, dynamic>)['status'] == 'Đã thuê',
+              )
+              .length;
         }
 
         return Column(
@@ -526,19 +731,38 @@ class _HomePageState extends State<HomePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Thống kê hiện trạng", style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      const Text(
+                        "Thống kê hiện trạng",
+                        style: TextStyle(color: Colors.black54, fontSize: 13),
+                      ),
                       const SizedBox(height: 6),
-                      Text(propertyName, style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(
+                        propertyName,
+                        style: const TextStyle(
+                          color: Color(0xFF00A651),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
                     ],
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text("Tổng số phòng", style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      const Text(
+                        "Tổng số phòng",
+                        style: TextStyle(color: Colors.black54, fontSize: 13),
+                      ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Text("$totalRooms", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(
+                            "$totalRooms",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           const Text(" phòng", style: TextStyle(fontSize: 15)),
                         ],
                       ),
@@ -548,10 +772,13 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Tình trạng phòng Header
-            _buildSectionHeader("Tình trạng phòng", "Tình trạng phòng đang thuê trong hệ thống"),
-            
+            _buildSectionHeader(
+              "Tình trạng phòng",
+              "Tình trạng phòng đang thuê trong hệ thống",
+            ),
+
             // Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -559,44 +786,122 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.shopping_cart_outlined, iconColor: Colors.red.shade400, iconBgColor: Colors.red.shade50, title: "Số phòng có thể cho thuê", count: emptyRooms, percent: totalRooms > 0 ? "${((emptyRooms / totalRooms) * 100).toInt()}%" : "0%", percentColor: Colors.orange.shade700)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.shopping_cart_outlined,
+                          iconColor: Colors.red.shade400,
+                          iconBgColor: Colors.red.shade50,
+                          title: "Số phòng có thể cho thuê",
+                          count: emptyRooms,
+                          percent: totalRooms > 0
+                              ? "${((emptyRooms / totalRooms) * 100).toInt()}%"
+                              : "0%",
+                          percentColor: Colors.orange.shade700,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildOverviewStatCard(
-                        icon: Icons.inventory_2_outlined,
-                        iconColor: Colors.white,
-                        iconBgColor: Colors.red.shade400,
-                        title: "Số phòng đang trống",
-                        count: emptyRooms,
-                        percent: totalRooms > 0 ? "${((emptyRooms / totalRooms) * 100).toInt()}%" : "0%",
-                        percentColor: Colors.orange.shade700,
-                        onTap: () {
-                          // Navigator.push(context, MaterialPageRoute(builder: (context) => EmptyRoomsPage(houseId: houseId, houseData: houseData)));
-                        },
-                      )),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.inventory_2_outlined,
+                          iconColor: Colors.white,
+                          iconBgColor: Colors.red.shade400,
+                          title: "Số phòng đang trống",
+                          count: emptyRooms,
+                          percent: totalRooms > 0
+                              ? "${((emptyRooms / totalRooms) * 100).toInt()}%"
+                              : "0%",
+                          percentColor: Colors.orange.shade700,
+                          onTap: () {
+                            // Navigator.push(context, MaterialPageRoute(builder: (context) => EmptyRoomsPage(houseId: houseId, houseData: houseData)));
+                          },
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.inventory_2, iconColor: Colors.white, iconBgColor: Colors.blue.shade600, title: "Số phòng đang thuê", count: rentedRooms, percent: totalRooms > 0 ? "${((rentedRooms / totalRooms) * 100).toInt()}%" : "0%", percentColor: Colors.green.shade600)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.inventory_2,
+                          iconColor: Colors.white,
+                          iconBgColor: Colors.blue.shade600,
+                          title: "Số phòng đang thuê",
+                          count: rentedRooms,
+                          percent: totalRooms > 0
+                              ? "${((rentedRooms / totalRooms) * 100).toInt()}%"
+                              : "0%",
+                          percentColor: Colors.green.shade600,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.warning_amber_rounded, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng sắp kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.warning_amber_rounded,
+                          iconColor: Colors.black87,
+                          iconBgColor: Colors.amber.shade400,
+                          title: "Số phòng sắp kết thúc hợp đồng",
+                          count: 0,
+                          percent: "0%",
+                          percentColor: Colors.orange.shade700,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.assignment_outlined, iconColor: Colors.black87, iconBgColor: Colors.amber.shade400, title: "Số phòng báo kết thúc hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.assignment_outlined,
+                          iconColor: Colors.black87,
+                          iconBgColor: Colors.amber.shade400,
+                          title: "Số phòng báo kết thúc hợp đồng",
+                          count: 0,
+                          percent: "0%",
+                          percentColor: Colors.orange.shade700,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.access_time_rounded, iconColor: Colors.white, iconBgColor: Colors.black87, title: "Số phòng quá hạn hợp đồng", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.access_time_rounded,
+                          iconColor: Colors.white,
+                          iconBgColor: Colors.black87,
+                          title: "Số phòng quá hạn hợp đồng",
+                          count: 0,
+                          percent: "0%",
+                          percentColor: Colors.orange.shade700,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.attach_money_rounded, iconColor: Colors.white, iconBgColor: Colors.green.shade500, title: "Số phòng đang nợ", count: 0, percent: "0%", percentColor: Colors.orange.shade700)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.attach_money_rounded,
+                          iconColor: Colors.white,
+                          iconBgColor: Colors.green.shade500,
+                          title: "Số phòng đang nợ",
+                          count: 0,
+                          percent: "0%",
+                          percentColor: Colors.orange.shade700,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildOverviewStatCard(icon: Icons.anchor_rounded, iconColor: Colors.white, iconBgColor: Colors.blueGrey.shade500, title: "Số phòng đang cọc", count: 0, percent: "0%", percentColor: Colors.green.shade600)),
+                      Expanded(
+                        child: _buildOverviewStatCard(
+                          icon: Icons.anchor_rounded,
+                          iconColor: Colors.white,
+                          iconBgColor: Colors.blueGrey.shade500,
+                          title: "Số phòng đang cọc",
+                          count: 0,
+                          percent: "0%",
+                          percentColor: Colors.green.shade600,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -605,7 +910,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 30),
           ],
         );
-      }
+      },
     );
   }
 
@@ -623,56 +928,90 @@ class _HomePageState extends State<HomePage> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: iconBgColor,
-                      shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: iconBgColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: iconColor, size: 20),
                     ),
-                    child: Icon(icon, color: iconColor, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Text("$count", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                ],
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: percentColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
+                    const SizedBox(width: 12),
+                    Text(
+                      "$count",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
-                    child: Text(percent, style: TextStyle(color: percentColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right_rounded, color: Colors.black54, size: 20),
-                ],
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: percentColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        percent,
+                        style: TextStyle(
+                          color: percentColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.black54,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 13,
+                height: 1.3,
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(title, style: const TextStyle(color: Colors.black87, fontSize: 13, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
-        ],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildSectionHeader(String title, String subtitle) {
@@ -695,66 +1034,101 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.black54, fontSize: 13),
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildGridItem({required IconData icon, required Color color, required String title, String? badge, VoidCallback? onTap}) {
+  Widget _buildGridItem({
+    required IconData icon,
+    required Color color,
+    required String title,
+    String? badge,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 38, color: color.withOpacity(0.7)),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
-              ),
-            ],
-          ),
-          if (badge != null)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade700,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  badge,
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-        ],
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 38, color: color.withOpacity(0.7)),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            if (badge != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade700,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badge,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
-  void _showHouseSwitcher(List<QueryDocumentSnapshot> docs, String currentHouseId) {
+  void _showHouseSwitcher(
+    List<QueryDocumentSnapshot> docs,
+    String currentHouseId,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -790,37 +1164,54 @@ class _HomePageState extends State<HomePage> {
                     final doc = docs[index];
                     final data = doc.data() as Map<String, dynamic>;
                     final isSelected = doc.id == currentHouseId;
-                    
-                    final displayTitle = (data['houseName'] ?? data['propertyName'] ?? "Hello World").toString();
-                    
+
+                    final displayTitle =
+                        (data['houseName'] ??
+                                data['propertyName'] ??
+                                "Hello World")
+                            .toString();
+
                     return ListTile(
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFE8F5E9) : Colors.grey.shade100,
+                          color: isSelected
+                              ? const Color(0xFFE8F5E9)
+                              : Colors.grey.shade100,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.home_work_rounded,
-                          color: isSelected ? const Color(0xFF00A651) : Colors.grey,
+                          color: isSelected
+                              ? const Color(0xFF00A651)
+                              : Colors.grey,
                         ),
                       ),
                       title: Text(
                         displayTitle.isEmpty ? 'Hello World' : displayTitle,
                         style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? const Color(0xFF00A651) : Colors.black87,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected
+                              ? const Color(0xFF00A651)
+                              : Colors.black87,
                         ),
                       ),
                       subtitle: Text(
-                        data['address'] != null ? (data['address']['summary'] ?? 'Chưa có địa chỉ') : 'Chưa có địa chỉ',
+                        data['address'] != null
+                            ? (data['address']['summary'] ?? 'Chưa có địa chỉ')
+                            : 'Chưa có địa chỉ',
                         style: const TextStyle(fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      trailing: isSelected 
-                        ? const Icon(Icons.check_circle_rounded, color: Color(0xFF00A651))
-                        : null,
+                      trailing: isSelected
+                          ? const Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF00A651),
+                            )
+                          : null,
                       onTap: () {
                         setState(() {
                           _selectedHouseId = doc.id;
@@ -843,13 +1234,18 @@ class _HomePageState extends State<HomePage> {
                 ),
                 title: Text(
                   "Thêm nhà trọ mới",
-                  style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AddHousePage()),
+                    MaterialPageRoute(
+                      builder: (context) => const AddHousePage(),
+                    ),
                   );
                 },
               ),
@@ -868,7 +1264,9 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: Colors.white, // Khớp với màu nền hệ thống nếu có
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top > 0 ? MediaQuery.of(context).padding.top : 10,
+        top: MediaQuery.of(context).padding.top > 0
+            ? MediaQuery.of(context).padding.top
+            : 10,
         left: 20,
         right: 20,
         bottom: 10,
@@ -878,24 +1276,43 @@ class _HomePageState extends State<HomePage> {
         children: [
           const Text(
             "15:06",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           Row(
             children: [
-              const Icon(Icons.signal_cellular_alt_rounded, size: 16, color: Colors.black87),
+              const Icon(
+                Icons.signal_cellular_alt_rounded,
+                size: 16,
+                color: Colors.black87,
+              ),
               const SizedBox(width: 4),
               const Icon(Icons.wifi_rounded, size: 16, color: Colors.black87),
               const SizedBox(width: 4),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text("52%", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  const Text(
+                    "52%",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
                   const SizedBox(width: 2),
-                  Icon(Icons.battery_5_bar_rounded, size: 18, color: Colors.black87),
+                  Icon(
+                    Icons.battery_5_bar_rounded,
+                    size: 18,
+                    color: Colors.black87,
+                  ),
                 ],
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -917,7 +1334,10 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: 40,
               height: 12,
-              decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           // Đám mây phải
@@ -927,7 +1347,10 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: 30,
               height: 10,
-              decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           // Mặt trời
@@ -936,7 +1359,10 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: 30,
               height: 30,
-              decoration: const BoxDecoration(color: Color(0xFFFFC107), shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFC107),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           // Tòa nhà xám đậm (Sau)
@@ -988,7 +1414,10 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: 30,
               height: 10,
-              decoration: BoxDecoration(color: const Color(0xFFEF5350), borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF5350),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
         ],
@@ -1036,13 +1465,22 @@ class _HomePageState extends State<HomePage> {
             color: const Color(0xFFF1F8F1), // Nền xanh lá cực nhạt
             borderRadius: BorderRadius.circular(16),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 40, 16, 16), // Padding trên chừa chỗ cho Icon
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            40,
+            16,
+            16,
+          ), // Padding trên chừa chỗ cho Icon
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, spreadRadius: 1),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
               ],
             ),
             child: Column(
@@ -1053,7 +1491,11 @@ class _HomePageState extends State<HomePage> {
                 const Text(
                   "Bắt đầu tạo nhà từ file excel",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -1071,7 +1513,7 @@ class _HomePageState extends State<HomePage> {
                   subtitle: "Tải file mẫu từ LOZIDO",
                 ),
                 const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                
+
                 // Bước 2
                 _buildListStep(
                   icon: Icons.edit_note_rounded,
@@ -1079,12 +1521,13 @@ class _HomePageState extends State<HomePage> {
                   subtitle: "Nhập hoặc copy dữ của bạn vào file excel mẫu",
                 ),
                 const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                
+
                 // Bước 3
                 _buildListStep(
                   icon: Icons.upload_rounded,
                   title: "Tải lên file đã nhập",
-                  subtitle: "Sau khi nhập dữ liệu và kiểm tra bạn tải lên để hoàn thành khởi tạo",
+                  subtitle:
+                      "Sau khi nhập dữ liệu và kiểm tra bạn tải lên để hoàn thành khởi tạo",
                   isLast: true,
                 ),
               ],
@@ -1108,13 +1551,21 @@ class _HomePageState extends State<HomePage> {
                 color: Color(0xFF2E7D32), // Màu xanh Excel đậm
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
                 ],
               ),
               alignment: Alignment.center,
               child: const Text(
                 "X",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
               ),
             ),
           ),
@@ -1124,9 +1575,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Row item cho List Hướng dẫn
-  Widget _buildListStep({required IconData icon, required String title, required String subtitle, bool isLast = false}) {
+  Widget _buildListStep({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    bool isLast = false,
+  }) {
     return Padding(
-      padding: EdgeInsets.only(top: 15, bottom: isLast ? 20 : 15, left: 16, right: 16),
+      padding: EdgeInsets.only(
+        top: 15,
+        bottom: isLast ? 20 : 15,
+        left: 16,
+        right: 16,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1147,12 +1608,20 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.3),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -1174,15 +1643,25 @@ class _HomePageState extends State<HomePage> {
                 height: 44,
                 child: OutlinedButton.icon(
                   onPressed: _downloadExcel,
-                  icon: const Icon(Icons.arrow_downward_rounded, size: 18, color: Color(0xFF00A651)),
+                  icon: const Icon(
+                    Icons.arrow_downward_rounded,
+                    size: 18,
+                    color: Color(0xFF00A651),
+                  ),
 
                   label: const Text(
                     "Tải excel xuống",
-                    style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(
+                      color: Color(0xFF00A651),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF00A651)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
@@ -1193,15 +1672,25 @@ class _HomePageState extends State<HomePage> {
                 height: 44,
                 child: ElevatedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.arrow_upward_rounded, size: 18, color: Colors.white),
+                  icon: const Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
                   label: const Text(
                     "Tải excel lên",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00A651),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
@@ -1214,18 +1703,33 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Row(
             children: [
-              const Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+              const Expanded(
+                child: Divider(color: Colors.black12, thickness: 1),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Row(
                   children: const [
-                    Text("Khởi tạo nhà theo mẫu / thủ công", style: TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(
+                      "Khởi tạo nhà theo mẫu / thủ công",
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     SizedBox(width: 4),
-                    Icon(Icons.swap_vert_rounded, size: 16, color: Colors.black54),
+                    Icon(
+                      Icons.swap_vert_rounded,
+                      size: 16,
+                      color: Colors.black54,
+                    ),
                   ],
                 ),
               ),
-              const Expanded(child: Divider(color: Colors.black12, thickness: 1)),
+              const Expanded(
+                child: Divider(color: Colors.black12, thickness: 1),
+              ),
             ],
           ),
         ),
@@ -1238,14 +1742,24 @@ class _HomePageState extends State<HomePage> {
                 height: 44,
                 child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.play_arrow_rounded, size: 20, color: Color(0xFFDC3545)),
+                  icon: const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 20,
+                    color: Color(0xFFDC3545),
+                  ),
                   label: const Text(
                     "Hướng dẫn",
-                    style: TextStyle(color: Color(0xFFDC3545), fontWeight: FontWeight.bold, fontSize: 13),
+                    style: TextStyle(
+                      color: Color(0xFFDC3545),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFDC3545)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
@@ -1258,19 +1772,32 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AddHousePage()),
+                      MaterialPageRoute(
+                        builder: (context) => const AddHousePage(),
+                      ),
                     );
                   },
-                  icon: const Icon(Icons.home_work_rounded, size: 18, color: Colors.yellow), // Icon nhà (xanh mượn đỡ yellow cho nổi)
+                  icon: const Icon(
+                    Icons.home_work_rounded,
+                    size: 18,
+                    color: Colors.yellow,
+                  ), // Icon nhà (xanh mượn đỡ yellow cho nổi)
                   label: const Text(
                     "Tạo mới nhà",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1877F2), // Màu xanh dương chuẩn
+                    backgroundColor: const Color(
+                      0xFF1877F2,
+                    ), // Màu xanh dương chuẩn
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
@@ -1299,7 +1826,11 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(width: 8),
             const Text(
               "Quản lý trên MÁY TÍNH",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),
