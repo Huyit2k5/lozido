@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
 
 class PdfContractService {
   static final _currencyFormat = NumberFormat.decimalPattern('vi_VN');
@@ -14,27 +15,17 @@ class PdfContractService {
   static Future<Uint8List> generateContractPdf({
     required Map<String, dynamic> contractData,
     required String roomName,
+    required String ownerName,
   }) async {
     final pdf = pw.Document();
 
-    // Since PDF requires a font that supports Vietnamese characters (UTF-8),
-    // we need to load a default font (e.g. Roboto) from assets or standard fonts if available.
-    // For simplicity, we use standard Helvetica but realistically you'd want a TTF loaded.
-    // However, the pdf package's default font doesn't fully support Vietnamese accents out-of-the-box.
-    // To fix this cleanly without local TTF, we will use default but note that proper implementation requires a local font asset.
-    // Here we will use a fallback logic.
-    pw.Font? ttf;
-    try {
-      final fontData = await rootBundle.load("fonts/Roboto-Regular.ttf");
-      ttf = pw.Font.ttf(fontData);
-    } catch (_) {
-      // If font is not available, proceed with default, but accents might be missing.
-      ttf = pw.Font.helvetica();
-    }
+    final pw.Font ttf = await PdfGoogleFonts.robotoRegular();
+    final pw.Font ttfBold = await PdfGoogleFonts.robotoBold();
+    final pw.Font ttfItalic = await PdfGoogleFonts.robotoItalic();
 
     final pw.TextStyle textStyle = pw.TextStyle(font: ttf, fontSize: 13, lineSpacing: 3);
-    final pw.TextStyle boldStyle = pw.TextStyle(font: ttf, fontSize: 13, fontWeight: pw.FontWeight.bold, lineSpacing: 3);
-    final pw.TextStyle headerStyle = pw.TextStyle(font: ttf, fontSize: 16, fontWeight: pw.FontWeight.bold);
+    final pw.TextStyle boldStyle = pw.TextStyle(font: ttfBold, fontSize: 13, lineSpacing: 3);
+    final pw.TextStyle headerStyle = pw.TextStyle(font: ttfBold, fontSize: 16);
 
     final tenantName = contractData['tenantName'] ?? '..................';
     final rentPrice = (contractData['rentPrice'] ?? 0).toDouble();
@@ -56,9 +47,9 @@ class PdfContractService {
               child: pw.Column(
                 children: [
                   pw.Text('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', style: headerStyle),
-                  pw.Text('Độc lập - Tự do - Hạnh phúc', style: pw.TextStyle(font: ttf, fontSize: 14, fontWeight: pw.FontWeight.bold, decoration: pw.TextDecoration.underline)),
+                  pw.Text('Độc lập - Tự do - Hạnh phúc', style: pw.TextStyle(font: ttfBold, fontSize: 14, decoration: pw.TextDecoration.underline)),
                   pw.SizedBox(height: 20),
-                  pw.Text('HỢP ĐỒNG CHO THUÊ PHÒNG TRỌ', style: pw.TextStyle(font: ttf, fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('HỢP ĐỒNG CHO THUÊ PHÒNG TRỌ', style: pw.TextStyle(font: ttfBold, fontSize: 18)),
                   pw.SizedBox(height: 20),
                 ],
               ),
@@ -67,7 +58,7 @@ class PdfContractService {
             // BÊN A
             pw.Text('BÊN A : BÊN CHO THUÊ (PHÒNG TRỌ)', style: boldStyle),
             pw.SizedBox(height: 8),
-            pw.Text('Họ và tên: Chủ nhà đại diện', style: textStyle),
+            pw.Text('Họ và tên: $ownerName', style: textStyle),
             pw.Text('Năm sinh: ..............................', style: textStyle),
             pw.Text('CMND/CCCD: ..............................', style: textStyle),
             pw.Text('Ngày cấp: .............................. Nơi cấp: ..............................', style: textStyle),
@@ -185,15 +176,15 @@ class PdfContractService {
                 pw.Column(
                   children: [
                     pw.Text('BÊN A', style: boldStyle),
-                    pw.Text('Ký và ghi rõ họ tên', style: pw.TextStyle(font: ttf, fontSize: 13, fontStyle: pw.FontStyle.italic)),
+                    pw.Text('Ký và ghi rõ họ tên', style: pw.TextStyle(font: ttfItalic, fontSize: 13)),
                     pw.SizedBox(height: 60),
-                    pw.Text('(Chủ nhà)', style: textStyle),
+                    pw.Text(ownerName, style: textStyle),
                   ]
                 ),
                 pw.Column(
                   children: [
                     pw.Text('BÊN B', style: boldStyle),
-                    pw.Text('Ký và ghi rõ họ tên', style: pw.TextStyle(font: ttf, fontSize: 13, fontStyle: pw.FontStyle.italic)),
+                    pw.Text('Ký và ghi rõ họ tên', style: pw.TextStyle(font: ttfItalic, fontSize: 13)),
                     pw.SizedBox(height: 60),
                     pw.Text(tenantName, style: textStyle),
                   ]

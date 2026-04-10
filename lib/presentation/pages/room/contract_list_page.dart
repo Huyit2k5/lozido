@@ -36,6 +36,7 @@ class _ContractListPageState extends State<ContractListPage> {
   ];
 
   List<Map<String, dynamic>> _rooms = [];
+  Set<String> _roomsWithContracts = {};
 
   @override
   void initState() {
@@ -50,8 +51,33 @@ class _ContractListPageState extends State<ContractListPage> {
           .doc(widget.houseId)
           .collection('rooms')
           .get();
+          
+      final Set<String> usedRoomIds = {};
+      try {
+        final contractsQs = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .get();
+
+        for (var doc in contractsQs.docs) {
+          try {
+            final data = doc.data();
+            if (data is Map) {
+              final rId = data['roomId']?.toString();
+              if (rId != null && rId.isNotEmpty) {
+                usedRoomIds.add(rId.trim());
+              }
+            }
+          } catch (_) {}
+        }
+      } catch (e) {
+        debugPrint("Lỗi tải contracts để lọc dropdown: $e");
+      }
+
       if (mounted) {
         setState(() {
+          _roomsWithContracts = usedRoomIds;
           _rooms = qs.docs.map((d) {
             final data = d.data();
             data['id'] = d.id;
@@ -203,8 +229,13 @@ class _ContractListPageState extends State<ContractListPage> {
                   child: Text('Tất cả phòng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
                 ..._rooms.where((room) {
+                  final rId = room['id']?.toString().trim();
+                  if (rId == null || !_roomsWithContracts.contains(rId)) {
+                    return false;
+                  }
+
                   if (_selectedFloor != 'Tất cả' && _selectedFloor != null) {
-                    return room['floor'] == _selectedFloor;
+                    return room['floor']?.toString() == _selectedFloor.toString();
                   }
                   return true;
                 }).map((room) {
@@ -400,29 +431,31 @@ class _ContractListPageState extends State<ContractListPage> {
               ),
               const Divider(height: 1),
 
-              ListTile(
-                leading: const Icon(Icons.edit_outlined, color: Colors.black87),
-                title: const Text('Chỉnh sửa hợp đồng', style: TextStyle(fontWeight: FontWeight.bold)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  final roomId = data['roomId'];
-                  final room = roomId != null ? _rooms.firstWhere((r) => r['id'] == roomId, orElse: () => <String, dynamic>{}) : <String, dynamic>{};
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CreateContractPage(
-                        houseId: widget.houseId,
-                        roomId: roomId ?? '',
-                        houseData: widget.houseData,
-                        roomData: room,
-                        contractId: data['id'],
-                        initialContractData: data,
+              if (data['status'] != 'Đã kết thúc') ...[
+                ListTile(
+                  leading: const Icon(Icons.edit_outlined, color: Colors.black87),
+                  title: const Text('Chỉnh sửa hợp đồng', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final roomId = data['roomId'];
+                    final room = roomId != null ? _rooms.firstWhere((r) => r['id'] == roomId, orElse: () => <String, dynamic>{}) : <String, dynamic>{};
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreateContractPage(
+                          houseId: widget.houseId,
+                          roomId: roomId ?? '',
+                          houseData: widget.houseData,
+                          roomData: room,
+                          contractId: data['id'],
+                          initialContractData: data,
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 1),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+              ],
 
               ListTile(
                 leading: const Icon(Icons.description_outlined, color: Colors.black87),
@@ -473,6 +506,9 @@ class _ContractListPageState extends State<ContractListPage> {
     final createdAtMs = (data['createdAt'] as Timestamp?)?.toDate();
     final createdAtStr = createdAtMs != null ? DateFormat('dd/MM/yyyy').format(createdAtMs) : '';
 
+    final isEnded = status == 'Đã kết thúc';
+    final statusColor = isEnded ? Colors.red : const Color(0xFF00A651);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -496,8 +532,8 @@ class _ContractListPageState extends State<ContractListPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF00A651),
+                  decoration: BoxDecoration(
+                    color: statusColor,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 24),
@@ -519,10 +555,10 @@ class _ContractListPageState extends State<ContractListPage> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(color: Color(0xFF00A651), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                           ),
                           const SizedBox(width: 6),
-                          Text(status == 'Active' ? 'Trong thời hạn hợp đồng' : status, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                          Text(status == 'Active' ? 'Trong thời hạn hợp đồng' : status, style: TextStyle(color: isEnded ? Colors.red : Colors.black54, fontSize: 13, fontWeight: isEnded ? FontWeight.bold : FontWeight.normal)),
                         ],
                       )
                     ],
