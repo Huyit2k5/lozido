@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../auth/login_page.dart';
 import 'profile_page.dart';
+import 'change_password_page.dart';
 
 class MorePage extends StatefulWidget {
   const MorePage({super.key});
@@ -391,6 +392,12 @@ class _MorePageState extends State<MorePage> {
           _buildSettingItem(
             icon: Icons.vpn_key_outlined,
             title: "Đổi mật khẩu",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
+              );
+            },
           ),
           _buildDivider(),
           _buildSettingItem(
@@ -489,9 +496,10 @@ class _MorePageState extends State<MorePage> {
     Widget? subtitleWidget,
     Widget? badge,
     Widget? trailing,
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
