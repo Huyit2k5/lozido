@@ -10,6 +10,8 @@ import 'empty_rooms_page.dart';
 import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 
+import '../room/contract_list_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -629,6 +631,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.analytics_outlined,
                 color: Colors.green,
                 title: "Quản lý\nhợp đồng",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ContractListPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.support_agent_rounded,

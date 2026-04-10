@@ -340,7 +340,7 @@ class _RoomListPageState extends State<RoomListPage> {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => DepositPage(houseId: widget.houseId, roomId: roomId, roomData: roomData, isViewMode: roomData['status'] == 'Đang cọc giữ chỗ')));
                     },
                   ),
-                  const Divider(height: 1, color: Color(0xFFF)),
+                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildModalListTile(
                     icon: Icons.settings_outlined,
                     title: 'Thiết lập dịch vụ',
@@ -378,6 +378,7 @@ class _RoomListPageState extends State<RoomListPage> {
     final name = roomData['roomName'] ?? 'Phòng';
     final priceInfo = _formatCurrency((roomData['price'] as num?)?.toDouble() ?? 0);
     final bool isReserved = status == 'Đang cọc giữ chỗ';
+    final Color statusColor = isReserved ? Colors.deepOrange : Colors.green;
 
     return InkWell(
       onTap: () => _showRoomActionModal(roomId, roomData),
@@ -396,9 +397,9 @@ class _RoomListPageState extends State<RoomListPage> {
             Container(
               width: 4,
               height: 180, // Match typical card height
-              decoration: const BoxDecoration(
-                color: Colors.deepOrange,
-                borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
               ),
             ),
             

@@ -176,6 +176,8 @@ class _CreateContractPageState extends State<CreateContractPage> {
 
       final contractData = {
         'roomId': widget.roomId,
+        'roomName': widget.roomData['roomName'] ?? '',
+        'floor': widget.roomData['floor'],
         'houseId': widget.houseId,
         'startDate': _startDateCtrl.text,
         'endDate': _endDateCtrl.text,
