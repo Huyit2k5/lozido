@@ -52,7 +52,7 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
           .collection('houses')
           .doc(widget.houseId)
           .collection('rooms')
-          .orderBy('name')
+          .orderBy('createdAt', descending: false)
           .get();
 
       if (snapshot.docs.isNotEmpty) {
@@ -61,23 +61,13 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
           final data = doc.data();
           return RoomItem(
             id: doc.id,
-            name: data['name'] ?? 'Phòng',
+            name: data['roomName'] ?? data['name'] ?? 'Phòng',
             price: (data['price'] ?? 0).toDouble(),
           );
         }).toList();
       } else {
-        // Chưa có dữ liệu -> Tạo danh sách ảo từ roomCount
-        int roomCount = widget.houseData['roomCount'] ?? 0;
-        if (roomCount <= 0) roomCount = 5; // Fallback
-        
-        double defaultPrice = (widget.houseData['price'] ?? 0).toDouble();
-
-        _rooms = List.generate(roomCount, (index) {
-          return RoomItem(
-            name: "Phòng ${index + 1}",
-            price: defaultPrice,
-          );
-        });
+        // Không tạo dữ liệu ảo nữa, chỉ hiển thị danh sách rỗng
+        _rooms = [];
       }
     } catch (e) {
       debugPrint("Lỗi tải danh sách phòng: $e");
@@ -322,32 +312,49 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
                         const SizedBox(height: 12),
                         
                         // Danh sách phòng
-                        ..._rooms.map((room) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey.shade200),
+                        if (_rooms.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Column(
+                              children: const [
+                                Icon(Icons.meeting_room_outlined, size: 48, color: Colors.black26),
+                                SizedBox(height: 12),
+                                Text(
+                                  "Chưa có phòng nào.\nVui lòng thêm phòng trong phần Quản lý phòng.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                                ),
+                              ],
                             ),
-                            child: CheckboxListTile(
-                              value: room.isSelected,
-                              activeColor: Colors.black87,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  room.isSelected = value ?? false;
-                                });
-                              },
-                              title: Text(room.name, style: const TextStyle(color: Colors.black54, fontSize: 14)),
-                              subtitle: Text(
-                                _currencyFormat.format(room.price),
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15),
+                          )
+                        else
+                          ..._rooms.map((room) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade200),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                              child: CheckboxListTile(
+                                value: room.isSelected,
+                                activeColor: Colors.black87,
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    room.isSelected = value ?? false;
+                                  });
+                                },
+                                title: Text(room.name, style: const TextStyle(color: Colors.black54, fontSize: 14)),
+                                subtitle: Text(
+                                  _currencyFormat.format(room.price),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         const SizedBox(height: 24),
                       ],
                     ),
