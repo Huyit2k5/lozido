@@ -7,6 +7,7 @@ import 'contract_provider.dart';
 import 'create_contract_page.dart';
 import 'service_selection_page.dart';
 import '../deposit/deposit_page.dart';
+import 'tenant_list_page.dart';
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
@@ -274,13 +275,19 @@ class _RoomListPageState extends State<RoomListPage> {
                   _buildModalListTile(
                     icon: Icons.people_outline,
                     title: 'Danh sách khách thuê',
-                    onTap: () { Navigator.pop(context); },
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => TenantListPage(houseId: widget.houseId, roomId: roomId, roomData: roomData)));
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildModalListTile(
                     icon: Icons.person_add_alt_1_outlined,
                     title: 'Thêm khách thuê (thành viên)',
-                    onTap: () { Navigator.pop(context); },
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => TenantListPage(houseId: widget.houseId, roomId: roomId, roomData: roomData)));
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildModalListTile(
