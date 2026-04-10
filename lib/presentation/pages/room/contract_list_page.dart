@@ -332,7 +332,20 @@ class _ContractListPageState extends State<ContractListPage> {
   }
 
   Widget _buildContractCard(Map<String, dynamic> data) {
-    final roomName = data['roomName'] ?? 'Phòng chưa đặt tên';
+    String roomName = data['roomName'] ?? '';
+    if (roomName.isEmpty) {
+      final roomId = data['roomId'];
+      if (roomId != null && _rooms.isNotEmpty) {
+        try {
+          final room = _rooms.firstWhere((r) => r['id'] == roomId);
+          roomName = room['roomName'] ?? 'Phòng chưa đặt tên';
+        } catch (_) {
+          roomName = 'Phòng chưa đặt tên';
+        }
+      } else {
+        roomName = 'Phòng chưa đặt tên';
+      }
+    }
     final status = data['status'] ?? 'Không xác định';
     final rentPrice = (data['rentPrice'] ?? 0).toDouble();
     final deposit = (data['depositAmount'] ?? 0).toDouble();

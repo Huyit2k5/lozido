@@ -628,13 +628,9 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               _buildGridItem(
-                
                 icon: Icons.analytics_outlined,
-               
                 color: Colors.green,
-               
                 title: "Quản lý\nhợp đồng",
-              ,
                 onTap: () {
                   Navigator.push(
                     context,
