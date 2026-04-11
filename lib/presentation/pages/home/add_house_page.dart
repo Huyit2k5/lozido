@@ -218,7 +218,37 @@ class _AddHousePageState extends State<AddHousePage> {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      await FirebaseFirestore.instance.collection('houses').add(houseData);
+      final houseRef = await FirebaseFirestore.instance.collection('houses').add(houseData);
+
+      if (_isAutoGenerate) {
+        int rCount = int.tryParse(_roomCountController.text) ?? 5;
+        double rArea = double.tryParse(_areaController.text) ?? 15.0;
+        double rPrice = double.tryParse(_priceController.text) ?? 0.0;
+        // Parsing max occupants string
+        int rMaxOccupants = 0;
+        if (_selectedMaxOccupants.contains(RegExp(r'\d'))) {
+          // get the first number
+          final match = RegExp(r'\d+').firstMatch(_selectedMaxOccupants);
+          if (match != null) {
+            rMaxOccupants = int.tryParse(match.group(0) ?? '0') ?? 0;
+          }
+        }
+
+        WriteBatch batch = FirebaseFirestore.instance.batch();
+        for (int i = 1; i <= rCount; i++) {
+          final roomDoc = houseRef.collection('rooms').doc();
+          batch.set(roomDoc, {
+            'roomName': 'Phòng ${i.toString().padLeft(2, '0')}',
+            'status': 'Đang trống',
+            'price': rPrice,
+            'area': rArea,
+            'floor': 1,
+            'maxOccupants': rMaxOccupants > 0 ? rMaxOccupants : null,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+        await batch.commit();
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

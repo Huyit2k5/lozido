@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/datasources/firebase_auth_service.dart';
-import '../main_screen/main_page.dart';
+import 'auth_wrapper.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
 
@@ -52,10 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
       
-      // Navigate to Main Page (Contains BottomNavigationBar)
-      Navigator.pushReplacement(
+      // Let AuthWrapper handle the routing by clearing the stack and navigating back to root
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+        MaterialPageRoute(builder: (context) => const AuthWrapper()),
+        (route) => false,
       );
     } catch (e) {
       if (!mounted) return;
