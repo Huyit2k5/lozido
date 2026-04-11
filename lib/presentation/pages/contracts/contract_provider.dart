@@ -10,6 +10,7 @@ class ContractAsset {
   final String supplier;
   final String unit;
   final String status;
+  final Map<String, int>? statusBreakdown;
 
   ContractAsset({
     this.assetId,
@@ -21,6 +22,7 @@ class ContractAsset {
     required this.supplier,
     required this.unit,
     required this.status,
+    this.statusBreakdown,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +36,7 @@ class ContractAsset {
       'supplier': supplier,
       'unit': unit,
       'status': status,
+      if (statusBreakdown != null) 'statusBreakdown': statusBreakdown,
     };
   }
 }

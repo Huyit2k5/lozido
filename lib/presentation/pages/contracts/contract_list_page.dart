@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -44,6 +45,51 @@ class _ContractListPageState extends State<ContractListPage> {
   void initState() {
     super.initState();
     _fetchRooms();
+  }
+
+  Future<void> _endContract(String contractId, String roomId) async {
+    final act = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận kết thúc'),
+        content: const Text('Bạn có chắc chắn muốn kết thúc hợp đồng cho phòng này không? Hợp đồng sẽ được lưu lại hệ thống với trạng thái đã kết thúc.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Đồng ý', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (act == true) {
+      try {
+        // 1. Update contract status
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .doc(contractId)
+            .update({
+          'status': 'Đã kết thúc',
+          'endedAt': FieldValue.serverTimestamp(),
+        });
+
+        // 2. Update room status to "Đang trống"
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('rooms')
+            .doc(roomId)
+            .update({'status': 'Đang trống'});
+
+        if (mounted) {
+          AppDialog.show(context, title: "Thành công", message: "Đã kết thúc hợp đồng thành công!", type: AppDialogType.success);
+        }
+      } catch (e) {
+        if (mounted) {
+          AppDialog.show(context, title: "Lỗi", message: "Lỗi khi kết thúc hợp đồng: $e", type: AppDialogType.error);
+        }
+      }
+    }
   }
 
   Future<void> _fetchRooms() async {
@@ -478,6 +524,18 @@ class _ContractListPageState extends State<ContractListPage> {
                 },
               ),
               const Divider(height: 1),
+
+              if (data['status'] == 'Active' || data['status'] == 'Còn hạn') ...[
+                ListTile(
+                  leading: const Icon(Icons.block, color: Colors.red),
+                  title: const Text('Kết thúc hợp đồng', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _endContract(data['id'], data['roomId'] ?? '');
+                  },
+                ),
+                const Divider(height: 1),
+              ],
               
               const SizedBox(height: 16),
             ],

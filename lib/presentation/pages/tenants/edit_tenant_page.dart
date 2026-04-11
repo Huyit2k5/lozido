@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 
 class EditTenantPage extends StatefulWidget {
   final String houseId;
@@ -221,16 +222,17 @@ class _EditTenantPageState extends State<EditTenantPage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lưu thông tin thành công!')),
+        AppDialog.show(
+          context, 
+          title: "Thành công", 
+          message: "Lưu thông tin khách thuê thành công!", 
+          type: AppDialogType.success,
+          onConfirm: () => Navigator.pop(context, true),
         );
-        Navigator.pop(context, true); // Return true to signal data changed
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
-        );
+        AppDialog.show(context, title: "Lỗi", message: "Lỗi hệ thống: $e", type: AppDialogType.error);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
