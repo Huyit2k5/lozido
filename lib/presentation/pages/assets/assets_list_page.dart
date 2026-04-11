@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import './manage_assets_page.dart';
 
 class AssetListPage extends StatefulWidget {
   final String houseId;
@@ -482,7 +483,28 @@ class _AssetListPageState extends State<AssetListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00A651),
-        onPressed: _showAddAssetModal,
+        onPressed: () async {
+          if (_selectedRoomId != null) {
+            // Room Selected: Navigate to Smart Selection Page
+            final room = _rooms.firstWhere((r) => r['id'] == _selectedRoomId);
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ManageAssetsPage(
+                  houseId: widget.houseId,
+                  roomId: _selectedRoomId,
+                  roomName: room['roomName'] ?? 'Phòng',
+                ),
+              ),
+            );
+            if (result == true) {
+              _fetchData(); // Refresh list if something changed
+            }
+          } else {
+            // No Room Selected: Show Global Warehouse Modal
+            _showAddAssetModal();
+          }
+        },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
