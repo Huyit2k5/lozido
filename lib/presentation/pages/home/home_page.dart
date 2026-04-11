@@ -12,6 +12,7 @@ import '../service/service_management_page.dart';
 
 import '../room/contract_list_page.dart';
 import '../room/assets_list_page.dart';
+import '../room/vehicle_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -666,14 +667,20 @@ class _HomePageState extends State<HomePage> {
                 title: "Quản lý\nkhách thuê",
               ),
               _buildGridItem(
-                icon: Icons.local_mall_outlined,
-                color: Colors.green,
-                title: "Quản lý\ntài sản",
-              ),
-              _buildGridItem(
                 icon: Icons.local_parking_rounded,
                 color: Colors.green,
                 title: "Danh sách\nxe",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VehicleListPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.handshake_outlined,

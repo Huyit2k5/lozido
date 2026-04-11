@@ -217,7 +217,7 @@ class _AssetListPageState extends State<AssetListPage> {
                           ),
                           ..._rooms.map((r) => DropdownMenuItem<String?>(
                             value: r['id'],
-                            child: Text(r['name'] ?? 'Phòng', style: const TextStyle(fontSize: 13)),
+                            child: Text(r['roomName'] ?? 'Phòng', style: const TextStyle(fontSize: 13)),
                           )).toList(),
                         ],
                         onChanged: (v) => setState(() => _selectedRoomId = v),
