@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 
 class RoomItem {
   String? id;
@@ -155,18 +157,6 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
     }
   }
 
-  void _onPriceChanged(String value) {
-    // Format input with dots
-    String numericOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (numericOnly.isNotEmpty) {
-      final number = int.parse(numericOnly);
-      final formatted = NumberFormat('#,###', 'vi_VN').format(number).replaceAll(',', '.');
-      _priceController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
-  }
 
   bool get _isAllSelected => _rooms.isNotEmpty && _rooms.every((r) => r.isSelected);
   int get _selectedCount => _rooms.where((r) => r.isSelected).length;
@@ -248,7 +238,10 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
                                     hintStyle: TextStyle(color: Colors.black38),
                                   ),
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  onChanged: _onPriceChanged,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    CurrencyInputFormatter(),
+                                  ],
                                 ),
                               ),
                               Container(

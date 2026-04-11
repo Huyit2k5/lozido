@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../contracts/contract_provider.dart';
 
 class ManageAssetsPage extends StatefulWidget {
@@ -674,7 +675,7 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint, List<TextInputFormatter>? formatters}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -683,6 +684,7 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
         TextField(
           controller: controller,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          inputFormatters: formatters,
           style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,

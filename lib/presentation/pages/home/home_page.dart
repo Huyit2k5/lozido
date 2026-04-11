@@ -1174,6 +1174,43 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _deleteHouse(String houseId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Xác nhận xóa", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("Hành động này sẽ xóa vĩnh viễn dữ liệu nhà trọ. Bạn có chắc chắn muốn xóa không?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Hủy", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Đồng ý", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance.collection('houses').doc(houseId).delete();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Đã xóa nhà trọ thành công")),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Lỗi khi xóa: ${e.toString()}")),
+          );
+        }
+      }
+    }
+  }
+
   void _showHouseSwitcher(
     List<QueryDocumentSnapshot> docs,
     String currentHouseId,
@@ -1181,126 +1218,212 @@ class _HomePageState extends State<HomePage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                // Thanh kéo modal
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  "Chọn nhà trọ muốn quản lý",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final doc = docs[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    final isSelected = doc.id == currentHouseId;
-
-                    final displayTitle =
-                        (data['houseName'] ??
-                                data['propertyName'] ??
-                                "Hello World")
-                            .toString();
-
-                    return ListTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
+                // Header (Theo thiết kế mới)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFFE8F5E9)
-                              : Colors.grey.shade100,
+                          color: Colors.grey.shade100,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.home_work_rounded,
-                          color: isSelected
-                              ? const Color(0xFF00A651)
-                              : Colors.grey,
+                        child: const Icon(Icons.sell_outlined, color: Colors.black87),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            "Danh sách nhà đang quản lý",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            "Danh sách nhà đang quản lý",
+                            style: TextStyle(fontSize: 13, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      final isSelected = doc.id == currentHouseId;
+                      final houseName = (data['houseName'] ?? data['propertyName'] ?? "Nhà trọ").toString();
+                      final address = data['address'] != null ? (data['address']['summary'] ?? 'Chưa có địa chỉ') : 'Chưa có địa chỉ';
+                      final roomCount = data['roomCount']?.toString() ?? "0";
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
-                      ),
-                      title: Text(
-                        displayTitle.isEmpty ? 'Hello World' : displayTitle,
-                        style: TextStyle(
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isSelected
-                              ? const Color(0xFF00A651)
-                              : Colors.black87,
-                        ),
-                      ),
-                      subtitle: Text(
-                        data['address'] != null
-                            ? (data['address']['summary'] ?? 'Chưa có địa chỉ')
-                            : 'Chưa có địa chỉ',
-                        style: const TextStyle(fontSize: 12),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: isSelected
-                          ? const Icon(
-                              Icons.check_circle_rounded,
-                              color: Color(0xFF00A651),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F8E9),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.home_work_rounded, color: Color(0xFF00A651)),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        houseName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        address,
+                                        style: const TextStyle(color: Colors.black54, fontSize: 13),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "$roomCount phòng cho thuê",
+                                        style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Icon(Icons.check_circle, color: Color(0xFF00A651), size: 28),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 44,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _deleteHouse(doc.id),
+                                      icon: const Icon(Icons.delete_outline, size: 20),
+                                      label: const Text("Xóa nhà", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFF4511E),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 44,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedHouseId = doc.id;
+                                        });
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(Icons.sync_rounded, size: 20),
+                                      label: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Text("Quản lý", style: TextStyle(fontWeight: FontWeight.bold)),
+                                          SizedBox(width: 4),
+                                          Icon(Icons.chevron_right, size: 16),
+                                        ],
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF00A651),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             )
-                          : null,
-                      onTap: () {
-                        setState(() {
-                          _selectedHouseId = doc.id;
-                        });
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
                         Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddHousePage(),
+                          ),
+                        );
                       },
-                    );
-                  },
-                ),
-              ),
-              const Divider(),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.add, color: Colors.blue.shade700),
-                ),
-                title: Text(
-                  "Thêm nhà trọ mới",
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddHousePage(),
+                      icon: const Icon(Icons.add, color: Color(0xFF1877F2)),
+                      label: const Text(
+                        "Thêm nhà trọ mới",
+                        style: TextStyle(
+                          color: Color(0xFF1877F2),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF1877F2)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
