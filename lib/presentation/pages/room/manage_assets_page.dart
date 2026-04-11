@@ -2,33 +2,111 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'contract_provider.dart';
-import 'create_contract_page.dart';
 
 class ManageAssetsPage extends StatefulWidget {
-  const ManageAssetsPage({super.key});
+  final String houseId;
+  
+  const ManageAssetsPage({super.key, required this.houseId});
 
   @override
   State<ManageAssetsPage> createState() => _ManageAssetsPageState();
 }
 
 class _ManageAssetsPageState extends State<ManageAssetsPage> {
-  // Temporary list to hold newly created ones and currently selected ones
-  List<ContractAsset> _availableAssets = [];
-  Set<int> _selectedIndices = {};
+  final NumberFormat _currencyFormat = NumberFormat.decimalPattern('vi_VN');
 
-  final NumberFormat _currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+  // KHO: Mapping from asset ID -> Data (including availableQuantity)
+  List<Map<String, dynamic>> _globalAssets = [];
+  bool _isLoading = true;
+
+  // Track the quantities selected by the user for this contract
+  // Key: assetId, Value: quantity selected
+  Map<String, int> _selectedQuantities = {};
 
   @override
   void initState() {
     super.initState();
-    // Load from provider initially
-    final currentAssets = Provider.of<ContractProvider>(context, listen: false).assets;
-    _availableAssets = List.from(currentAssets);
-    
-    // Initially all existing ones are selected
-    for (int i = 0; i < _availableAssets.length; i++) {
-      _selectedIndices.add(i);
+    _fetchInventory();
+  }
+
+  Future<void> _fetchInventory() async {
+    setState(() => _isLoading = true);
+    try {
+      // 1. Fetch Assets
+      final assetsQs = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('assets')
+          .get();
+          
+      // 2. Fetch Active Contracts to calculate usage
+      final contractsQs = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('contracts')
+          .where('status', isNotEqualTo: 'Đã kết thúc')
+          .get();
+
+      final List<Map<String, dynamic>> loaded = [];
+      
+      for (var doc in assetsQs.docs) {
+        final data = doc.data();
+        final aId = doc.id;
+        
+        // Calculate used quantity
+        int usedQty = 0;
+        for (var cDoc in contractsQs.docs) {
+          final cData = cDoc.data();
+          final cAssets = cData['assets'] as List?;
+          if (cAssets != null) {
+            for (var ca in cAssets) {
+              if (ca != null) {
+                if (ca['assetId'] == aId || ca['assetName'] == data['assetName']) {
+                  usedQty += ((ca['quantity'] ?? 1) as num).toInt();
+                }
+              }
+            }
+          }
+        }
+        
+        final totalQty = (data['quantity'] ?? 1).toInt();
+        final availableQty = totalQty - usedQty;
+        
+        data['id'] = aId;
+        data['availableQuantity'] = availableQty < 0 ? 0 : availableQty;
+        data['totalQuantity'] = totalQty;
+        loaded.add(data);
+      }
+
+      // 3. Pre-fill selections from Provider
+      final currentContractAssets = Provider.of<ContractProvider>(context, listen: false).assets;
+      final Map<String, int> initialSelections = {};
+      
+      for (var cAsset in currentContractAssets) {
+        // Try to match by ID or Name
+        final match = loaded.firstWhere(
+          (a) => a['id'] == cAsset.assetId || a['assetName'] == cAsset.assetName, 
+          orElse: () => <String, dynamic>{}
+        );
+        if (match.isNotEmpty) {
+          initialSelections[match['id']] = cAsset.quantity;
+          // If this asset was already allocated in THIS VERY CONTRACT, the formula `total - active_contracts` 
+          // above actually deducted it! Meaning availableQuantity is lower than it should be if we are editing.
+          // For simplicity, we just add the currently selected amount back to the virtual available pool 
+          // so the user can re-adjust properly in this session.
+          match['availableQuantity'] = (match['availableQuantity'] as int) + cAsset.quantity;
+        }
+      }
+
+      _globalAssets = loaded;
+      _selectedQuantities = initialSelections;
+
+    } catch (e) {
+      debugPrint("Error fetching inventory: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -38,22 +116,33 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _AddAssetForm(
-        onAdd: (asset) {
-          setState(() {
-            _availableAssets.add(asset);
-            _selectedIndices.add(_availableAssets.length - 1);
-          });
+        onAdd: (assetData) async {
+          try {
+            await FirebaseFirestore.instance
+                .collection('houses')
+                .doc(widget.houseId)
+                .collection('assets')
+                .add({
+              ...assetData,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+            _fetchInventory(); // Reload to get the new asset into the list
+          } catch (e) {
+            debugPrint("Error creating asset: $e");
+          }
         },
       ),
     );
   }
 
-  IconData _getIconData(String name) {
+  IconData _getIconData(String? name) {
+    if (name == null) return Icons.category;
     if (name.contains('Tủ lạnh')) return Icons.kitchen;
     if (name.contains('Máy giặt')) return Icons.local_laundry_service;
     if (name.contains('Điều hòa')) return Icons.ac_unit;
     if (name.contains('Giường')) return Icons.bed;
-    if (name.contains('Bàn')) return Icons.desk;
+    if (name.contains('Bàn ghế')) return Icons.chair;
+    if (name.contains('Tủ quần áo')) return Icons.checkroom;
     return Icons.category;
   }
 
@@ -69,113 +158,123 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Thêm/bớt tài sản",
+          "Chọn tài sản cho phòng",
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
-          TextButton.icon(
+          IconButton(
             onPressed: _showAddAssetModal,
-            icon: const Icon(Icons.settings_outlined, color: Colors.blueAccent, size: 20),
-            label: const Text("Cài đặt", style: TextStyle(color: Colors.blueAccent)),
+            icon: const Icon(Icons.add_circle_outline, color: Colors.blueAccent),
+            tooltip: "Nhập tài sản mới vào kho",
           )
         ],
       ),
-      body: _availableAssets.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.chair_alt_outlined, size: 64, color: Colors.grey.shade400),
-                  const SizedBox(height: 16),
-                  const Text("Chưa có tài sản nào để quản lý...", style: TextStyle(color: Colors.black54)),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A651),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    onPressed: _showAddAssetModal,
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text("Thêm tài sản mới", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  )
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _availableAssets.length,
-              itemBuilder: (context, index) {
-                final asset = _availableAssets[index];
-                final isSelected = _selectedIndices.contains(index);
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _globalAssets.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.shade400),
+                      const SizedBox(height: 16),
+                      const Text("Kho chưa có tài sản nào...", style: TextStyle(color: Colors.black54)),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00A651),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        ),
+                        onPressed: _showAddAssetModal,
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: const Text("Tạo tài sản vào kho", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      )
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _globalAssets.length,
+                  itemBuilder: (context, index) {
+                    final asset = _globalAssets[index];
+                    final aId = asset['id'] as String;
+                    final available = asset['availableQuantity'] as int;
+                    final total = asset['totalQuantity'] as int;
+                    
+                    final currentSelectedQty = _selectedQuantities[aId] ?? 0;
+                    final isSelected = currentSelectedQty > 0;
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: Container(
-                      padding: const EdgeInsets.all(12),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade200),
                       ),
-                      child: Icon(_getIconData(asset.iconTag), color: Colors.black87, size: 24),
-                    ),
-                    title: Text(
-                      asset.assetName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          _currencyFormat.format(asset.value),
-                          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.green.shade50 : Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(_getIconData(asset['iconTag']), color: isSelected ? const Color(0xFF00A651) : Colors.black87, size: 24),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(asset['assetName'] ?? 'Tài sản', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  const SizedBox(height: 4),
+                                  Text('${_currencyFormat.format(asset['value'] ?? 0)} đ', style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 4),
+                                  Text('Sẵn sàng: $available / $total', style: TextStyle(color: available > 0 ? Colors.black54 : Colors.red, fontSize: 13, fontWeight: FontWeight.w500)),
+                                ],
+                              ),
+                            ),
+                            // Selection Control
+                            if (available > 0 || currentSelectedQty > 0)
+                              Row(
+                                children: [
+                                  if (currentSelectedQty > 0) ...[
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedQuantities[aId] = currentSelectedQty - 1;
+                                        });
+                                      },
+                                    ),
+                                    Text('$currentSelectedQty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  ],
+                                  IconButton(
+                                    icon: Icon(Icons.add_circle, color: currentSelectedQty < available ? const Color(0xFF00A651) : Colors.grey),
+                                    onPressed: currentSelectedQty < available 
+                                        ? () {
+                                            setState(() {
+                                              _selectedQuantities[aId] = currentSelectedQty + 1;
+                                            });
+                                          }
+                                        : null, // Disable if reached max available
+                                  ),
+                                ],
+                              )
+                            else
+                              const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text('Hết hàng', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isSelected ? "Đang sử dụng" : "Không sử dụng",
-                          style: TextStyle(
-                            color: isSelected ? const Color(0xFF00A651) : Colors.deepOrange,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: InkWell(
-                      onTap: () {
-                        setState(() {
-                          if (isSelected) {
-                            _selectedIndices.remove(index);
-                          } else {
-                            _selectedIndices.add(index);
-                          }
-                        });
-                      },
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade400, width: 2),
-                          borderRadius: BorderRadius.circular(4),
-                          color: isSelected ? const Color(0xFF00A651) : Colors.transparent,
-                        ),
-                        child: isSelected
-                            ? const Icon(Icons.check, size: 16, color: Colors.white)
-                            : null,
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -195,7 +294,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                     backgroundColor: const Color(0xFFF5F5F5),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Đóng", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15)),
+                  child: const Text("Hủy", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -209,11 +308,28 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                     elevation: 0,
                   ),
                   onPressed: () {
-                    final selectedAssets = _selectedIndices.map((i) => _availableAssets[i]).toList();
+                    final List<ContractAsset> selectedAssets = [];
+                    for (var asset in _globalAssets) {
+                      final aId = asset['id'] as String;
+                      final qty = _selectedQuantities[aId] ?? 0;
+                      if (qty > 0) {
+                        selectedAssets.add(ContractAsset(
+                          assetId: aId,
+                          assetName: asset['assetName'] ?? '',
+                          iconTag: asset['iconTag'] ?? 'category',
+                          value: (asset['value'] ?? 0).toDouble(),
+                          importPrice: (asset['importPrice'] ?? 0).toDouble(),
+                          quantity: qty,
+                          supplier: asset['supplier'] ?? '',
+                          unit: asset['unit'] ?? 'Cái',
+                          status: asset['status'] ?? 'Bình thường',
+                        ));
+                      }
+                    }
                     Provider.of<ContractProvider>(context, listen: false).updateAssets(selectedAssets);
                     Navigator.pop(context);
                   },
-                  child: const Text("Áp dụng tài sản", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: const Text("Áp dụng vào Phòng", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],
@@ -224,8 +340,12 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
   }
 }
 
+// ---------------------------------------------------------
+// ADD ASSET FORM 
+// ---------------------------------------------------------
+
 class _AddAssetForm extends StatefulWidget {
-  final Function(ContractAsset) onAdd;
+  final Function(Map<String, dynamic>) onAdd;
 
   const _AddAssetForm({required this.onAdd});
 
@@ -274,7 +394,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Thêm tài sản mới", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                const Text("Thêm mới vào Kho tổng", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.black54), onPressed: () => Navigator.pop(context)),
               ],
             ),
@@ -312,41 +432,18 @@ class _AddAssetFormState extends State<_AddAssetForm> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _buildTextField("Giá trị tài sản", _valueCtrl, isNumber: true, hint: "VNĐ", formatters: [CurrencyInputFormatter()])),
+                Expanded(child: _buildTextField("Giá trị", _valueCtrl, isNumber: true, hint: "VNĐ")),
                 const SizedBox(width: 16),
-                Expanded(child: _buildTextField("Giá nhập vào", _importPriceCtrl, isNumber: true, hint: "VNĐ", formatters: [CurrencyInputFormatter()])),
+                Expanded(child: _buildTextField("Giá nhập", _importPriceCtrl, isNumber: true, hint: "VNĐ")),
               ],
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _buildTextField("Số lượng (*)", _quantityCtrl, isNumber: true)),
+                Expanded(child: _buildTextField("Số lượng nhập (*)", _quantityCtrl, isNumber: true)),
                 const SizedBox(width: 16),
-                Expanded(child: _buildTextField("Đơn vị tính", _unitCtrl, hint: "Cái/Chiếc")),
+                Expanded(child: _buildTextField("Đơn vị", _unitCtrl, hint: "Cái/Chiếc")),
               ],
-            ),
-            const SizedBox(height: 16),
-            _buildTextField("Nhà cung cấp", _supplierCtrl),
-            const SizedBox(height: 16),
-            const Text("Trạng thái", style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87, fontSize: 13)),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white,
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedStatus,
-                  isExpanded: true,
-                  items: ['Hoạt động tốt', 'Không hoạt động', 'Hư hỏng nhẹ', 'Đang sửa chữa'].map((String value) {
-                    return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(fontSize: 14)));
-                  }).toList(),
-                  onChanged: (v) => setState(() => _selectedStatus = v!),
-                ),
-              ),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -363,20 +460,20 @@ class _AddAssetFormState extends State<_AddAssetForm> {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập tên và số lượng")));
                     return;
                   }
-                  final asset = ContractAsset(
-                    assetName: _nameCtrl.text,
-                    iconTag: _selectedIcon,
-                    value: double.tryParse(_valueCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
-                    importPrice: double.tryParse(_importPriceCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
-                    quantity: int.tryParse(_quantityCtrl.text) ?? 1,
-                    supplier: _supplierCtrl.text,
-                    unit: _unitCtrl.text.isNotEmpty ? _unitCtrl.text : 'Cái',
-                    status: _selectedStatus,
-                  );
-                  widget.onAdd(asset);
+                  final assetData = {
+                    'assetName': _nameCtrl.text,
+                    'iconTag': _selectedIcon,
+                    'value': double.tryParse(_valueCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
+                    'importPrice': double.tryParse(_importPriceCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
+                    'quantity': int.tryParse(_quantityCtrl.text) ?? 1,
+                    'supplier': _supplierCtrl.text,
+                    'unit': _unitCtrl.text.isNotEmpty ? _unitCtrl.text : 'Cái',
+                    'status': _selectedStatus,
+                  };
+                  widget.onAdd(assetData);
                   Navigator.pop(context);
                 },
-                child: const Text("Xác nhận", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: const Text("Tạo kiện tài sản", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 16),
@@ -386,7 +483,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint, List<TextInputFormatter>? formatters}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -396,10 +493,9 @@ class _AddAssetFormState extends State<_AddAssetForm> {
           controller: controller,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
           style: const TextStyle(fontSize: 14),
-          inputFormatters: formatters,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
