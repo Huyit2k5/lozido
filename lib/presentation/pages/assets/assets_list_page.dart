@@ -89,7 +89,7 @@ class _AssetListPageState extends State<AssetListPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _AddAssetForm(
-        onAdd: (assetData) async {
+        onSave: (assetData) async {
           try {
             await FirebaseFirestore.instance
                 .collection('houses')
@@ -106,6 +106,142 @@ class _AssetListPageState extends State<AssetListPage> {
         },
       ),
     );
+  }
+
+  void _showEditAssetModal(Map<String, dynamic> item) {
+    int? maxAllowed;
+    if (_selectedRoomId != null) {
+      // Room View: Calculate available stock
+      final assetId = item['assetId'];
+      final assetName = item['assetName'];
+      
+      final master = _globalAssets.firstWhere(
+        (a) => (assetId != null && a['id'] == assetId) || (a['assetName'] == assetName),
+        orElse: () => {}
+      );
+      
+      if (master.isNotEmpty) {
+        int totalStock = (master['quantity'] ?? 0).toInt();
+        int totalUsed = 0;
+        for (var contract in _activeContracts) {
+          final cAssets = contract['assets'] as List?;
+          if (cAssets != null) {
+            for (var ca in cAssets) {
+              if ((assetId != null && ca['assetId'] == assetId) || (ca['assetName'] == assetName)) {
+                totalUsed += ((ca['quantity'] ?? 1) as num).toInt();
+              }
+            }
+          }
+        }
+        maxAllowed = (item['quantity'] ?? 0).toInt() + (totalStock - totalUsed);
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _AddAssetForm(
+        initialData: item,
+        maxAllowed: maxAllowed,
+        onSave: (newData) => _updateAsset(item, newData),
+      ),
+    );
+  }
+
+  Future<void> _updateAsset(Map<String, dynamic> oldItem, Map<String, dynamic> newData) async {
+    try {
+      if (_selectedRoomId == null) {
+        // Global Update
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('assets')
+            .doc(oldItem['id'])
+            .update(newData);
+      } else {
+        // Room Update (Contract Update)
+        final contract = _activeContracts.firstWhere((c) => c['roomId'] == _selectedRoomId);
+        final List<dynamic> assets = List.from(contract['assets'] ?? []);
+        
+        final index = assets.indexWhere((a) => a['assetName'] == oldItem['assetName'] && a['quantity'] == oldItem['quantity']);
+        if (index != -1) {
+          assets[index] = {
+            ...assets[index],
+            ...newData,
+          };
+          await FirebaseFirestore.instance
+              .collection('houses')
+              .doc(widget.houseId)
+              .collection('contracts')
+              .doc(contract['id'])
+              .update({'assets': assets});
+        }
+      }
+      _fetchData();
+    } catch (e) {
+      debugPrint("Error updating asset: $e");
+    }
+  }
+
+  Future<void> _deleteAsset(Map<String, dynamic> item) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Xác nhận xoá"),
+        content: Text("Bạn có chắc chắn muốn xoá ${item['assetName']}?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Huỷ")),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Xoá", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      if (_selectedRoomId == null) {
+        // Global Delete
+        // Check if used
+        bool isUsed = false;
+        for (var contract in _activeContracts) {
+          final cAssets = contract['assets'] as List?;
+          if (cAssets != null) {
+            if (cAssets.any((ca) => ca['assetId'] == item['id'] || ca['assetName'] == item['assetName'])) {
+              isUsed = true;
+              break;
+            }
+          }
+        }
+
+        if (isUsed) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Không thể xoá tài sản đang được sử dụng trong hợp đồng")));
+          return;
+        }
+
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('assets')
+            .doc(item['id'])
+            .delete();
+      } else {
+        // Room Delete (Remove from contract)
+        final contract = _activeContracts.firstWhere((c) => c['roomId'] == _selectedRoomId);
+        final List<dynamic> assets = List.from(contract['assets'] ?? []);
+        assets.removeWhere((a) => a['assetName'] == item['assetName'] && a['quantity'] == item['quantity']);
+        
+        await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .doc(contract['id'])
+            .update({'assets': assets});
+      }
+      _fetchData();
+    } catch (e) {
+      debugPrint("Error deleting asset: $e");
+    }
   }
 
   IconData _getIconData(String? name) {
@@ -305,11 +441,37 @@ class _AssetListPageState extends State<AssetListPage> {
                                   )
                                 : Text('Số lượng: $totalQty Cái/Chiếc', style: const TextStyle(color: Colors.black54)),
                           ),
-                          trailing: IconButton(
+                          trailing: PopupMenuButton<String>(
                             icon: const Icon(Icons.more_vert),
-                            onPressed: () {
-                              // Options per item, like edit/delete
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                _showEditAssetModal(item);
+                              } else if (value == 'delete') {
+                                _deleteAsset(item);
+                              }
                             },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit, size: 20, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('Chỉnh sửa'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete, size: 20, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text('Xoá'),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -332,25 +494,61 @@ class _AssetListPageState extends State<AssetListPage> {
 // ---------------------------------------------------------
 
 class _AddAssetForm extends StatefulWidget {
-  final Function(Map<String, dynamic>) onAdd;
+  final Map<String, dynamic>? initialData;
+  final int? maxAllowed;
+  final Function(Map<String, dynamic>) onSave;
 
-  const _AddAssetForm({required this.onAdd});
+  const _AddAssetForm({
+    required this.onSave,
+    this.initialData,
+    this.maxAllowed,
+  });
 
   @override
   State<_AddAssetForm> createState() => _AddAssetFormState();
 }
 
 class _AddAssetFormState extends State<_AddAssetForm> {
-  final _nameCtrl = TextEditingController();
-  final _valueCtrl = TextEditingController();
-  final _importPriceCtrl = TextEditingController();
-  final _quantityCtrl = TextEditingController();
-  final _supplierCtrl = TextEditingController();
-  final _unitCtrl = TextEditingController();
+  late TextEditingController _nameCtrl;
+  late TextEditingController _valueCtrl;
+  late TextEditingController _importPriceCtrl;
+  late TextEditingController _quantityCtrl;
+  late TextEditingController _supplierCtrl;
+  late TextEditingController _unitCtrl;
   String _selectedStatus = 'Hoạt động tốt';
-
   String _selectedIcon = 'Tủ lạnh';
+
   final List<String> _icons = ['Tủ lạnh', 'Máy giặt', 'Điều hòa', 'Giường', 'Tủ quần áo', 'Bàn ghế'];
+
+  @override
+  void initState() {
+    super.initState();
+    final data = widget.initialData;
+    _nameCtrl = TextEditingController(text: data?['assetName'] ?? '');
+    _valueCtrl = TextEditingController(text: data?['value']?.toString() ?? '');
+    _importPriceCtrl = TextEditingController(text: data?['importPrice']?.toString() ?? '');
+    _quantityCtrl = TextEditingController(text: data?['quantity']?.toString() ?? '');
+    _supplierCtrl = TextEditingController(text: data?['supplier'] ?? '');
+    _unitCtrl = TextEditingController(text: data?['unit'] ?? '');
+    
+    if (data?['status'] != null) {
+      _selectedStatus = data!['status'];
+    }
+    if (data?['iconTag'] != null) {
+      _selectedIcon = data!['iconTag'];
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _valueCtrl.dispose();
+    _importPriceCtrl.dispose();
+    _quantityCtrl.dispose();
+    _supplierCtrl.dispose();
+    _unitCtrl.dispose();
+    super.dispose();
+  }
 
   IconData _getIconData(String name) {
     switch (name) {
@@ -381,11 +579,12 @@ class _AddAssetFormState extends State<_AddAssetForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Tạo kiện tài sản tổng", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text(widget.initialData == null ? "Tạo kiện tài sản tổng" : "Chỉnh sửa tài sản", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                 IconButton(icon: const Icon(Icons.close, color: Colors.black54), onPressed: () => Navigator.pop(context)),
               ],
             ),
-            const Text("Tài sản tạo tại đây sẽ được lưu vào kho tổng. Bạn phân bổ tài sản vào phòng khi thêm vào Hợp đồng.", style: TextStyle(color: Colors.black54, fontSize: 13, fontStyle: FontStyle.italic)),
+            if (widget.initialData == null) 
+              const Text("Tài sản tạo tại đây sẽ được lưu vào kho tổng. Bạn phân bổ tài sản vào phòng khi thêm vào Hợp đồng.", style: TextStyle(color: Colors.black54, fontSize: 13, fontStyle: FontStyle.italic)),
             const SizedBox(height: 16),
             _buildTextField("Tên tài sản (*)", _nameCtrl),
             const SizedBox(height: 16),
@@ -467,24 +666,29 @@ class _AddAssetFormState extends State<_AddAssetForm> {
                   elevation: 0,
                 ),
                 onPressed: () {
-                  if (_nameCtrl.text.isEmpty || _quantityCtrl.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập tên và số lượng")));
+                  final qty = int.tryParse(_quantityCtrl.text) ?? 1;
+                  if (widget.maxAllowed != null && qty > widget.maxAllowed!) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text("Số lượng vượt quá kho cho phép (Tối đa trong kho: ${widget.maxAllowed})"),
+                      backgroundColor: Colors.redAccent,
+                    ));
                     return;
                   }
+
                   final doc = {
                     'assetName': _nameCtrl.text,
                     'iconTag': _selectedIcon,
                     'value': double.tryParse(_valueCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
                     'importPrice': double.tryParse(_importPriceCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
-                    'quantity': int.tryParse(_quantityCtrl.text) ?? 1,
+                    'quantity': qty,
                     'supplier': _supplierCtrl.text,
                     'unit': _unitCtrl.text.isNotEmpty ? _unitCtrl.text : 'Cái',
                     'status': _selectedStatus,
                   };
-                  widget.onAdd(doc);
+                  widget.onSave(doc);
                   Navigator.pop(context);
                 },
-                child: const Text("Tạo tài sản vào kho", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                child: Text(widget.initialData == null ? "Tạo tài sản vào kho" : "Cập nhật tài sản", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 16),
