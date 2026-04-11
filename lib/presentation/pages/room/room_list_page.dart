@@ -3,11 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_room_page.dart';
 import 'room_detail_page.dart';
 import 'package:provider/provider.dart';
-import 'contract_provider.dart';
-import 'create_contract_page.dart';
-import 'service_selection_page.dart';
+import '../contracts/contract_provider.dart';
+import '../contracts/create_contract_page.dart';
+import '../contracts/service_selection_page.dart';
 import '../deposit/deposit_page.dart';
-import 'tenant_list_page.dart';
+import '../tenants/tenant_list_page.dart';
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;

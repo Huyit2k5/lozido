@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AddVehiclePage extends StatefulWidget {
+class EditVehiclePage extends StatefulWidget {
   final String houseId;
-  final Map<String, dynamic> houseData;
+  final String vehicleId;
+  final Map<String, dynamic> vehicleData;
 
-  const AddVehiclePage({
+  const EditVehiclePage({
     super.key,
     required this.houseId,
-    required this.houseData,
+    required this.vehicleId,
+    required this.vehicleData,
   });
 
   @override
-  State<AddVehiclePage> createState() => _AddVehiclePageState();
+  State<EditVehiclePage> createState() => _EditVehiclePageState();
 }
 
-class _AddVehiclePageState extends State<AddVehiclePage> {
-  final _vehicleNameCtrl = TextEditingController();
-  final _licensePlateCtrl = TextEditingController();
+class _EditVehiclePageState extends State<EditVehiclePage> {
+  late TextEditingController _vehicleNameCtrl;
+  late TextEditingController _licensePlateCtrl;
 
   String? _selectedRoomId;
   String? _selectedRoomName;
@@ -33,6 +35,15 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
   @override
   void initState() {
     super.initState();
+    _vehicleNameCtrl = TextEditingController(
+      text: widget.vehicleData['vehicleName'] ?? '',
+    );
+    _licensePlateCtrl = TextEditingController(
+      text: widget.vehicleData['licensePlate'] ?? '',
+    );
+    _selectedRoomId = widget.vehicleData['roomId'];
+    _selectedRoomName = widget.vehicleData['roomName'];
+    _selectedTenantName = widget.vehicleData['tenantName'];
     _fetchRooms();
   }
 
@@ -61,6 +72,11 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
           _isLoadingRooms = false;
         });
       }
+
+      // Load tenants for the pre-selected room
+      if (_selectedRoomId != null) {
+        _fetchTenants(_selectedRoomId!);
+      }
     } catch (e) {
       debugPrint('Error fetching rooms: $e');
       if (mounted) setState(() => _isLoadingRooms = false);
@@ -71,7 +87,6 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     setState(() {
       _isLoadingTenants = true;
       _tenants = [];
-      _selectedTenantName = null;
     });
 
     try {
@@ -85,10 +100,46 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
 
       final tenantNames = <String>{};
       for (var doc in qs.docs) {
-        final data = doc.data();
-        final name = data['tenantName']?.toString().trim();
-        if (name != null && name.isNotEmpty) {
-          tenantNames.add(name);
+        final data = doc.data() as Map<String, dynamic>;
+        
+        // 1. Lấy tenantName từ contract (người đại diện)
+        final tenantNameInDoc = data['tenantName']?.toString().trim();
+        if (tenantNameInDoc != null && tenantNameInDoc.isNotEmpty) {
+          tenantNames.add(tenantNameInDoc);
+        }
+
+        // 2. Lấy name từ contract (nếu có)
+        final nameInDoc = data['name']?.toString().trim();
+        if (nameInDoc != null && nameInDoc.isNotEmpty) {
+          tenantNames.add(nameInDoc);
+        }
+
+        // 3. Lấy tên từ mảng 'tenant' bên trong contract (nếu có)
+        final tenantArray = data['tenant'] as List<dynamic>? ?? [];
+        for (var t in tenantArray) {
+          if (t is Map<String, dynamic>) {
+            final tName = t['name']?.toString().trim();
+            if (tName != null && tName.isNotEmpty) {
+              tenantNames.add(tName);
+            }
+          }
+        }
+
+        // 4. Lấy từ sub-collection 'tenant'
+        final tenantsSnap = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('contracts')
+            .doc(doc.id)
+            .collection('tenant')
+            .get();
+
+        for (var tenantDoc in tenantsSnap.docs) {
+          final tenantData = tenantDoc.data();
+          final tName = tenantData['name']?.toString().trim();
+          if (tName != null && tName.isNotEmpty) {
+            tenantNames.add(tName);
+          }
         }
       }
 
@@ -96,6 +147,11 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
         setState(() {
           _tenants = tenantNames.toList();
           _isLoadingTenants = false;
+          // Giữ lại selectedTenantName nếu nó vẫn có trong danh sách
+          if (_selectedTenantName != null &&
+              !_tenants.contains(_selectedTenantName)) {
+            _selectedTenantName = null;
+          }
         });
       }
     } catch (e) {
@@ -104,7 +160,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     }
   }
 
-  Future<void> _submitVehicle() async {
+  Future<void> _submitUpdate() async {
     if (_selectedRoomId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn phòng')),
@@ -137,18 +193,18 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
           .collection('houses')
           .doc(widget.houseId)
           .collection('vehicles')
-          .add({
+          .doc(widget.vehicleId)
+          .update({
         'vehicleName': _vehicleNameCtrl.text.trim(),
         'licensePlate': _licensePlateCtrl.text.trim(),
         'roomId': _selectedRoomId,
         'roomName': _selectedRoomName ?? '',
         'tenantName': _selectedTenantName ?? '',
-        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thêm phương tiện thành công!')),
+          const SnackBar(content: Text('Cập nhật phương tiện thành công!')),
         );
         Navigator.pop(context);
       }
@@ -231,6 +287,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
                                 onChanged: (val) {
                                   setState(() {
                                     _selectedRoomId = val;
+                                    _selectedTenantName = null;
                                     if (val != null) {
                                       final room = _rooms.firstWhere(
                                         (r) => r['id'] == val,
@@ -355,7 +412,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : _submitVehicle,
+                  onPressed: _isSubmitting ? null : _submitUpdate,
                   icon: _isSubmitting
                       ? const SizedBox(
                           width: 18,
@@ -365,9 +422,9 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Icon(Icons.add, color: Colors.white, size: 20),
+                      : const Icon(Icons.edit, color: Colors.white, size: 20),
                   label: const Text(
-                    'Thêm xe',
+                    'Lưu xe',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,

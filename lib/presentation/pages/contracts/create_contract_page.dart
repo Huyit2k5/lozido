@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../services/chat_service.dart';
 import 'contract_provider.dart';
-import 'manage_assets_page.dart';
+import '../assets/manage_assets_page.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override

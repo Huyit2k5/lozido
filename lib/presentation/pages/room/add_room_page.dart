@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'service_selection_page.dart';
+import '../contracts/service_selection_page.dart';
 
 class AddRoomPage extends StatefulWidget {
   final String houseId;
