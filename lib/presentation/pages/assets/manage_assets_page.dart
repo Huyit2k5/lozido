@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import '../contracts/contract_provider.dart';
 
 class ManageAssetsPage extends StatefulWidget {
@@ -110,10 +111,14 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
         // So `usedByOthers` is correct as "already committed to other rooms".
 
         final totalQty = (asset['quantity'] ?? 1).toInt();
-        final availableToThisRoom = totalQty - usedByOthers;
+        final breakdown = Map<String, dynamic>.from(asset['statusBreakdown'] ?? {});
+        final goodQty = ((breakdown['Hoạt động tốt'] ?? (asset['status'] == 'Hoạt động tốt' ? totalQty : 0)) as num).toInt();
+
+        final availableGoodToThisRoom = goodQty - usedByOthers;
         
-        asset['availableQuantity'] = availableToThisRoom < 0 ? 0 : availableToThisRoom;
+        asset['availableGoodQuantity'] = availableGoodToThisRoom < 0 ? 0 : availableGoodToThisRoom;
         asset['totalQuantity'] = totalQty;
+        asset['goodQuantity'] = goodQty;
         finalAssets.add(asset);
 
         // Check if this asset is currently in the room
@@ -151,27 +156,16 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
     if (matchIndex != -1) {
       final match = _globalAssets[matchIndex];
       final aId = match['id'];
-      final available = match['availableQuantity'] as int;
+      final available = (match['availableGoodQuantity'] ?? 0) as int;
 
       if (available >= requestedQty) {
         setState(() {
           _selectedQuantities[aId] = (_selectedQuantities[aId] ?? 0) + requestedQty;
           _isWarehouseTab = true; // Switch back to see result
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Tài sản '$name' đã có trong kho. Hệ thống đã tự động chọn từ kho và trừ số lượng."),
-            backgroundColor: Colors.blueAccent,
-            duration: const Duration(seconds: 3),
-          )
-        );
+        AppDialog.show(context, title: "Đã khớp kho", message: "Tài sản '$name' đã có trong kho. Hệ thống đã tự động chọn từ kho và trừ số lượng.", type: AppDialogType.success);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Tài sản '$name' có trong kho nhưng không đủ số lượng (Sẵn sàng: $available)."),
-            backgroundColor: Colors.orange,
-          )
-        );
+        AppDialog.show(context, title: "Hết hàng", message: "Tài sản '$name' có trong kho nhưng không đủ số lượng sẵn sàng (Sẵn sàng: $available).", type: AppDialogType.warning);
       }
     } else {
       // 2. New Asset - Create in Warehouse with quantity set to room allocation
@@ -192,15 +186,9 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           _isWarehouseTab = true;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Đã tạo mới tài sản '$name' vào kho và áp dụng cho phòng."),
-            backgroundColor: const Color(0xFF00A651),
-          )
-        );
+        AppDialog.show(context, title: "Thành công", message: "Đã tạo mới tài sản '$name' vào kho và áp dụng cho phòng.", type: AppDialogType.success);
       } catch (e) {
-        debugPrint("Error creating asset: $e");
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lỗi khi tạo tài sản mới")));
+        AppDialog.show(context, title: "Lỗi", message: "Không thể tạo tài sản mới: $e", type: AppDialogType.error);
       }
     }
   }
@@ -358,7 +346,13 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                           quantity: qty,
                           supplier: asset['supplier'] ?? '',
                           unit: asset['unit'] ?? 'Cái',
-                          status: asset['status'] ?? 'Bình thường',
+                          status: 'Hoạt động tốt',
+                          statusBreakdown: {
+                            'Hoạt động tốt': qty,
+                            'Không hoạt động': 0,
+                            'Hư hỏng nhẹ': 0,
+                            'Đang sửa chữa': 0,
+                          },
                         ));
                       }
                     }
@@ -385,17 +379,19 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                               .update({'assets': selectedAssets.map((a) => a.toMap()).toList()});
                           
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đã cập nhật tài sản cho phòng thành công!")));
+                            AppDialog.show(context, title: "Thành công", message: "Đã cập nhật tài sản cho phòng thành công!", type: AppDialogType.success);
                             Navigator.pop(context, true); // Return true to signal refresh
                           }
                         } else {
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Không tìm thấy hợp đồng hoạt động cho phòng này")));
+                            AppDialog.show(context, title: "Không tìm thấy hợp đồng", message: "Không tìm thấy hợp đồng hoạt động cho phòng này", type: AppDialogType.warning);
                           }
                         }
                       } catch (e) {
                           debugPrint("Error updating assets: $e");
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+                          if (mounted) {
+                            AppDialog.show(context, title: "Lỗi", message: "Lỗi hệ thống: $e", type: AppDialogType.error);
+                          }
                       } finally {
                         if (mounted) setState(() => _isLoading = false);
                       }
@@ -446,8 +442,8 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
       itemBuilder: (context, index) {
         final asset = _globalAssets[index];
         final aId = asset['id'] as String;
-        final available = asset['availableQuantity'] as int;
-        final total = asset['totalQuantity'] as int;
+        final availableGood = (asset['availableGoodQuantity'] ?? 0) as int;
+        final total = (asset['totalQuantity'] ?? 0) as int;
         
         final currentSelectedQty = _selectedQuantities[aId] ?? 0;
         final isSelected = currentSelectedQty > 0;
@@ -476,16 +472,29 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(asset['assetName'] ?? 'Tài sản', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              asset['assetName'] ?? 'Tài sản',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildStatusBadge(asset['status'] ?? 'Hoạt động tốt', asset['statusBreakdown']),
+                        ],
+                      ),
                       const SizedBox(height: 4),
                       Text('${_currencyFormat.format(asset['value'] ?? 0)} đ', style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 4),
-                      Text('Sẵn sàng: $available / $total', style: TextStyle(color: available > 0 ? Colors.black54 : Colors.red, fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text('Sẵn sàng (Tốt): ${asset['availableGoodQuantity']} / Tổng Tốt: ${asset['goodQuantity']}', 
+                           style: TextStyle(color: (asset['availableGoodQuantity'] as int) > 0 ? Colors.black54 : Colors.red, fontSize: 13, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
                 // Selection Control
-                if (available > 0 || currentSelectedQty > 0)
+                if (availableGood > 0 || currentSelectedQty > 0)
                   Row(
                     children: [
                       if (currentSelectedQty > 0) ...[
@@ -500,14 +509,14 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                         Text('$currentSelectedQty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                       IconButton(
-                        icon: Icon(Icons.add_circle, color: currentSelectedQty < available ? const Color(0xFF00A651) : Colors.grey),
-                        onPressed: currentSelectedQty < available 
+                        icon: Icon(Icons.add_circle, color: currentSelectedQty < (asset['availableGoodQuantity'] as int) ? const Color(0xFF00A651) : Colors.grey),
+                        onPressed: currentSelectedQty < (asset['availableGoodQuantity'] as int) 
                             ? () {
                                 setState(() {
                                   _selectedQuantities[aId] = currentSelectedQty + 1;
                                 });
                               }
-                            : null, // Disable if reached max available
+                            : null, // Disable if reached max available GOOD
                       ),
                     ],
                   )
@@ -521,6 +530,40 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildStatusBadge(String status, Map<dynamic, dynamic>? breakdown) {
+    String displayStatus = status;
+    if (breakdown != null && breakdown.isNotEmpty) {
+      String dominant = status;
+      int max = -1;
+      breakdown.forEach((s, q) {
+        if ((q as num).toInt() > max) {
+          max = q.toInt();
+          dominant = s.toString();
+        }
+      });
+      displayStatus = dominant;
+    }
+
+    Color color;
+    switch (displayStatus) {
+      case 'Hoạt động tốt': color = const Color(0xFF00A651); break;
+      case 'Hư hỏng nhẹ': color = Colors.orange; break;
+      case 'Không hoạt động': color = Colors.grey; break;
+      case 'Đang sửa chữa': color = Colors.blue; break;
+      default: color = Colors.black54;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Text(displayStatus, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 }
@@ -639,6 +682,10 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
               Expanded(child: _buildTextField("Đơn vị", _unitCtrl, hint: "Cái/Chiếc")),
             ],
           ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          const Text("Trạng thái: Hoạt động tốt", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651), fontSize: 13)),
+          const Text("Tài sản cấp vào phòng phải ở trạng thái hoạt động tốt.", style: TextStyle(fontSize: 12, color: Colors.black54, fontStyle: FontStyle.italic)),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -654,15 +701,22 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập tên và số lượng")));
                   return;
                 }
+                final qty = int.tryParse(_quantityCtrl.text) ?? 1;
                 final assetData = {
                   'assetName': _nameCtrl.text,
                   'iconTag': _selectedIcon,
                   'value': double.tryParse(_valueCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
                   'importPrice': double.tryParse(_importPriceCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0.0,
-                  'quantity': int.tryParse(_quantityCtrl.text) ?? 1,
+                  'quantity': qty,
                   'supplier': _supplierCtrl.text,
                   'unit': _unitCtrl.text.isNotEmpty ? _unitCtrl.text : 'Cái',
-                  'status': _selectedStatus,
+                  'status': 'Hoạt động tốt',
+                  'statusBreakdown': {
+                    'Hoạt động tốt': qty,
+                    'Không hoạt động': 0,
+                    'Hư hỏng nhẹ': 0,
+                    'Đang sửa chữa': 0,
+                  },
                 };
                 widget.onAdd(assetData);
               },

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import '../contracts/service_selection_page.dart';
 
 class AddRoomPage extends StatefulWidget {
@@ -218,9 +219,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
     }
     
     if (_selectedFloor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn Nhóm (Tầng/dãy)')),
-      );
+      AppDialog.show(context, title: "Thông báo", message: "Vui lòng chọn Nhóm (Tầng/dãy)", type: AppDialogType.warning);
       return;
     }
 
@@ -272,19 +271,17 @@ class _AddRoomPageState extends State<AddRoomPage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isEdit ? 'Cập nhật phòng thành công!' : 'Thêm phòng thành công!'),
-            backgroundColor: Colors.green,
-          ),
+        AppDialog.show(
+          context, 
+          title: "Thành công", 
+          message: isEdit ? 'Cập nhật phòng thành công!' : 'Thêm phòng thành công!', 
+          type: AppDialogType.success,
+          onConfirm: () => Navigator.pop(context),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi thêm phòng: $e'), backgroundColor: Colors.red),
-        );
+        AppDialog.show(context, title: "Lỗi", message: "Lỗi hệ thống: $e", type: AppDialogType.error);
       }
     } finally {
       if (mounted) {

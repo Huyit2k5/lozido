@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 
 class EditVehiclePage extends StatefulWidget {
   final String houseId;
@@ -162,33 +163,59 @@ class _EditVehiclePageState extends State<EditVehiclePage> {
 
   Future<void> _submitUpdate() async {
     if (_selectedRoomId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn phòng')),
-      );
+      AppDialog.show(context, title: "Thông báo", message: "Vui lòng chọn phòng", type: AppDialogType.warning);
       return;
     }
     if (_selectedTenantName == null || _selectedTenantName!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn khách thuê')),
-      );
+      AppDialog.show(context, title: "Thông báo", message: "Vui lòng chọn khách thuê", type: AppDialogType.warning);
       return;
     }
     if (_vehicleNameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập tên xe')),
-      );
+      AppDialog.show(context, title: "Thông báo", message: "Vui lòng nhập tên xe", type: AppDialogType.warning);
       return;
     }
-    if (_licensePlateCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập biển số xe')),
-      );
+    final licensePlate = _licensePlateCtrl.text.trim().toUpperCase();
+    if (licensePlate.isEmpty) {
+      AppDialog.show(context, title: "Thông báo", message: "Vui lòng nhập biển số xe", type: AppDialogType.warning);
+      return;
+    }
+
+    // Check license plate format: must contain a hyphen (e.g., 68X1-12345)
+    final plateRegex = RegExp(r'^[A-Z0-9]+-[A-Z0-9.]+$');
+    if (!plateRegex.hasMatch(licensePlate)) {
+      if (mounted) {
+        AppDialog.show(context, title: "Định dạng sai", message: "Biển số xe sai định dạng! (Ví dụ: 79X1-12345)", type: AppDialogType.warning);
+      }
       return;
     }
 
     setState(() => _isSubmitting = true);
 
     try {
+      // Check for duplicate license plate (excluding the current vehicle being edited)
+      final duplicateQs = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('vehicles')
+          .where('licensePlate', isEqualTo: licensePlate)
+          .get();
+
+      bool isDuplicate = false;
+      for (var doc in duplicateQs.docs) {
+        if (doc.id != widget.vehicleId) {
+          isDuplicate = true;
+          break;
+        }
+      }
+
+      if (isDuplicate) {
+        if (mounted) {
+          AppDialog.show(context, title: "Trùng biển số", message: "Biển số xe này đã tồn tại trong hệ thống!", type: AppDialogType.error);
+        }
+        setState(() => _isSubmitting = false);
+        return;
+      }
+
       await FirebaseFirestore.instance
           .collection('houses')
           .doc(widget.houseId)
@@ -196,23 +223,20 @@ class _EditVehiclePageState extends State<EditVehiclePage> {
           .doc(widget.vehicleId)
           .update({
         'vehicleName': _vehicleNameCtrl.text.trim(),
-        'licensePlate': _licensePlateCtrl.text.trim(),
+        'licensePlate': licensePlate,
         'roomId': _selectedRoomId,
         'roomName': _selectedRoomName ?? '',
         'tenantName': _selectedTenantName ?? '',
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật phương tiện thành công!')),
-        );
-        Navigator.pop(context);
+        AppDialog.show(context, title: "Thành công", message: "Cập nhật phương tiện thành công!", type: AppDialogType.success, onConfirm: () {
+           Navigator.pop(context);
+        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
-        );
+        AppDialog.show(context, title: "Lỗi", message: "Không thể cập nhật: $e", type: AppDialogType.error);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -373,7 +397,7 @@ class _EditVehiclePageState extends State<EditVehiclePage> {
               child: _buildTextField(
                 label: 'Biển số xe',
                 controller: _licensePlateCtrl,
-                hint: 'Ví dụ: 93B - 12345',
+                hint: 'Ví dụ: 68X1-12345',
                 isRequired: true,
               ),
             ),
