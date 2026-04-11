@@ -1754,6 +1754,15 @@ class _AddHousePageState extends State<AddHousePage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : () {
                           if (_currentStep == 0) {
+                            if (_propertyNameController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Vui lòng nhập tên nhà cho thuê'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
                             setState(() => _currentStep = 1);
                           } else {
                             _saveHouseData();
