@@ -457,7 +457,12 @@ class _AddRoomPageState extends State<AddRoomPage> {
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
                                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
                                 ),
-                                validator: (value) => (value == null || value.isEmpty) ? 'Bắt buộc' : null,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) return 'Bắt buộc';
+                                  final price = double.tryParse(value.replaceAll('.', '').trim()) ?? 0;
+                                  if (price > 1000000000) return 'Giá thuê tối đa là 1.000.000.000';
+                                  return null;
+                                },
                               ),
                             ),
                           ],
