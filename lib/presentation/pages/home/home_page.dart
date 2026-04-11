@@ -11,6 +11,7 @@ import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 
 import '../room/contract_list_page.dart';
+import '../room/all_tenants_page.dart';
 import '../room/assets_list_page.dart';
 import '../room/vehicle_list_page.dart';
 
@@ -648,12 +649,12 @@ class _HomePageState extends State<HomePage> {
               _buildGridItem(
                 icon: Icons.inventory_2_outlined,
                 color: Colors.green,
-                title: "Quản lý\ntài sản",
+                title: "Quản lý\nkhách thuê",
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AssetListPage(
+                      builder: (context) => AllTenantsPage(
                         houseId: houseId,
                         houseData: houseData,
                       ),
