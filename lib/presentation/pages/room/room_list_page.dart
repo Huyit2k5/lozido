@@ -196,6 +196,52 @@ class _RoomListPageState extends State<RoomListPage> {
     }
   }
 
+  Future<void> _navigateToContract(String roomId, Map<String, dynamic> roomData) async {
+    try {
+      final activeContracts = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('contracts')
+          .where('roomId', isEqualTo: roomId)
+          .where('status', isEqualTo: 'Active')
+          .get();
+
+      if (activeContracts.docs.isNotEmpty) {
+        final doc = activeContracts.docs.first;
+        if (mounted) {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => ChangeNotifierProvider(
+                create: (_) => ContractProvider(),
+                child: CreateContractPage(
+                  houseId: widget.houseId, 
+                  roomId: roomId, 
+                  houseData: widget.houseData, 
+                  roomData: roomData,
+                  contractId: doc.id,
+                  initialContractData: doc.data(),
+                ),
+              ),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeInOut));
+                return SlideTransition(position: animation.drive(tween), child: child);
+              },
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy hợp đồng đang hoạt động cho phòng này')));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi khi tải hợp đồng: $e')));
+      }
+    }
+  }
+
   void _showRoomActionModal(String roomId, Map<String, dynamic> roomData) {
     bool isRented = roomData['status'] == 'Đã thuê' || roomData['status'] == 'Đã có người';
     String displayStatus = isRented ? 'Đang ở' : (roomData['status'] ?? 'Đang trống');
@@ -289,34 +335,40 @@ class _RoomListPageState extends State<RoomListPage> {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => TenantListPage(houseId: widget.houseId, roomId: roomId, roomData: roomData)));
                     },
                   ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.sync_alt,
-                    title: 'Chuyển phòng',
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.remove_red_eye_outlined,
-                    title: 'Xem thông tin hợp đồng',
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.edit_document,
-                    title: 'Chỉnh sửa hợp đồng',
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.exit_to_app,
-                    title: 'Kết thúc hợp đồng',
-                    isDestructive: true,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _endContract(roomId);
-                    },
-                  ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.sync_alt,
+                  title: 'Chuyển phòng',
+                  onTap: () { Navigator.pop(context); },
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.remove_red_eye_outlined,
+                  title: 'Xem thông tin hợp đồng',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToContract(roomId, roomData);
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.edit_document,
+                  title: 'Chỉnh sửa hợp đồng',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToContract(roomId, roomData);
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.exit_to_app,
+                  title: 'Kết thúc hợp đồng',
+                  isDestructive: true,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _endContract(roomId);
+                  },
+                ),
                 ] else ...[
                   _buildModalListTile(
                     icon: Icons.assignment_outlined,
