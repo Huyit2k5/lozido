@@ -11,6 +11,7 @@ import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 
 import '../room/contract_list_page.dart';
+import '../room/all_tenants_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -647,6 +648,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.support_agent_rounded,
                 color: Colors.green,
                 title: "Quản lý\nkhách thuê",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllTenantsPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.local_mall_outlined,
