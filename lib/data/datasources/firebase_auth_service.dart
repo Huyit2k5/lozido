@@ -53,6 +53,7 @@ class FirebaseAuthService {
         await _firestore.collection('users').doc(user.uid).set({
           'name': name,
           'phoneNumber': phoneNumber,
+          'role': 'Landlord', // Phân quyền chủ trọ
           'createdAt': FieldValue.serverTimestamp(),
         });
       }

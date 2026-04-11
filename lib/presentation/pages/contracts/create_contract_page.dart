@@ -272,7 +272,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             .collection('houses').doc(widget.houseId)
             .collection('rooms').doc(widget.roomId)
             .update({
-        'status': 'Đã có người',
+        'status': 'Đã thuê',
         'tenantName': _nameCtrl.text.trim(),
         'tenantPhone': _phoneCtrl.text.trim(),
         'contractStartDate': _startDateCtrl.text,
