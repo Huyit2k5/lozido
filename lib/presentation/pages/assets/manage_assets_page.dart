@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../contracts/contract_provider.dart';
 
 class ManageAssetsPage extends StatefulWidget {
@@ -432,9 +433,9 @@ class _AddAssetFormState extends State<_AddAssetForm> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _buildTextField("Giá trị", _valueCtrl, isNumber: true, hint: "VNĐ")),
+                Expanded(child: _buildTextField("Giá trị", _valueCtrl, isNumber: true, hint: "VNĐ", formatters: [CurrencyInputFormatter()])),
                 const SizedBox(width: 16),
-                Expanded(child: _buildTextField("Giá nhập", _importPriceCtrl, isNumber: true, hint: "VNĐ")),
+                Expanded(child: _buildTextField("Giá nhập", _importPriceCtrl, isNumber: true, hint: "VNĐ", formatters: [CurrencyInputFormatter()])),
               ],
             ),
             const SizedBox(height: 16),
@@ -483,7 +484,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint}) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint, List<TextInputFormatter>? formatters}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -492,6 +493,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
         TextField(
           controller: controller,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          inputFormatters: formatters,
           style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,

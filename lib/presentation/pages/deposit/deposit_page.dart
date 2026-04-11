@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 
 class DepositPage extends StatefulWidget {
   final String houseId;
@@ -39,7 +41,8 @@ class _DepositPageState extends State<DepositPage> {
     if (widget.isViewMode) {
       _loadActiveDeposit();
     } else {
-      _depositAmountController.text = ((widget.roomData['price'] as num?) ?? 0).toStringAsFixed(0);
+      final double price = (widget.roomData['price'] as num?)?.toDouble() ?? 0;
+      _depositAmountController.text = NumberFormat.decimalPattern('vi_VN').format(price);
       _isLoading = false;
     }
   }
@@ -70,7 +73,6 @@ class _DepositPageState extends State<DepositPage> {
         setState(() {
           _tenantNameController.text = data['tenantName'] ?? '';
           _phoneController.text = data['phoneNumber'] ?? '';
-          _depositAmountController.text = ((data['depositAmount'] as num?) ?? 0).toStringAsFixed(0);
           _paymentMethod = data['paymentMethod'] ?? 'Tiền mặt';
           if (data['depositDate'] != null) {
             _depositDate = (data['depositDate'] as Timestamp).toDate();
@@ -78,6 +80,9 @@ class _DepositPageState extends State<DepositPage> {
           if (data['expectedMoveInDate'] != null) {
             _moveInDate = (data['expectedMoveInDate'] as Timestamp).toDate();
           }
+
+          final double amount = (data['depositAmount'] as num?)?.toDouble() ?? 0;
+          _depositAmountController.text = NumberFormat.decimalPattern('vi_VN').format(amount);
         });
       }
     } catch (e) {
@@ -358,6 +363,10 @@ class _DepositPageState extends State<DepositPage> {
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                         ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          CurrencyInputFormatter(),
+                        ],
                         validator: (v) => v == null || v.isEmpty ? 'Vui lòng nhập' : null,
                       ),
                       const SizedBox(height: 12),

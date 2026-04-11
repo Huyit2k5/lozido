@@ -180,17 +180,20 @@ class _RoomListPageState extends State<RoomListPage> {
             );
           }
 
-          // Filtering logic
+          // Filtering logic based on 'floor' field
           List<QueryDocumentSnapshot> displayDocs = [];
           if (_selectedFloorIndex == 0) {
             displayDocs = allDocs;
           } else {
-            final floorIdx = _selectedFloorIndex - 1;
-            final rPerFloor = _roomsPerFloor;
-            final startIdx = floorIdx * rPerFloor;
-            final endIdx = (startIdx + rPerFloor < allDocs.length) ? startIdx + rPerFloor : allDocs.length;
+            final targetFloor = _selectedFloorIndex - 1;
+            displayDocs = allDocs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              // Default to 0 if 'floor' is missing
+              final roomFloor = data['floor'] ?? 0;
+              return roomFloor == targetFloor;
+            }).toList();
 
-            if (startIdx >= allDocs.length) {
+            if (displayDocs.isEmpty) {
               return const Center(
                 child: Text(
                   "Không có phòng ở tầng này",
@@ -198,7 +201,6 @@ class _RoomListPageState extends State<RoomListPage> {
                 ),
               );
             }
-            displayDocs = allDocs.sublist(startIdx, endIdx);
           }
 
           return ListView.builder(
