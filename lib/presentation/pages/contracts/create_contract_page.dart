@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../services/chat_service.dart';
 import 'contract_provider.dart';
-import 'manage_assets_page.dart';
+import '../assets/manage_assets_page.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -272,7 +272,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             .collection('houses').doc(widget.houseId)
             .collection('rooms').doc(widget.roomId)
             .update({
-        'status': 'Đã có người',
+        'status': 'Đã thuê',
         'tenantName': _nameCtrl.text.trim(),
         'tenantPhone': _phoneCtrl.text.trim(),
         'contractStartDate': _startDateCtrl.text,

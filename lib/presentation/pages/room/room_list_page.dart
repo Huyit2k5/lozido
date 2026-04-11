@@ -3,11 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_room_page.dart';
 import 'room_detail_page.dart';
 import 'package:provider/provider.dart';
-import 'contract_provider.dart';
-import 'create_contract_page.dart';
-import 'service_selection_page.dart';
+import '../contracts/contract_provider.dart';
+import '../contracts/create_contract_page.dart';
+import '../contracts/service_selection_page.dart';
 import '../deposit/deposit_page.dart';
-import 'tenant_list_page.dart';
+import '../tenants/tenant_list_page.dart';
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
@@ -197,7 +197,7 @@ class _RoomListPageState extends State<RoomListPage> {
   }
 
   void _showRoomActionModal(String roomId, Map<String, dynamic> roomData) {
-    bool isRented = roomData['status'] == 'Đã thuê';
+    bool isRented = roomData['status'] == 'Đã thuê' || roomData['status'] == 'Đã có người';
     String displayStatus = isRented ? 'Đang ở' : (roomData['status'] ?? 'Đang trống');
     
     showModalBottomSheet(
@@ -378,7 +378,7 @@ class _RoomListPageState extends State<RoomListPage> {
 
   Widget _buildRoomCard(String roomId, Map<String, dynamic> roomData) {
     final status = roomData['status'] ?? 'Đang trống';
-    if (status == 'Đã thuê') {
+    if (status == 'Đã thuê' || status == 'Đã có người') {
       return _buildRentedRoomCard(roomId, roomData);
     }
     

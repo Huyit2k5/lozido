@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'contract_provider.dart';
+import '../contracts/contract_provider.dart';
 
 class ManageAssetsPage extends StatefulWidget {
   final String houseId;
