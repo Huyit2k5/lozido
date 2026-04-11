@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:dvhcvn/dvhcvn.dart' as dvhcvn;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
+import '../room/room_list_page.dart';
+
 
 class AddHousePage extends StatefulWidget {
   const AddHousePage({super.key});
@@ -188,7 +193,7 @@ class _AddHousePageState extends State<AddHousePage> {
         'floorCount': _selectedFloorCount,
         'roomCount': int.tryParse(_roomCountController.text) ?? 5,
         'area': double.tryParse(_areaController.text) ?? 15.0,
-        'price': double.tryParse(_priceController.text) ?? 0.0,
+        'price': double.tryParse(_priceController.text.replaceAll('.', '')) ?? 0.0,
         'maxOccupants': _selectedMaxOccupants,
         'invoiceDate': int.tryParse(_invoiceDateController.text) ?? 1,
         'dueDate': int.tryParse(_dueDateController.text) ?? 5,
@@ -223,7 +228,7 @@ class _AddHousePageState extends State<AddHousePage> {
       if (_isAutoGenerate) {
         int rCount = int.tryParse(_roomCountController.text) ?? 5;
         double rArea = double.tryParse(_areaController.text) ?? 15.0;
-        double rPrice = double.tryParse(_priceController.text) ?? 0.0;
+        double rPrice = double.tryParse(_priceController.text.replaceAll('.', '')) ?? 0.0;
         // Parsing max occupants string
         int rMaxOccupants = 0;
         if (_selectedMaxOccupants.contains(RegExp(r'\d'))) {
@@ -242,7 +247,7 @@ class _AddHousePageState extends State<AddHousePage> {
             'status': 'Đang trống',
             'price': rPrice,
             'area': rArea,
-            'floor': 1,
+            'floor': 0,
             'maxOccupants': rMaxOccupants > 0 ? rMaxOccupants : null,
             'createdAt': FieldValue.serverTimestamp(),
           });
@@ -785,6 +790,10 @@ class _AddHousePageState extends State<AddHousePage> {
                       hintText: "Nhập giá",
                       controller: _priceController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        CurrencyInputFormatter(),
+                      ],
                       suffixTextWidget: _buildSuffixTag("đ/tháng"),
                     ),
                   ],
@@ -1754,6 +1763,15 @@ class _AddHousePageState extends State<AddHousePage> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : () {
                           if (_currentStep == 0) {
+                            if (_propertyNameController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Vui lòng nhập tên nhà cho thuê'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
                             setState(() => _currentStep = 1);
                           } else {
                             _saveHouseData();
@@ -1940,13 +1958,17 @@ class _AddHousePageState extends State<AddHousePage> {
     String? hintText,
     String? initialValue,
     TextEditingController? controller,
-    TextInputType keyboardType = TextInputType.text,
+    TextInputType? keyboardType,
+    bool? readOnly,
     Widget? suffixTextWidget,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       initialValue: controller != null ? null : initialValue,
       controller: controller,
       keyboardType: keyboardType,
+      readOnly: readOnly ?? false,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.black38),

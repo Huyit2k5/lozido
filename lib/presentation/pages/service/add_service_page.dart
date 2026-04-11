@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 
 class AddServicePage extends StatefulWidget {
   final String houseId;
@@ -227,7 +229,7 @@ class _AddServicePageState extends State<AddServicePage> {
 
     try {
       final serviceName = _nameController.text.trim();
-      final price = double.tryParse(_priceController.text.trim()) ?? 0;
+      final price = double.tryParse(_priceController.text.replaceAll('.', '').trim()) ?? 0;
       final unit = _selectedUnit;
 
       await FirebaseFirestore.instance
@@ -597,7 +599,10 @@ class _AddServicePageState extends State<AddServicePage> {
                         TextField(
                           controller: _priceController,
                           keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            CurrencyInputFormatter(),
+                          ],
                           decoration: InputDecoration(
                             hintText: 'Nhập giá dịch vụ',
                             hintStyle: const TextStyle(color: Colors.black38),
