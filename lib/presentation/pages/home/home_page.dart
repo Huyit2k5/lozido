@@ -12,6 +12,7 @@ import '../service/service_management_page.dart';
 
 import '../room/contract_list_page.dart';
 import '../room/assets_list_page.dart';
+import '../invoice/select_room_invoice_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -559,6 +560,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.receipt_long_outlined,
                 color: Colors.green,
                 title: "Lập hóa đơn",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SelectRoomInvoicePage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.calculate_outlined,
