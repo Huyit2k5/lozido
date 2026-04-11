@@ -197,7 +197,7 @@ class _RoomListPageState extends State<RoomListPage> {
   }
 
   void _showRoomActionModal(String roomId, Map<String, dynamic> roomData) {
-    bool isRented = roomData['status'] == 'Đã thuê';
+    bool isRented = roomData['status'] == 'Đã thuê' || roomData['status'] == 'Đã có người';
     String displayStatus = isRented ? 'Đang ở' : (roomData['status'] ?? 'Đang trống');
     
     showModalBottomSheet(
@@ -378,7 +378,7 @@ class _RoomListPageState extends State<RoomListPage> {
 
   Widget _buildRoomCard(String roomId, Map<String, dynamic> roomData) {
     final status = roomData['status'] ?? 'Đang trống';
-    if (status == 'Đã thuê') {
+    if (status == 'Đã thuê' || status == 'Đã có người') {
       return _buildRentedRoomCard(roomId, roomData);
     }
     
