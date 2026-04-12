@@ -10,6 +10,8 @@ import 'empty_rooms_page.dart';
 import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 
+
+import '../invoice/select_room_invoice_page.dart';
 import '../contracts/contract_list_page.dart';
 import '../tenants/all_tenants_page.dart';
 import '../assets/assets_list_page.dart';
@@ -561,6 +563,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.receipt_long_outlined,
                 color: Colors.green,
                 title: "Lập hóa đơn",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SelectRoomInvoicePage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.calculate_outlined,
