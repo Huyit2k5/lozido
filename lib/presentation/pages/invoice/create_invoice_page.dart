@@ -269,6 +269,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       final invoiceData = {
         'roomId': widget.roomId,
         'roomName': widget.roomData['roomName'],
+        'tenantName': widget.roomData['tenantName'] ?? "Khách hàng",
+        'zaloUid': widget.roomData['tenantPhone'], // Dùng số điện thoại làm UID như yêu cầu
         'billingMonth': DateFormat('MM/yyyy').format(widget.billingMonthDate),
         'reason': _selectedReason,
         'dueDate': _dueDate,

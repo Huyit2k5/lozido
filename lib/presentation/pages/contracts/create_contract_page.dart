@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -276,9 +278,56 @@ class _CreateContractPageState extends State<CreateContractPage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.contractId == null ? "Lập hợp đồng thành công!" : "Cập nhật thành công!")));
-        Navigator.pop(context); // Trở về màn hình trước
+        if (_useApp) {
+          // Nếu chọn sử dụng app/zalo, hỏi để chuyển sang Zalo kết nối luôn
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('Kết nối Zalo'),
+              content: Text('Hợp đồng đã lập thành công. Bạn có muốn kết nối Zalo cho khách ${_nameCtrl.text} ngay bây giờ không?'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Đóng dialog
+                    Navigator.pop(context); // Trở về màn hình trước
+                  },
+                  child: const Text('Bỏ qua', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final phone = _phoneCtrl.text.trim();
+                    final connectText = "Ketnoi $phone";
+                    
+                    // Copy vào clipboard để khách dễ dán
+                    await Clipboard.setData(ClipboardData(text: connectText));
+                    
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Đã copy: "$connectText". Hãy dán vào Zalo!'))
+                      );
+                    }
+
+                    final url = Uri.parse("https://zalo.me/389808064785934940?text=Ketnoi%20$phone");
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    }
+                    if (mounted) {
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Kết nối ngay', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651))),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.contractId == null ? "Lập hợp đồng thành công!" : "Cập nhật thành công!")));
+          Navigator.pop(context); // Trở về màn hình trước
+        }
       }
+
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
