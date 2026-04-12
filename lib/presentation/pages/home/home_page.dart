@@ -10,8 +10,7 @@ import 'empty_rooms_page.dart';
 import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 
-import '../room/contract_list_page.dart';
-import '../room/assets_list_page.dart';
+
 import '../invoice/select_room_invoice_page.dart';
 import '../contracts/contract_list_page.dart';
 import '../tenants/all_tenants_page.dart';
