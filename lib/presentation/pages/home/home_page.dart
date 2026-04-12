@@ -9,6 +9,8 @@ import '../deposit/deposit_room_list_page.dart';
 import 'empty_rooms_page.dart';
 import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
+import 'tenant_app_settings_page.dart';
+
 
 
 import '../invoice/select_room_invoice_page.dart';
@@ -711,6 +713,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.handshake_outlined,
                 color: Colors.green,
                 title: "Cài đặt APP\nkhách thuê",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TenantAppSettingsPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.settings_applications_outlined,
