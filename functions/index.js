@@ -45,6 +45,80 @@ exports.sendZaloInvoiceBot = functions.firestore
         const tenantName = invoiceData.tenantName || "Khách hàng";
         const totalAmount = invoiceData.grandTotal || 0;
         const month = invoiceData.billingMonth || "này";
+        const services = invoiceData.services || [];
+        const adjustments = invoiceData.adjustments || [];
+        const dueDate = invoiceData.dueDate;
+
+        // Lấy tên nhà trọ
+        let houseName = "nhà trọ";
+        try {
+            const houseSnap = await admin.firestore().doc(`houses/${houseId}`).get();
+            if (houseSnap.exists) {
+                houseName = houseSnap.data().propertyName;
+            }
+        } catch (e) {
+            console.log("Không thể lấy tên nhà:");
+        }
+
+        const formatCurrency = (val) => Number(val || 0).toLocaleString('vi-VN');
+
+        // Phân loại và định dạng các chi tiết
+        let electricDetail = "---";
+        let waterDetail = "---";
+        let otherServicesText = "";
+        let otherServicesTotal = 0;
+        let adjustmentsText = "";
+        let adjustmentsTotal = 0;
+
+        services.forEach(item => {
+            const name = item.name || "Dịch vụ";
+            const price = item.price || 0;
+            const total = item.total || 0;
+
+            if (name.toLowerCase().includes("điện")) {
+                const consumption = (item.newIndex || 0) - (item.oldIndex || 0);
+                electricDetail = `Số cũ: ${item.oldIndex || 0} - Số mới: ${item.newIndex || 0}\n      ${consumption} ${item.unit || "kWh"} x ${formatCurrency(price)} = ${formatCurrency(total)} đ`;
+            } else if (name.toLowerCase().includes("nước")) {
+                const consumption = (item.newIndex || 0) - (item.oldIndex || 0);
+                waterDetail = `Số cũ: ${item.oldIndex || 0} - Số mới: ${item.newIndex || 0}\n      ${consumption} ${item.unit || "Khối"} x ${formatCurrency(price)} = ${formatCurrency(total)} đ`;
+            } else {
+                otherServicesTotal += total;
+                if (total > 0) {
+                    otherServicesText += `   • ${name}: ${formatCurrency(total)} đ\n`;
+                }
+            }
+        });
+
+        adjustments.forEach(adj => {
+            const reason = adj.reason || "Cộng/Giảm khác";
+            const amount = adj.amount || 0;
+            adjustmentsTotal += amount;
+            adjustmentsText += `   • ${reason}: ${formatCurrency(amount)} đ\n`;
+        });
+
+        // Định dạng ngày hạn thanh toán
+        let dueDateStr = "N/A";
+        if (dueDate) {
+            const d = dueDate.toDate ? dueDate.toDate() : new Date(dueDate);
+            dueDateStr = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        }
+
+        // XÂY DỰNG NỘI DUNG TIN NHẮN THEO MẪU
+        const messageText =
+            `🏠 THÔNG BÁO HÓA ĐƠN\n` +
+            `Xin chào ${tenantName}\n\n` +
+            `Hóa đơn tiền thuê nhà tháng ${month}\n` +
+            `📍 ${roomName} - ${houseName}\n\n` +
+            `-----------------------------------\n` +
+            `💵 Tiền phòng: ${formatCurrency(invoiceData.rentAmount)} đ\n` +
+            `⚡ Tiền điện: ${electricDetail}\n` +
+            `💧 Tiền nước: ${waterDetail}\n` +
+            `🛠 Dịch vụ khác:\n${otherServicesText || "   • Không có\n"}` +
+            `➕ Cộng/Giảm:\n${adjustmentsText || "   • Không có\n"}` +
+            `-----------------------------------\n` +
+            `💰 TỔNG TIỀN: ${formatCurrency(totalAmount)} đ\n\n` +
+            `📅 Hạn thanh toán: ${dueDateStr}\n` +
+            `Vui lòng kiểm tra chi tiết trên ứng dụng và thanh toán đúng hạn. Trân trọng!`;
 
         try {
             const configDoc = await admin.firestore().doc('config/zalo_api').get();
@@ -54,13 +128,8 @@ exports.sendZaloInvoiceBot = functions.firestore
             }
             const botToken = configDoc.data().bot_token;
 
-            const messageText = `CHÀO ${tenantName.toUpperCase()}!\n` +
-                `Hóa đơn tiền nhà [${roomName}] tháng ${month} của bạn đã có.\n` +
-                `Tổng tiền: ${totalAmount.toLocaleString('vi-VN')} đ\n` +
-                `Vui lòng kiểm tra chi tiết trên ứng dụng và thanh toán đúng hạn. Trân trọng!`;
-
             const sendUrl = `https://bot-api.zaloplatforms.com/bot${botToken}/sendMessage`;
-            console.log('Đang gửi thông báo tới:', zaloUid);
+            console.log('Đ đang gửi thông báo tới:', zaloUid);
 
             const response = await axios.post(sendUrl, {
                 chat_id: zaloUid,

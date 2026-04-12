@@ -113,8 +113,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         final unit = svc['unit'] ?? '';
         final oldIdx = (svc['currentIndex'] as num?)?.toDouble() ?? 0;
         
-        // determine metered roughly by unit or a specific flag if exists
-        bool isMetered = unit.toLowerCase() == 'kwh' || unit.toLowerCase() == 'khối';
+        // Cải thiện nhận diện dịch vụ có chỉ số (điện/nước)
+        final unitLower = unit.toLowerCase();
+        bool isMetered = unitLower.contains('kwh') || 
+                         unitLower.contains('khối') || 
+                         unitLower.contains('m3') || 
+                         unitLower.contains('m³') || 
+                         unitLower.contains('số') || 
+                         unitLower.contains('điện') || 
+                         unitLower.contains('nước');
 
         _serviceItems.add(InvoiceServiceItem(
           name: name,
@@ -123,6 +130,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           isMetered: isMetered,
           oldIndex: oldIdx,
           newIndex: isMetered ? oldIdx : 0, 
+          isUsed: true, // Tự động chọn sử dụng cho tất cả dịch vụ của phòng
         ));
       }
     }
