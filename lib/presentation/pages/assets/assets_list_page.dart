@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
+import 'package:provider/provider.dart';
+import './manage_assets_page.dart';
 
 class AssetListPage extends StatefulWidget {
   final String houseId;
@@ -89,6 +92,8 @@ class _AssetListPageState extends State<AssetListPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _AddAssetForm(
+        houseId: widget.houseId,
+        isRoomView: _selectedRoomId != null,
         onSave: (assetData) async {
           try {
             await FirebaseFirestore.instance
@@ -100,8 +105,9 @@ class _AssetListPageState extends State<AssetListPage> {
               'createdAt': FieldValue.serverTimestamp(),
             });
             _fetchData(); // Reload
+            AppDialog.show(context, title: "Thành công", message: "Đã thêm tài sản mới vào kho", type: AppDialogType.success);
           } catch (e) {
-            debugPrint("Error adding asset: $e");
+            AppDialog.show(context, title: "Lỗi", message: "Không thể thêm tài sản: $e", type: AppDialogType.error);
           }
         },
       ),
@@ -144,6 +150,8 @@ class _AssetListPageState extends State<AssetListPage> {
       builder: (context) => _AddAssetForm(
         initialData: item,
         maxAllowed: maxAllowed,
+        houseId: widget.houseId,
+        isRoomView: _selectedRoomId != null,
         onSave: (newData) => _updateAsset(item, newData),
       ),
     );
@@ -179,8 +187,9 @@ class _AssetListPageState extends State<AssetListPage> {
         }
       }
       _fetchData();
+      AppDialog.show(context, title: "Thành công", message: "Đã cập nhật thông tin tài sản", type: AppDialogType.success);
     } catch (e) {
-      debugPrint("Error updating asset: $e");
+      AppDialog.show(context, title: "Lỗi", message: "Không thể cập nhật: $e", type: AppDialogType.error);
     }
   }
 
@@ -422,7 +431,19 @@ class _AssetListPageState extends State<AssetListPage> {
                           title: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildStatusBadge(item['status'] ?? 'Hoạt động tốt', item['statusBreakdown']),
+                                ],
+                              ),
                               const SizedBox(height: 4),
                               Text('${_currencyFormat.format(value)} đ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ],
@@ -482,8 +503,76 @@ class _AssetListPageState extends State<AssetListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF00A651),
-        onPressed: _showAddAssetModal,
+        onPressed: () async {
+          if (_selectedRoomId != null) {
+            // Room Selected: Navigate to Smart Selection Page
+            final room = _rooms.firstWhere((r) => r['id'] == _selectedRoomId);
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ManageAssetsPage(
+                  houseId: widget.houseId,
+                  roomId: _selectedRoomId,
+                  roomName: room['roomName'] ?? 'Phòng',
+                ),
+              ),
+            );
+            if (result == true) {
+              _fetchData(); // Refresh list if something changed
+            }
+          } else {
+            // No Room Selected: Show Global Warehouse Modal
+            _showAddAssetModal();
+          }
+        },
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status, Map<dynamic, dynamic>? breakdown) {
+    String displayStatus = status;
+    if (breakdown != null && breakdown.isNotEmpty) {
+      // Find status with largest count
+      String dominant = status;
+      int max = -1;
+      breakdown.forEach((s, q) {
+        if ((q as num).toInt() > max) {
+          max = q.toInt();
+          dominant = s.toString();
+        }
+      });
+      displayStatus = dominant;
+    }
+
+    Color color;
+    switch (displayStatus) {
+      case 'Hoạt động tốt':
+        color = const Color(0xFF00A651);
+        break;
+      case 'Hư hỏng nhẹ':
+        color = Colors.orange;
+        break;
+      case 'Không hoạt động':
+        color = Colors.grey;
+        break;
+      case 'Đang sửa chữa':
+        color = Colors.blue;
+        break;
+      default:
+        color = Colors.black54;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Text(
+        displayStatus,
+        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -496,12 +585,16 @@ class _AssetListPageState extends State<AssetListPage> {
 class _AddAssetForm extends StatefulWidget {
   final Map<String, dynamic>? initialData;
   final int? maxAllowed;
+  final String? houseId;
+  final bool isRoomView;
   final Function(Map<String, dynamic>) onSave;
 
   const _AddAssetForm({
     required this.onSave,
     this.initialData,
     this.maxAllowed,
+    this.houseId,
+    this.isRoomView = false,
   });
 
   @override
@@ -515,10 +608,16 @@ class _AddAssetFormState extends State<_AddAssetForm> {
   late TextEditingController _quantityCtrl;
   late TextEditingController _supplierCtrl;
   late TextEditingController _unitCtrl;
-  String _selectedStatus = 'Hoạt động tốt';
+  Map<String, int> _breakdown = {
+    'Hoạt động tốt': 0,
+    'Không hoạt động': 0,
+    'Hư hỏng nhẹ': 0,
+    'Đang sửa chữa': 0,
+  };
   String _selectedIcon = 'Tủ lạnh';
 
   final List<String> _icons = ['Tủ lạnh', 'Máy giặt', 'Điều hòa', 'Giường', 'Tủ quần áo', 'Bàn ghế'];
+  final List<String> _statuses = ['Hoạt động tốt', 'Không hoạt động', 'Hư hỏng nhẹ', 'Đang sửa chữa'];
 
   @override
   void initState() {
@@ -531,9 +630,14 @@ class _AddAssetFormState extends State<_AddAssetForm> {
     _supplierCtrl = TextEditingController(text: data?['supplier'] ?? '');
     _unitCtrl = TextEditingController(text: data?['unit'] ?? '');
     
-    if (data?['status'] != null) {
-      _selectedStatus = data!['status'];
+    if (data?['statusBreakdown'] != null) {
+      _breakdown = Map<String, int>.from(data!['statusBreakdown']);
+    } else if (data?['status'] != null) {
+      _breakdown[data!['status']] = int.tryParse(_quantityCtrl.text) ?? 1;
+    } else {
+      _breakdown['Hoạt động tốt'] = int.tryParse(_quantityCtrl.text) ?? 1;
     }
+
     if (data?['iconTag'] != null) {
       _selectedIcon = data!['iconTag'];
     }
@@ -635,26 +739,32 @@ class _AddAssetFormState extends State<_AddAssetForm> {
             const SizedBox(height: 16),
             _buildTextField("Nhà cung cấp", _supplierCtrl),
             const SizedBox(height: 16),
-            const Text("Trạng thái", style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87, fontSize: 13)),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white,
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedStatus,
-                  isExpanded: true,
-                  items: ['Hoạt động tốt', 'Không hoạt động', 'Hư hỏng nhẹ', 'Đang sửa chữa'].map((String value) {
-                    return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(fontSize: 14)));
-                  }).toList(),
-                  onChanged: (v) => setState(() => _selectedStatus = v!),
+            const Text("Phân bổ trạng thái theo số lượng", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14)),
+            const SizedBox(height: 12),
+            ..._statuses.map((status) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(status, style: const TextStyle(fontSize: 14))),
+                    SizedBox(
+                      width: 80,
+                      child: TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8), border: OutlineInputBorder()),
+                        onChanged: (val) {
+                          setState(() {
+                            _breakdown[status] = int.tryParse(val) ?? 0;
+                          });
+                        },
+                        controller: TextEditingController(text: _breakdown[status].toString())..selection = TextSelection.fromPosition(TextPosition(offset: _breakdown[status].toString().length)),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
+              );
+            }).toList(),
+            const SizedBox(height: 16),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -665,14 +775,69 @@ class _AddAssetFormState extends State<_AddAssetForm> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
-                onPressed: () {
+                onPressed: () async {
                   final qty = int.tryParse(_quantityCtrl.text) ?? 1;
-                  if (widget.maxAllowed != null && qty > widget.maxAllowed!) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Số lượng vượt quá kho cho phép (Tối đa trong kho: ${widget.maxAllowed})"),
-                      backgroundColor: Colors.redAccent,
-                    ));
+                  
+                  // 1. Validate Sum
+                  int sum = 0;
+                  _breakdown.forEach((key, value) => sum += value);
+                  if (sum != qty) {
+                    AppDialog.show(context, title: "Sai số lượng", message: "Tổng phân bổ ($sum) phải bằng số lượng tổng ($qty)", type: AppDialogType.warning);
                     return;
+                  }
+
+                  // 2. Validate Warehouse Constraint: Can't reduce below what's assigned to rooms
+                  if (!widget.isRoomView && widget.initialData != null && widget.houseId != null) {
+                    try {
+                      final assetId = widget.initialData!['id'];
+                      final assetName = widget.initialData!['assetName'];
+                      
+                      // Fetch all contracts to count current allocations
+                      final contractsQs = await FirebaseFirestore.instance
+                          .collection('houses')
+                          .doc(widget.houseId)
+                          .collection('contracts')
+                          .where('status', isNotEqualTo: 'Đã kết thúc')
+                          .get();
+                      
+                      int assignedCount = 0;
+                      for (var doc in contractsQs.docs) {
+                        final assets = doc.data()['assets'] as List?;
+                        if (assets != null) {
+                          for (var a in assets) {
+                            if (a['assetId'] == assetId || a['assetName'] == assetName) {
+                              assignedCount += (a['quantity'] ?? 0) as int;
+                            }
+                          }
+                        }
+                      }
+
+                      if (qty < assignedCount) {
+                        AppDialog.show(
+                          context, 
+                          title: "Mâu thuẫn số lượng", 
+                          message: "Không thể giảm số lượng xuống $qty vì hiện tại có $assignedCount cái đang được cấp cho các phòng. Vui lòng thu hồi ở các phòng trước.", 
+                          type: AppDialogType.error
+                        );
+                        return;
+                      }
+                    } catch (e) {
+                      debugPrint("Error checking constraints: $e");
+                    }
+                  }
+
+                  // 3. Status Constraint for New Room Additions
+                  if (widget.isRoomView && widget.initialData == null) {
+                    // Manual add to room: Ensure it's Good
+                    if (_breakdown['Hoạt động tốt']! < qty) {
+                      AppDialog.show(
+                        context, 
+                        title: "Trạng thái không hợp lệ", 
+                        message: "Chỉ được phép đưa tài sản có trạng thái 'Hoạt động tốt' vào phòng", 
+                        type: AppDialogType.warning
+                      );
+                      return;
+                    }
                   }
 
                   final doc = {
@@ -683,7 +848,8 @@ class _AddAssetFormState extends State<_AddAssetForm> {
                     'quantity': qty,
                     'supplier': _supplierCtrl.text,
                     'unit': _unitCtrl.text.isNotEmpty ? _unitCtrl.text : 'Cái',
-                    'status': _selectedStatus,
+                    'statusBreakdown': _breakdown,
+                    'status': _getDominantStatus(_breakdown),
                   };
                   widget.onSave(doc);
                   Navigator.pop(context);
@@ -696,6 +862,18 @@ class _AddAssetFormState extends State<_AddAssetForm> {
         ),
       ),
     );
+  }
+
+  String _getDominantStatus(Map<String, int> breakdown) {
+    String dominant = 'Hoạt động tốt';
+    int max = -1;
+    breakdown.forEach((s, q) {
+      if (q > max) {
+        max = q;
+        dominant = s;
+      }
+    });
+    return dominant;
   }
 
   Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, String? hint, List<TextInputFormatter>? formatters}) {

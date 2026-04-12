@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
+import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import '../contracts/service_selection_page.dart';
 
 class AddRoomPage extends StatefulWidget {
@@ -75,50 +78,97 @@ class _AddRoomPageState extends State<AddRoomPage> {
   }
 
   int get _floorCount {
-    return int.tryParse(widget.houseData['floorCount']?.toString() ?? '1') ?? 1;
+    final floorCountStr = widget.houseData['floorCount']?.toString() ?? "";
+    final match = RegExp(r'\d+').firstMatch(floorCountStr);
+    if (match != null) {
+      return int.tryParse(match.group(0)!) ?? 1;
+    }
+    return 1;
+  }
+
+  String _getFloorLabel(int index) {
+    if (index == 0) return 'Tầng trệt';
+    return 'Tầng $index';
   }
 
   void _showFloorPicker() {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: Text(
-                  'Chọn Nhóm (Tầng/dãy/khu)',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.list_alt_rounded, color: Colors.black87),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Nhóm (Tầng/dãy/khu)',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _floorCount,
-                  itemBuilder: (context, index) {
-                    final floorNumber = index + 1;
-                    return ListTile(
-                      title: Text('Tầng $floorNumber'),
-                      trailing: _selectedFloor == floorNumber
-                          ? const Icon(Icons.check, color: Color(0xFF00A651))
-                          : null,
-                      onTap: () {
-                        setState(() {
-                          _selectedFloor = floorNumber;
-                        });
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
+                const SizedBox(height: 16),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _floorCount,
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final label = _getFloorLabel(index);
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                        title: Text(
+                          label,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: _selectedFloor == index ? const Color(0xFF00A651) : Colors.black87,
+                          ),
+                        ),
+                        trailing: _selectedFloor == index
+                            ? const Icon(Icons.check_circle, color: Color(0xFF00A651))
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            _selectedFloor = index;
+                          });
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey.shade200,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Đóng', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -169,9 +219,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
     }
     
     if (_selectedFloor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn Nhóm (Tầng/dãy)')),
-      );
+      AppDialog.show(context, title: "Thông báo", message: "Vui lòng chọn Nhóm (Tầng/dãy)", type: AppDialogType.warning);
       return;
     }
 
@@ -184,7 +232,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
         'roomName': _roomNameController.text.trim(),
         'floor': _selectedFloor,
         'area': double.tryParse(_areaController.text.trim()) ?? 0.0,
-        'price': double.tryParse(_priceController.text.trim()) ?? 0.0,
+        'price': double.tryParse(_priceController.text.replaceAll('.', '').trim()) ?? 0.0,
         'billingCycleDay': int.tryParse(_billingCycleController.text.trim()) ?? 1,
         'priority': _selectedPriority,
         'status': 'Đang trống',
@@ -223,19 +271,17 @@ class _AddRoomPageState extends State<AddRoomPage> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isEdit ? 'Cập nhật phòng thành công!' : 'Thêm phòng thành công!'),
-            backgroundColor: Colors.green,
-          ),
+        AppDialog.show(
+          context, 
+          title: "Thành công", 
+          message: isEdit ? 'Cập nhật phòng thành công!' : 'Thêm phòng thành công!', 
+          type: AppDialogType.success,
+          onConfirm: () => Navigator.pop(context),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi thêm phòng: $e'), backgroundColor: Colors.red),
-        );
+        AppDialog.show(context, title: "Lỗi", message: "Lỗi hệ thống: $e", type: AppDialogType.error);
       }
     } finally {
       if (mounted) {
@@ -313,10 +359,10 @@ class _AddRoomPageState extends State<AddRoomPage> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  _selectedFloor != null ? 'Tầng $_selectedFloor' : 'Chọn giá trị',
+                                  _selectedFloor != null ? _getFloorLabel(_selectedFloor!) : 'Chọn giá trị',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: _selectedFloor != null ? Colors.black87 : Colors.black87,
+                                    color: Colors.black87,
                                     fontWeight: _selectedFloor != null ? FontWeight.bold : FontWeight.normal,
                                   ),
                                 ),
@@ -386,7 +432,10 @@ class _AddRoomPageState extends State<AddRoomPage> {
                               child: TextFormField(
                                 controller: _priceController,
                                 keyboardType: TextInputType.number,
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  CurrencyInputFormatter(),
+                                ],
                                 decoration: InputDecoration(
                                   hintText: 'Giá thuê',
                                   suffixIcon: Padding(

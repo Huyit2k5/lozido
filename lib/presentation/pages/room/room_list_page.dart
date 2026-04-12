@@ -19,6 +19,37 @@ class RoomListPage extends StatefulWidget {
 }
 
 class _RoomListPageState extends State<RoomListPage> {
+  int _selectedFloorIndex = 0;
+
+  int get _totalFloors {
+    final floorCountStr = widget.houseData['floorCount']?.toString() ?? "";
+    final match = RegExp(r'\d+').firstMatch(floorCountStr);
+    if (match != null) {
+      return int.parse(match.group(0)!);
+    }
+    return 1;
+  }
+
+  int get _roomsPerFloor {
+    final roomCount = widget.houseData['roomCount'] is int 
+        ? widget.houseData['roomCount'] as int 
+        : int.tryParse(widget.houseData['roomCount']?.toString() ?? "0") ?? 0;
+    final fCount = _totalFloors;
+    if (fCount <= 0) return roomCount;
+    return (roomCount / fCount).ceil();
+  }
+
+  List<String> get _floorNames {
+    final count = _totalFloors;
+    List<String> names = ["Tất cả"];
+    names.add("Tầng trệt");
+    if (count > 1) {
+      for (int i = 1; i < count; i++) {
+        names.add("Tầng $i");
+      }
+    }
+    return names;
+  }
   Future<void> _addRoom() async {
     Navigator.push(
       context,
@@ -55,48 +86,70 @@ class _RoomListPageState extends State<RoomListPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
-            alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: const BoxDecoration(
               color: Colors.white,
-              border: Border(bottom: BorderSide(color: Color(0xFFF), width: 1)),
+              border: Border(bottom: BorderSide(color: Color(0xFFF0F0F0), width: 1)),
             ),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(Icons.settings, size: 20, color: Colors.black87),
-                      Positioned(
-                        right: -4,
-                        top: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF00A651),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Text("0", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.settings, size: 20, color: Colors.black87),
+                    ),
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF00A651),
+                          shape: BoxShape.circle,
                         ),
-                      )
-                    ],
-                  ),
+                        child: const Text("3", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                      ),
+                    )
+                  ],
                 ),
                 const SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Color(0xFF00A651), width: 3)),
-                  ),
-                  child: const Text(
-                    "Tầng trệt",
-                    style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 15),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _floorNames.asMap().entries.map((entry) {
+                        int idx = entry.key;
+                        String name = entry.value;
+                        bool isSelected = _selectedFloorIndex == idx;
+                        
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedFloorIndex = idx),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 24),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border(bottom: BorderSide(color: isSelected ? const Color(0xFF00A651) : Colors.transparent, width: 3)),
+                              ),
+                              child: Text(
+                                name,
+                                style: TextStyle(
+                                  color: isSelected ? const Color(0xFF00A651) : Colors.black87,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 15
+                                ),
+                              ),
+                            ),
+                          )
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ],
@@ -115,9 +168,9 @@ class _RoomListPageState extends State<RoomListPage> {
             return const Center(child: Text("Không thể tải danh sách phòng"));
           }
 
-          final docs = snapshot.data?.docs ?? [];
-
-          if (docs.isEmpty) {
+          final allDocs = snapshot.data?.docs ?? [];
+          
+          if (allDocs.isEmpty) {
             return const Center(
               child: Text(
                 "Chưa có phòng nào.\nBấm '+' để thêm phòng",
@@ -127,11 +180,34 @@ class _RoomListPageState extends State<RoomListPage> {
             );
           }
 
+          // Filtering logic based on 'floor' field
+          List<QueryDocumentSnapshot> displayDocs = [];
+          if (_selectedFloorIndex == 0) {
+            displayDocs = allDocs;
+          } else {
+            final targetFloor = _selectedFloorIndex - 1;
+            displayDocs = allDocs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              // Default to 0 if 'floor' is missing
+              final roomFloor = data['floor'] ?? 0;
+              return roomFloor == targetFloor;
+            }).toList();
+
+            if (displayDocs.isEmpty) {
+              return const Center(
+                child: Text(
+                  "Không có phòng ở tầng này",
+                  style: TextStyle(color: Colors.black54),
+                ),
+              );
+            }
+          }
+
           return ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: docs.length,
+            itemCount: displayDocs.length,
             itemBuilder: (context, index) {
-              final doc = docs[index];
+              final doc = displayDocs[index];
               return _buildRoomCard(doc.id, doc.data() as Map<String, dynamic>);
             },
           );
@@ -192,6 +268,52 @@ class _RoomListPageState extends State<RoomListPage> {
          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
          }
+      }
+    }
+  }
+
+  Future<void> _navigateToContract(String roomId, Map<String, dynamic> roomData) async {
+    try {
+      final activeContracts = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('contracts')
+          .where('roomId', isEqualTo: roomId)
+          .where('status', isEqualTo: 'Active')
+          .get();
+
+      if (activeContracts.docs.isNotEmpty) {
+        final doc = activeContracts.docs.first;
+        if (mounted) {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => ChangeNotifierProvider(
+                create: (_) => ContractProvider(),
+                child: CreateContractPage(
+                  houseId: widget.houseId, 
+                  roomId: roomId, 
+                  houseData: widget.houseData, 
+                  roomData: roomData,
+                  contractId: doc.id,
+                  initialContractData: doc.data(),
+                ),
+              ),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeInOut));
+                return SlideTransition(position: animation.drive(tween), child: child);
+              },
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy hợp đồng đang hoạt động cho phòng này')));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi khi tải hợp đồng: $e')));
       }
     }
   }
@@ -289,34 +411,40 @@ class _RoomListPageState extends State<RoomListPage> {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => TenantListPage(houseId: widget.houseId, roomId: roomId, roomData: roomData)));
                     },
                   ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.sync_alt,
-                    title: 'Chuyển phòng',
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.remove_red_eye_outlined,
-                    title: 'Xem thông tin hợp đồng',
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.edit_document,
-                    title: 'Chỉnh sửa hợp đồng',
-                    onTap: () { Navigator.pop(context); },
-                  ),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildModalListTile(
-                    icon: Icons.exit_to_app,
-                    title: 'Kết thúc hợp đồng',
-                    isDestructive: true,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _endContract(roomId);
-                    },
-                  ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.sync_alt,
+                  title: 'Chuyển phòng',
+                  onTap: () { Navigator.pop(context); },
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.remove_red_eye_outlined,
+                  title: 'Xem thông tin hợp đồng',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToContract(roomId, roomData);
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.edit_document,
+                  title: 'Chỉnh sửa hợp đồng',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _navigateToContract(roomId, roomData);
+                  },
+                ),
+                const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                _buildModalListTile(
+                  icon: Icons.exit_to_app,
+                  title: 'Kết thúc hợp đồng',
+                  isDestructive: true,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _endContract(roomId);
+                  },
+                ),
                 ] else ...[
                   _buildModalListTile(
                     icon: Icons.assignment_outlined,
@@ -399,11 +527,12 @@ class _RoomListPageState extends State<RoomListPage> {
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Left orange strip
             Container(
               width: 4,
-              height: 180, // Match typical card height
+              height: 180,
               decoration: BoxDecoration(
                 color: statusColor,
                 borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
@@ -416,45 +545,37 @@ class _RoomListPageState extends State<RoomListPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Row 1: Icon, Name, Options
+                    // Header
                     Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
                           child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 24),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-                          ),
+                          child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
                         ),
                         InkWell(
                           onTap: () => _showRoomActionModal(roomId, roomData),
                           child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.more_vert, color: Colors.blue.shade600, size: 20),
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+                            child: const Icon(Icons.more_vert, color: Colors.blueAccent, size: 20),
                           ),
                         ),
                       ],
                     ),
                   const SizedBox(height: 12),
                   
-                  // Row 2: Status Box
+                  // Status Box Section (Matching Image Grouping)
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade200),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       children: [
@@ -462,43 +583,17 @@ class _RoomListPageState extends State<RoomListPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
                             Icon(Icons.sell_outlined, size: 14, color: Colors.black54),
-                            SizedBox(width: 4),
-                            Text("Trạng thái", style: TextStyle(color: Colors.black87, fontSize: 13)),
+                            SizedBox(width: 6),
+                            Text("Trạng thái", style: TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500)),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(width: 8, height: 8, decoration: BoxDecoration(color: isReserved ? Colors.deepOrange : Colors.green, shape: BoxShape.circle)),
-                                  const SizedBox(width: 6),
-                                  Text(status, style: const TextStyle(fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
-                                  const SizedBox(width: 6),
-                                  const Text("Chờ kỳ thu tới", style: TextStyle(fontSize: 12)),
-                                ],
-                              ),
-                            ),
+                            _buildStatusTagLine(status, isReserved ? Colors.deepOrange : Colors.green),
+                            const SizedBox(width: 16),
+                            _buildStatusTagLine("Chờ kỳ thu tới", Colors.green),
                           ],
                         ),
                       ],
@@ -506,7 +601,7 @@ class _RoomListPageState extends State<RoomListPage> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Row 3: Price and Buttons
+                  // Footer: Price and Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -517,10 +612,7 @@ class _RoomListPageState extends State<RoomListPage> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF00A651),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                                decoration: BoxDecoration(color: const Color(0xFF00A651), borderRadius: BorderRadius.circular(4)),
                                 child: const Icon(Icons.attach_money, color: Colors.white, size: 10),
                               ),
                               const SizedBox(width: 4),
@@ -528,75 +620,16 @@ class _RoomListPageState extends State<RoomListPage> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            "$priceInfo đ",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
+                          Text("$priceInfo đ", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
-                      if (isReserved)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF00A651),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Icon(Icons.attach_money, color: Colors.white, size: 10),
-                                ),
-                                const SizedBox(width: 4),
-                                const Text("Tiền cọc giữ chỗ", style: TextStyle(color: Colors.black54, fontSize: 12)),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "${_formatCurrency((roomData['depositAmount'] as num?)?.toDouble() ?? 0)} đ", 
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepOrange)
-                            ),
-                          ],
-                        )
-                      else
-                        Row(
-                          children: [
-                          OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: const Color(0xFF00A651).withOpacity(0.5)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-                              backgroundColor: const Color(0xFFE8F5E9),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.lightBlue, shape: BoxShape.circle)),
-                                const SizedBox(width: 6),
-                                const Text("Lấp phòng", style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 13)),
-                              ],
-                            ),
-                          ),
+                      Row(
+                        children: [
+                          _buildActionButton("Lấp phòng", Colors.lightBlue),
                           const SizedBox(width: 8),
-                          OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: const Color(0xFF00A651).withOpacity(0.5)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-                              backgroundColor: const Color(0xFFE8F5E9),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
-                                const SizedBox(width: 6),
-                                const Text("Đăng tin", style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 13)),
-                              ],
-                            ),
-                          ),
+                          _buildActionButton("Đăng tin", Colors.redAccent),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ],
@@ -606,6 +639,36 @@ class _RoomListPageState extends State<RoomListPage> {
         ],
       ),
     ));
+  }
+
+  Widget _buildStatusTagLine(String text, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(text, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(String text, Color dotColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        border: Border.all(color: const Color(0xFF00A651).withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 13)),
+        ],
+      ),
+    );
   }
 
   String _formatCurrency(double amount) {
@@ -648,138 +711,138 @@ class _RoomListPageState extends State<RoomListPage> {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 4,
-              decoration: const BoxDecoration(
-                color: Color(0xFF00A651), // Green strip
-                borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 4,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF00A651), // Green strip
+                  borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
+                ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
-                          child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 24),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Icon(Icons.phone_outlined, size: 14, color: Colors.black87),
-                                  const SizedBox(width: 4),
-                                  Text("$shortTenant - $tenantPhone", style: const TextStyle(color: Colors.blueAccent, fontSize: 13, fontWeight: FontWeight.w500)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _showRoomActionModal(roomId, roomData),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
-                            child: const Icon(Icons.more_vert, color: Colors.blueAccent, size: 20),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Box Section
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade200),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      Row(
                         children: [
-                          _buildBoxRow(Icons.calendar_today_outlined, "Hạn h.đồng", "$contractStart - $contractEnd"),
-                          const Divider(height: 1, color: Color(0xFFF)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.phone_android_outlined, size: 16, color: Colors.black87),
-                                const SizedBox(width: 8),
-                                const Text("Sử dụng APP", style: TextStyle(fontSize: 13, color: Colors.black87)),
-                                const Spacer(),
-                                useApp 
-                                  ? Row(children: const [Icon(Icons.check_circle_outline, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đang sử dụng app", style: TextStyle(color: Colors.green, fontSize: 13))])
-                                  : Row(children: const [Icon(Icons.info_outline, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Chưa sử dụng app", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
-                              ],
-                            ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 24),
                           ),
-                          const Divider(height: 1, color: Color(0xFFF)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.drive_file_rename_outline, size: 16, color: Colors.black87),
-                                const SizedBox(width: 8),
-                                const Text("Hợp đồng online", style: TextStyle(fontSize: 13, color: Colors.black87)),
-                                const Spacer(),
-                                isSigned 
-                                  ? Row(children: const [Icon(Icons.check, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đã ký", style: TextStyle(color: Colors.green, fontSize: 13))])
-                                  : Row(children: const [Icon(Icons.close, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Khách chưa ký", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
-                              ],
-                            ),
-                          ),
-                          const Divider(height: 1, color: Color(0xFFF)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            child: Row(
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.sell_outlined, size: 16, color: Colors.black87),
-                                const SizedBox(width: 8),
-                                const Text("Trạng thái", style: TextStyle(fontSize: 13, color: Colors.black87)),
-                                const Spacer(),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                                const SizedBox(height: 2),
+                                Row(
                                   children: [
-                                    _buildStatusTagLine("Đang ở", Colors.green),
-                                    const SizedBox(height: 6),
-                                    _buildStatusTagLine("Chờ kỳ thu tới", Colors.green),
+                                    const Icon(Icons.phone_outlined, size: 14, color: Colors.black87),
+                                    const SizedBox(width: 4),
+                                    Text("$shortTenant - $tenantPhone", style: const TextStyle(color: Colors.blueAccent, fontSize: 13, fontWeight: FontWeight.w500)),
                                   ],
                                 ),
                               ],
                             ),
                           ),
+                          InkWell(
+                            onTap: () => _showRoomActionModal(roomId, roomData),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(color: Colors.grey.shade100, shape: BoxShape.circle),
+                              child: const Icon(Icons.more_vert, color: Colors.blueAccent, size: 20),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Footer Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildFooterStat(Icons.attach_money, "Giá thuê", "$rentPrice đ", Colors.green, Colors.black87),
-                        _buildFooterStat(Icons.attach_money, "Cọc đã thu", "$depositAmount đ", Colors.green, Colors.black87),
-                        _buildFooterStat(Icons.person, "Khách ghi nhận", "1/$totalMembers người", Colors.green, Colors.black87, crossAxisAlignment: CrossAxisAlignment.end),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      
+                      // Box Section
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildBoxRow(Icons.calendar_today_outlined, "Hạn h.đồng", "$contractStart - $contractEnd"),
+                            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.phone_android_outlined, size: 16, color: Colors.black87),
+                                  const SizedBox(width: 8),
+                                  const Text("Sử dụng APP", style: TextStyle(fontSize: 13, color: Colors.black87)),
+                                  const Spacer(),
+                                  useApp 
+                                    ? Row(children: const [Icon(Icons.check_circle_outline, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đang sử dụng app", style: TextStyle(color: Colors.green, fontSize: 13))])
+                                    : Row(children: const [Icon(Icons.info_outline, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Chưa sử dụng app", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.drive_file_rename_outline, size: 16, color: Colors.black87),
+                                  const SizedBox(width: 8),
+                                  const Text("Hợp đồng online", style: TextStyle(fontSize: 13, color: Colors.black87)),
+                                  const Spacer(),
+                                  isSigned 
+                                    ? Row(children: const [Icon(Icons.check, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đã ký", style: TextStyle(color: Colors.green, fontSize: 13))])
+                                    : Row(children: const [Icon(Icons.close, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Khách chưa ký", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.sell_outlined, size: 16, color: Colors.black87),
+                                  const SizedBox(width: 8),
+                                  const Text("Trạng thái", style: TextStyle(fontSize: 13, color: Colors.black87)),
+                                  const Spacer(),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      _buildStatusTagLine("Đang ở", Colors.green),
+                                      const SizedBox(height: 6),
+                                      _buildStatusTagLine("Chờ kỳ thu tới", Colors.green),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Footer Section
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildFooterStat(Icons.attach_money, "Giá thuê", "$rentPrice đ", Colors.green, Colors.black87),
+                          _buildFooterStat(Icons.attach_money, "Cọc đã thu", "$depositAmount đ", Colors.green, Colors.black87),
+                          _buildFooterStat(Icons.person, "Khách ghi nhận", "1/$totalMembers người", Colors.green, Colors.black87, crossAxisAlignment: CrossAxisAlignment.end),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
@@ -795,21 +858,6 @@ class _RoomListPageState extends State<RoomListPage> {
           Text(label, style: const TextStyle(fontSize: 13, color: Colors.black87)),
           const Spacer(),
           Text(value, style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusTagLine(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 6),
-          Text(text, style: const TextStyle(fontSize: 12, color: Colors.black87)),
         ],
       ),
     );

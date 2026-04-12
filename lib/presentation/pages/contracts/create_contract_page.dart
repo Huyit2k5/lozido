@@ -4,32 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../../../services/chat_service.dart';
 import 'contract_provider.dart';
 import '../assets/manage_assets_page.dart';
 
-class CurrencyInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    if (newValue.text.isEmpty) {
-      return newValue.copyWith(text: '');
-    }
-
-    // Remove all non-digits
-    final numericString = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (numericString.isEmpty) return newValue.copyWith(text: '');
-
-    final value = double.parse(numericString);
-    final formatter = NumberFormat.decimalPattern('vi_VN');
-    final newText = formatter.format(value);
-
-    return TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newText.length),
-    );
-  }
-}
 
 class CreateContractPage extends StatefulWidget {
   final String houseId;
