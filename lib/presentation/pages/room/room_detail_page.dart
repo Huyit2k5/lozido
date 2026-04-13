@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'add_room_page.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+
 
 class RoomDetailPage extends StatefulWidget {
   final String houseId;
@@ -199,9 +203,67 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
                     ),
                   ],
                 ),
+                // NÚT KẾT NỐI ZALO (Nếu đã thuê mà chưa có ID Zalo)
+                if (_roomData['status'] == 'Đã thuê' && (_roomData['zaloUid'] == null || _roomData['zaloUid'].toString().isEmpty)) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "⚠️ Khách thuê chưa kết nối Zalo nhận thông báo tự động.",
+                    style: TextStyle(color: Colors.deepOrange, fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final phone = _roomData['tenantPhone'] ?? '';
+                        if (phone.isEmpty) return;
+
+                        final connectText = "Ketnoi $phone";
+                        // Copy vào clipboard
+                        await Clipboard.setData(ClipboardData(text: connectText));
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Đã copy: "$connectText". Hãy dán vào Zalo!'))
+                          );
+                        }
+
+                        final url = Uri.parse("https://zalo.me/389808064785934940?text=Ketnoi%20$phone");
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        }
+                      },
+
+                      icon: const Icon(Icons.wechat_rounded, color: Colors.white),
+                      label: const Text("Kết nối Zalo ngay", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0068FF), // Màu xanh Zalo
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+                // HIỂN THỊ TRẠNG THÁI ĐÃ KẾT NỐI
+                if (_roomData['zaloUid'] != null && _roomData['zaloUid'].toString().isNotEmpty) ...[
+                   const SizedBox(height: 12),
+                   Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.blue, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text("Đã kết nối Zalo nhận thông báo hằng tháng (ID: ${_roomData['zaloUid']})", style: const TextStyle(fontSize: 12, color: Colors.blue))),
+                      ],
+                    ),
+                   ),
+                ],
               ],
             ),
           ),
+
           
           const SizedBox(height: 12),
           
