@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../../../services/chat_service.dart';
 import 'contract_provider.dart';
@@ -146,6 +147,12 @@ class _CreateContractPageState extends State<CreateContractPage> {
     } else {
       _startDateCtrl.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
       _updateEndDate();
+      
+      // Auto check useApp if autoCreateAccount is true in house settings
+      final settings = widget.houseData['tenantAppSettings'] as Map<String, dynamic>?;
+      if (settings != null && settings['autoCreateAccount'] == true) {
+        _useApp = true;
+      }
     }
   }
 
@@ -265,6 +272,11 @@ class _CreateContractPageState extends State<CreateContractPage> {
 
         final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
         await ChatService().createNewChatRoom(roomName, userId: FirebaseAuth.instance.currentUser?.uid);
+
+        // Auto create tenant account if useApp is checked
+        if (_useApp) {
+          await _createTenantAccount();
+        }
       } else {
         // Update existing contract
         await FirebaseFirestore.instance
@@ -285,6 +297,68 @@ class _CreateContractPageState extends State<CreateContractPage> {
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _createTenantAccount() async {
+    FirebaseApp? tempApp;
+    try {
+      final landlordUid = FirebaseAuth.instance.currentUser?.uid;
+      if (landlordUid == null) return;
+
+      final settings = widget.houseData['tenantAppSettings'] as Map<String, dynamic>?;
+      final defaultPassword = settings?['defaultPassword'] ?? "lozido123";
+      final phoneNumber = _phoneCtrl.text.trim();
+
+      if (phoneNumber.isEmpty) return;
+
+      // 1. Create Firebase Auth account using a secondary instance
+      // This prevents the current landlord user from being logged out
+      final String email = '$phoneNumber@lozido.com';
+      String uid = '';
+      
+      try {
+        tempApp = await Firebase.initializeApp(
+          name: 'TenantAccountCreator_${DateTime.now().millisecondsSinceEpoch}',
+          options: Firebase.app().options,
+        );
+        
+        final auth = FirebaseAuth.instanceFor(app: tempApp);
+        final userCredential = await auth.createUserWithEmailAndPassword(
+          email: email,
+          password: defaultPassword,
+        );
+        uid = userCredential.user?.uid ?? '';
+      } catch (e) {
+        // If already exists, we might still want to update the Firestore doc
+        debugPrint("Auth account might already exist or error occurred: $e");
+      }
+
+      // 2. Create/Update account in root collection: tenants/{phoneNumber}
+      await FirebaseFirestore.instance
+          .collection('tenants')
+          .doc(phoneNumber)
+          .set({
+        'name': _nameCtrl.text.trim(),
+        'phoneNumber': phoneNumber,
+        'role': 'Tenant',
+        'password': defaultPassword,
+        'uid': uid, // Store the UID if we managed to create it
+        'createdAt': FieldValue.serverTimestamp(),
+        'houseId': widget.houseId,
+        'roomId': widget.roomId,
+        'email': email,
+        'userId': landlordUid,
+      }, SetOptions(merge: true));
+
+      debugPrint("Đã tự động tạo tài khoản tenant cho $phoneNumber");
+    } catch (e) {
+      debugPrint("Lỗi khi tạo tài khoản tenant: $e");
+    } finally {
+      // Clean up the temporary Firebase App instance
+      if (tempApp != null) {
+        await tempApp.delete();
+      }
     }
   }
 
