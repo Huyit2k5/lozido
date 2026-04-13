@@ -302,7 +302,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         }).toList(),
         'grandTotal': _grandTotal,
         'sendZaloApp': _sendZaloApp,
-        'status': 'Chưa thanh toán',
+        'status': 'Chưa thu',
+        'paidAmount': 0,
+        'payments': [],
         'createdAt': FieldValue.serverTimestamp(),
       };
 
