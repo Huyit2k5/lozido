@@ -271,7 +271,7 @@ exports.zaloWebhook = functions.https.onRequest(async (req, res) => {
                         const replyUrl = `https://bot-api.zaloplatforms.com/bot${botToken}/sendMessage`;
                         await axios.post(replyUrl, {
                             chat_id: chatId,
-                            text: `✅ [Lozido] Kết nối thành công!\nBạn đã được liên kết với phòng: ${linkedRooms.join(', ')} tại ${houseName}. Từ nay bạn sẽ nhận được thông báo hóa đơn tự động qua Zalo.`
+                            text: `✅ Kết nối thành công!\nBạn đã được liên kết với phòng: ${linkedRooms.join(', ')} tại ${houseName}. Từ nay bạn sẽ nhận được thông báo hóa đơn tự động qua Zalo.`
                         });
                     } catch (e) {
                         console.error('Lỗi khi gửi tin nhắn phản hồi:', e.message);

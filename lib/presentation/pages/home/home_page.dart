@@ -14,6 +14,7 @@ import 'tenant_app_settings_page.dart';
 
 
 import '../invoice/select_room_invoice_page.dart';
+import '../invoice/invoice_list_page.dart';
 import '../contracts/contract_list_page.dart';
 import '../tenants/all_tenants_page.dart';
 import '../assets/assets_list_page.dart';
@@ -628,6 +629,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.receipt_outlined,
                 color: Colors.green,
                 title: "Quản lý\nhóa đơn",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => InvoiceListPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.edit_document,
