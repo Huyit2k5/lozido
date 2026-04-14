@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../../../services/chat_service.dart';
 import 'contract_provider.dart';
@@ -264,6 +265,71 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'totalMembers': int.tryParse(_membersCtrl.text) ?? 1,
         'contractSigned': false,
       });
+
+        // Add primary tenant to members subcollection
+        final name = _nameCtrl.text.trim();
+        final phone = _phoneCtrl.text.trim();
+        
+        await FirebaseFirestore.instance
+            .collection('houses').doc(widget.houseId)
+            .collection('rooms').doc(widget.roomId)
+            .collection('members').add({
+              'name': name,
+              'phone': phone,
+              'role': 'Chủ hộ',
+              'status': 'Chưa xác nhận',
+              'residenceStatus': 'Chưa đăng ký',
+              'joinedAt': FieldValue.serverTimestamp(),
+        });
+
+        // --- TỰ ĐỘNG TẠO TÀI KHOẢN CHO KHÁCH THUÊ ---
+        if (phone.isNotEmpty) {
+          try {
+            // Sử dụng Secondary App để tạo Auth mà không văng tài khoản chủ trọ
+            FirebaseApp tempApp = await Firebase.initializeApp(
+              name: 'TempApp_${DateTime.now().millisecondsSinceEpoch}',
+              options: Firebase.app().options,
+            );
+            
+            final email = '$phone@lozido.com';
+            final password = phone; // Mật khẩu mặc định là số điện thoại
+            
+            UserCredential userCredential = await FirebaseAuth.instanceFor(app: tempApp)
+                .createUserWithEmailAndPassword(email: email, password: password);
+            
+            if (userCredential.user != null) {
+              await userCredential.user!.updateDisplayName(name);
+              
+              // Lưu thông tin vào Firestore users collection
+              await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+                'name': name,
+                'phoneNumber': phone,
+                'role': 'Tenant',
+                'houseId': widget.houseId,
+                'roomId': widget.roomId,
+                'isDefaultPassword': true,
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+            }
+            
+            await tempApp.delete();
+          } catch (e) {
+            // Chặn lỗi: tài khoản (email) đã tồn tại (khách từng đăng ký)
+            if (e.toString().contains('email-already-in-use')) {
+               final userQuery = await FirebaseFirestore.instance.collection('users').where('phoneNumber', isEqualTo: phone).limit(1).get();
+               if (userQuery.docs.isNotEmpty) {
+                 await userQuery.docs.first.reference.update({
+                    'houseId': widget.houseId,
+                    'roomId': widget.roomId,
+                    'role': 'Tenant',
+                 });
+               }
+            } else {
+               debugPrint("Lỗi khi tự động tạo tài khoản: $e");
+            }
+          }
+        }
+        // -------------------------------------------
 
         final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
         await ChatService().createNewChatRoom(roomName, userId: FirebaseAuth.instance.currentUser?.uid);
