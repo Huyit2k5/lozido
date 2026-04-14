@@ -52,12 +52,18 @@ class _AuthWrapperState extends State<AuthWrapper> {
               );
             }
 
-            if (userSnapshot.hasError || !userSnapshot.hasData || !userSnapshot.data!.exists) {
-              // Xử lý mất mạng hoặc xoá user
+            if (userSnapshot.hasError) {
+              // Xử lý báo lỗi (ví dụ mất mạng)
               return _ErrorScreen(
-                message: 'Không thể tìm thấy thông tin tài khoản người dùng',
+                message: 'Đã xảy ra lỗi khi tải dữ liệu. Vui lòng kiểm tra kết nối mạng.',
                 onRetry: () => setState(() {}),
               );
+            }
+
+            if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+              // Tài khoản đăng nhập thành công nhưng không có thông tin user
+              // Phân luồng mặc định cho đối tượng này là Tenant (Khách thuê)
+              return const TenantMainPage();
             }
 
             final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
