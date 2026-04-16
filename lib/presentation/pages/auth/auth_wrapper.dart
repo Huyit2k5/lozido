@@ -41,8 +41,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
 
         // Kiểm tra Role trong Firestore
-        return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+        return FutureBuilder<Map<String, dynamic>?>(
+          future: _resolveUserRole(user),
           builder: (context, userSnapshot) {
             if (userSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -52,22 +52,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
               );
             }
 
-            if (userSnapshot.hasError) {
-              // Xử lý báo lỗi (ví dụ mất mạng)
+            final userData = userSnapshot.data;
+            if (userData == null) {
+              // Xử lý mất mạng hoặc xoá user
               return _ErrorScreen(
-                message: 'Đã xảy ra lỗi khi tải dữ liệu. Vui lòng kiểm tra kết nối mạng.',
+                message: 'Không thể tìm thấy thông tin tài khoản người dùng',
                 onRetry: () => setState(() {}),
               );
             }
 
-            if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-              // Tài khoản đăng nhập thành công nhưng không có thông tin user
-              // Phân luồng mặc định cho đối tượng này là Tenant (Khách thuê)
-              return const TenantMainPage();
-            }
-
-            final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
-            final role = userData?['role'] as String? ?? 'Landlord'; // Nếu null, mặc định chọn Landlord
+            final role = userData['role'] as String? ?? 'Landlord'; // Nếu null, mặc định chọn Landlord
 
             if (role == 'Tenant') {
               return const TenantMainPage();
@@ -79,6 +73,66 @@ class _AuthWrapperState extends State<AuthWrapper> {
         );
       },
     );
+  }
+
+  Future<Map<String, dynamic>?> _resolveUserRole(User user) async {
+    try {
+      // 1. Check top-level users collection first (Landlords)
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        return doc.data();
+      }
+
+      // 2. If not found, check for Tenant in sub-collections
+      // Try to find by UID first (if they registered directly or were updated)
+      try {
+        final tenantByUid = await FirebaseFirestore.instance
+            .collection('tenants')
+            .where('uid', isEqualTo: user.uid)
+            .get();
+        if (tenantByUid.docs.isNotEmpty) {
+          return tenantByUid.docs.first.data();
+        }
+      } catch (e) {
+        debugPrint("Lỗi khi tìm tenant theo UID: $e");
+        if (e.toString().contains('failed-precondition')) {
+          debugPrint("CẦN TẠO INDEX cho collectionGroup 'tenant'");
+        }
+      }
+
+      // 3. Try to find by Phone Number (extracted from email or user object)
+      String? phoneNumber = user.phoneNumber;
+      if (phoneNumber == null && user.email != null && user.email!.endsWith('@lozido.com')) {
+        phoneNumber = user.email!.split('@').first;
+      }
+
+      if (phoneNumber != null) {
+        try {
+          final tenantByPhone = await FirebaseFirestore.instance
+              .collection('tenants')
+              .where('phoneNumber', isEqualTo: phoneNumber)
+              .get();
+          if (tenantByPhone.docs.isNotEmpty) {
+            // Found it! Optionally update the UID if it is missing
+            final doc = tenantByPhone.docs.first;
+            if (doc.data()['uid'] == null || doc.data()['uid'] == '') {
+              await doc.reference.update({'uid': user.uid});
+            }
+            return doc.data();
+          }
+        } catch (e) {
+          debugPrint("Lỗi khi tìm tenant theo Phone: $e");
+           if (e.toString().contains('failed-precondition')) {
+            throw Exception('Vui lòng tạo Index cho collectionGroup "tenant" trong Firebase Console.');
+          }
+        }
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint("Lỗi phân quyền: $e");
+      rethrow; // Let FutureBuilder handle the error if it's an index issue
+    }
   }
 }
 
