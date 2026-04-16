@@ -149,6 +149,12 @@ class _CreateContractPageState extends State<CreateContractPage> {
     } else {
       _startDateCtrl.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
       _updateEndDate();
+      
+      // Auto check useApp if autoCreateAccount is true in house settings
+      final settings = widget.houseData['tenantAppSettings'] as Map<String, dynamic>?;
+      if (settings != null && settings['autoCreateAccount'] == true) {
+        _useApp = true;
+      }
     }
   }
 
@@ -266,73 +272,13 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'contractSigned': false,
       });
 
-        // Add primary tenant to members subcollection
-        final name = _nameCtrl.text.trim();
-        final phone = _phoneCtrl.text.trim();
-        
-        await FirebaseFirestore.instance
-            .collection('houses').doc(widget.houseId)
-            .collection('rooms').doc(widget.roomId)
-            .collection('members').add({
-              'name': name,
-              'phone': phone,
-              'role': 'Chủ hộ',
-              'status': 'Chưa xác nhận',
-              'residenceStatus': 'Chưa đăng ký',
-              'joinedAt': FieldValue.serverTimestamp(),
-        });
-
-        // --- TỰ ĐỘNG TẠO TÀI KHOẢN CHO KHÁCH THUÊ ---
-        if (phone.isNotEmpty) {
-          try {
-            // Sử dụng Secondary App để tạo Auth mà không văng tài khoản chủ trọ
-            FirebaseApp tempApp = await Firebase.initializeApp(
-              name: 'TempApp_${DateTime.now().millisecondsSinceEpoch}',
-              options: Firebase.app().options,
-            );
-            
-            final email = '$phone@lozido.com';
-            final password = phone; // Mật khẩu mặc định là số điện thoại
-            
-            UserCredential userCredential = await FirebaseAuth.instanceFor(app: tempApp)
-                .createUserWithEmailAndPassword(email: email, password: password);
-            
-            if (userCredential.user != null) {
-              await userCredential.user!.updateDisplayName(name);
-              
-              // Lưu thông tin vào Firestore users collection
-              await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-                'name': name,
-                'phoneNumber': phone,
-                'role': 'Tenant',
-                'houseId': widget.houseId,
-                'roomId': widget.roomId,
-                'isDefaultPassword': true,
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-            }
-            
-            await tempApp.delete();
-          } catch (e) {
-            // Chặn lỗi: tài khoản (email) đã tồn tại (khách từng đăng ký)
-            if (e.toString().contains('email-already-in-use')) {
-               final userQuery = await FirebaseFirestore.instance.collection('users').where('phoneNumber', isEqualTo: phone).limit(1).get();
-               if (userQuery.docs.isNotEmpty) {
-                 await userQuery.docs.first.reference.update({
-                    'houseId': widget.houseId,
-                    'roomId': widget.roomId,
-                    'role': 'Tenant',
-                 });
-               }
-            } else {
-               debugPrint("Lỗi khi tự động tạo tài khoản: $e");
-            }
-          }
-        }
-        // -------------------------------------------
-
         final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
         await ChatService().createNewChatRoom(roomName, userId: FirebaseAuth.instance.currentUser?.uid);
+
+        // Auto create tenant account if useApp is checked
+        if (_useApp) {
+          await _createTenantAccount();
+        }
       } else {
         // Update existing contract
         await FirebaseFirestore.instance
@@ -400,6 +346,68 @@ class _CreateContractPageState extends State<CreateContractPage> {
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _createTenantAccount() async {
+    FirebaseApp? tempApp;
+    try {
+      final landlordUid = FirebaseAuth.instance.currentUser?.uid;
+      if (landlordUid == null) return;
+
+      final settings = widget.houseData['tenantAppSettings'] as Map<String, dynamic>?;
+      final defaultPassword = settings?['defaultPassword'] ?? "lozido123";
+      final phoneNumber = _phoneCtrl.text.trim();
+
+      if (phoneNumber.isEmpty) return;
+
+      // 1. Create Firebase Auth account using a secondary instance
+      // This prevents the current landlord user from being logged out
+      final String email = '$phoneNumber@lozido.com';
+      String uid = '';
+      
+      try {
+        tempApp = await Firebase.initializeApp(
+          name: 'TenantAccountCreator_${DateTime.now().millisecondsSinceEpoch}',
+          options: Firebase.app().options,
+        );
+        
+        final auth = FirebaseAuth.instanceFor(app: tempApp);
+        final userCredential = await auth.createUserWithEmailAndPassword(
+          email: email,
+          password: defaultPassword,
+        );
+        uid = userCredential.user?.uid ?? '';
+      } catch (e) {
+        // If already exists, we might still want to update the Firestore doc
+        debugPrint("Auth account might already exist or error occurred: $e");
+      }
+
+      // 2. Create/Update account in root collection: tenants/{phoneNumber}
+      await FirebaseFirestore.instance
+          .collection('tenants')
+          .doc(phoneNumber)
+          .set({
+        'name': _nameCtrl.text.trim(),
+        'phoneNumber': phoneNumber,
+        'role': 'Tenant',
+        'password': defaultPassword,
+        'uid': uid, // Store the UID if we managed to create it
+        'createdAt': FieldValue.serverTimestamp(),
+        'houseId': widget.houseId,
+        'roomId': widget.roomId,
+        'email': email,
+        'userId': landlordUid,
+      }, SetOptions(merge: true));
+
+      debugPrint("Đã tự động tạo tài khoản tenant cho $phoneNumber");
+    } catch (e) {
+      debugPrint("Lỗi khi tạo tài khoản tenant: $e");
+    } finally {
+      // Clean up the temporary Firebase App instance
+      if (tempApp != null) {
+        await tempApp.delete();
+      }
     }
   }
 
