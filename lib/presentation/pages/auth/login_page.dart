@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../data/datasources/firebase_auth_service.dart';
 import 'auth_wrapper.dart';
 import 'register_page.dart';
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isObscure = true;
+  bool _isTenantMode = false;
   bool _isLoading = false;
 
   final FirebaseAuthService _authService = FirebaseAuthService();
@@ -39,10 +41,43 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.loginWithPhoneNumber(
-        phoneNumber: _phoneController.text.trim(),
-        password: _passwordController.text,
-      );
+      final phoneNumber = _phoneController.text.trim();
+      final password = _passwordController.text;
+
+      // Extra verification for Tenants
+      if (_isTenantMode) {
+        final tenantSnap = await FirebaseFirestore.instance
+            .collection('tenants')
+            .where('phoneNumber', isEqualTo: phoneNumber)
+            .get();
+
+        if (tenantSnap.docs.isEmpty) {
+          throw Exception('Tài khoản người thuê không tồn tại cho số điện thoại này.');
+        }
+
+        final tenantData = tenantSnap.docs.first.data();
+        final storedPassword = tenantData['password']?.toString();
+
+        if (storedPassword != password) {
+          throw Exception('Mật khẩu người thuê không chính xác.');
+        }
+
+        // Use the stored password from tenant document for Firebase Auth login
+        // because the Auth account was created with defaultPassword from settings,
+        // which may differ from what the user enters.
+        final tenantEmail = tenantData['email']?.toString() ?? '$phoneNumber@lozido.com';
+        final tenantAuthPassword = storedPassword ?? password;
+
+        await _authService.loginWithPhoneNumber(
+          phoneNumber: tenantEmail.replaceAll('@lozido.com', ''),
+          password: tenantAuthPassword,
+        );
+      } else {
+        await _authService.loginWithPhoneNumber(
+          phoneNumber: phoneNumber,
+          password: password,
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -149,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 _buildMainLoginButton(),
                 const SizedBox(height: 15),
                 
-                _buildZaloLoginButton(),
+                _buildTenantLoginButton(),
                 const SizedBox(height: 25),
                 
                 _buildLinksRow(),
@@ -196,9 +231,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
           const SizedBox(height: 2),
-          const Text(
-            "Quản lý NHÀ CHO THUÊ",
-            style: TextStyle(
+          Text(
+            _isTenantMode ? "Tìm trọ - căn hộ" : "Quản lý NHÀ CHO THUÊ",
+            style: const TextStyle(
               color: Color(0xFF28A745),
               fontWeight: FontWeight.w600,
               fontSize: 14,
@@ -345,18 +380,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildZaloLoginButton() {
+  Widget _buildTenantLoginButton() {
     return SizedBox(
       height: 48,
-      child: ElevatedButton(
+      child: OutlinedButton(
         onPressed: () {
-          // Placeholder 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Chức năng Zalo Signup đang phát triển!')),
-          );
+          setState(() {
+            _isTenantMode = !_isTenantMode;
+          });
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF0068FF),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFF0068FF), width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -365,18 +399,15 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: const Text('Zalo', style: TextStyle(color: Color(0xFF0068FF), fontSize: 9, fontWeight: FontWeight.bold)),
+            Icon(
+              _isTenantMode ? Icons.admin_panel_settings_outlined : Icons.person_outline,
+              color: const Color(0xFF0068FF),
+              size: 20,
             ),
             const SizedBox(width: 8),
-            const Text(
-              "Đăng nhập với ZALO",
-              style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold),
+            Text(
+              _isTenantMode ? "Đăng nhập dành cho chủ trọ" : "Đăng nhập dành cho người thuê",
+              style: const TextStyle(fontSize: 14, color: Color(0xFF0068FF), fontWeight: FontWeight.bold),
             ),
           ],
         ),

@@ -8,6 +8,10 @@ class CreateInvoicePage extends StatefulWidget {
   final String roomId;
   final Map<String, dynamic> roomData;
   final DateTime billingMonthDate;
+  final String? initialReason;
+  final DateTime? initialRentFromDate;
+  final DateTime? initialRentToDate;
+  final bool calculateRentByDays;
 
   const CreateInvoicePage({
     super.key,
@@ -15,6 +19,10 @@ class CreateInvoicePage extends StatefulWidget {
     required this.roomId,
     required this.roomData,
     required this.billingMonthDate,
+    this.initialReason,
+    this.initialRentFromDate,
+    this.initialRentToDate,
+    this.calculateRentByDays = false,
   });
 
   @override
@@ -102,6 +110,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   @override
   void initState() {
     super.initState();
+    _selectedReason = widget.initialReason ?? "Thu tiền phòng theo chu kỳ";
+    _rentFromDate = widget.initialRentFromDate ?? DateTime.now();
+    _rentToDate = widget.initialRentToDate ?? DateTime.now().add(const Duration(days: 30));
     _rentPrice = (widget.roomData['rentPrice'] as num?)?.toDouble() ?? (widget.roomData['price'] as num?)?.toDouble() ?? 0;
 
     // If there is an existing 'currentIndex' on service array from roomData, use it as oldIndex
@@ -174,7 +185,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     super.dispose();
   }
 
-  double get _totalRent => _rentPrice; // Simplified: 1 month = rent. Could be fractional if requested.
+  double get _totalRent {
+    if (widget.calculateRentByDays || _selectedReason == 'Thu tiền khi kết thúc hợp đồng') {
+      int days = _rentToDate.difference(_rentFromDate).inDays;
+      if (days < 0) days = 0;
+      return (_rentPrice / 30) * days;
+    }
+    return _rentPrice;
+  }
+
   double get _totalDeposit => double.tryParse(_depositController.text.replaceAll('.', '')) ?? 0;
   double get _totalServices => _serviceItems.fold(0, (sum, item) => sum + item.total);
   double get _totalAdjustments => _adjustments.fold(0, (sum, item) => sum + item.amount);
@@ -195,6 +214,15 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       count++;
     }
     return (amount < 0 ? "-" : "") + result;
+  }
+
+  String _getRentDurationText() {
+    if (widget.calculateRentByDays || _selectedReason == 'Thu tiền khi kết thúc hợp đồng') {
+      int days = _rentToDate.difference(_rentFromDate).inDays;
+      if (days < 0) days = 0;
+      return "$days ngày";
+    }
+    return "1 tháng, 0 ngày";
   }
 
   void _addAdjustment() {
@@ -901,9 +929,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text("1 tháng, 0 ngày", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 13)), // Dummy calculate
+                                    Text(_getRentDurationText(), style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 13)),
                                     const SizedBox(height: 4),
-                                    Text("x ${_formatCurrency(_rentPrice)} đ", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    Text("x ${_formatCurrency(_rentPrice)} đ / tháng", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                                 Column(

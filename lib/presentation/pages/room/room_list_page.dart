@@ -5,6 +5,7 @@ import 'room_detail_page.dart';
 import 'package:provider/provider.dart';
 import '../contracts/contract_provider.dart';
 import '../contracts/create_contract_page.dart';
+import '../contracts/terminate_contract_page.dart';
 import '../contracts/service_selection_page.dart';
 import '../deposit/deposit_page.dart';
 import '../tenants/tenant_list_page.dart';
@@ -221,56 +222,7 @@ class _RoomListPageState extends State<RoomListPage> {
     );
   }
 
-  Future<void> _endContract(String roomId) async {
-    final act = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận kết thúc'),
-        content: const Text('Bạn có chắc chắn muốn kết thúc hợp đồng cho phòng này không? Hợp đồng sẽ được lưu lại hệ thống với trạng thái đã kết thúc.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Đồng ý', style: TextStyle(color: Colors.red))),
-        ],
-      ),
-    );
 
-    if (act == true) {
-      try {
-        final activeContracts = await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('contracts')
-            .where('roomId', isEqualTo: roomId)
-            .where('status', isEqualTo: 'Active')
-            .get();
-
-        if (activeContracts.docs.isNotEmpty) {
-          final docId = activeContracts.docs.first.id;
-          await FirebaseFirestore.instance
-              .collection('houses')
-              .doc(widget.houseId)
-              .collection('contracts')
-              .doc(docId)
-              .update({'status': 'Đã kết thúc', 'endedAt': FieldValue.serverTimestamp()});
-        }
-
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('rooms')
-            .doc(roomId)
-            .update({'status': 'Đang trống'});
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã kết thúc hợp đồng thành công!')));
-        }
-      } catch (e) {
-         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
-         }
-      }
-    }
-  }
 
   Future<void> _navigateToContract(String roomId, Map<String, dynamic> roomData) async {
     try {
@@ -442,7 +394,12 @@ class _RoomListPageState extends State<RoomListPage> {
                   isDestructive: true,
                   onTap: () {
                     Navigator.pop(context);
-                    _endContract(roomId);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TerminateContractPage(
+                      houseId: widget.houseId,
+                      roomId: roomId,
+                      houseData: widget.houseData,
+                      roomData: roomData,
+                    )));
                   },
                 ),
                 ] else ...[
