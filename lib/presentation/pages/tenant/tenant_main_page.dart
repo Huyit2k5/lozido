@@ -38,23 +38,42 @@ class _TenantMainPageState extends State<TenantMainPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
-      body: StreamBuilder<DocumentSnapshot>(
+      body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
-            .collection('users')
-            .doc(currentUser!.uid)
+            .collection('tenants')
+            .where('uid', isEqualTo: currentUser!.uid)
             .snapshots(),
-        builder: (context, userSnapshot) {
-          if (!userSnapshot.hasData) {
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Không tìm thấy thông tin thành viên.'),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _logout,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00A651),
+                    ),
+                    child: const Text('Đăng xuất'),
+                  ),
+                ],
+              ),
+            );
+          }
+
           final userData =
-              userSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+              snapshot.data!.docs.first.data() as Map<String, dynamic>;
           final String? houseId = userData['houseId'];
           final String? roomId = userData['roomId'];
-          final bool isDefaultPassword = userData['isDefaultPassword'] ?? false;
 
-          if (houseId == null || roomId == null) {
+          // Treat empty strings as not assigned to a room
+          if (houseId == null || houseId.isEmpty || roomId == null || roomId.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -73,7 +92,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
             );
           }
 
-          return _buildMainContent(houseId, roomId, isDefaultPassword);
+          return _buildMainContent(houseId, roomId);
         },
       ),
     );
@@ -82,7 +101,6 @@ class _TenantMainPageState extends State<TenantMainPage> {
   Widget _buildMainContent(
     String houseId,
     String roomId,
-    bool isDefaultPassword,
   ) {
     return StreamBuilder<DocumentSnapshot>(
       stream: _firestore
@@ -116,7 +134,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildProgressCard(houseId, roomId),
-                        if (isDefaultPassword) _buildPasswordWarningBanner(),
+
                         const SizedBox(height: 24),
                         Row(
                           children: [
