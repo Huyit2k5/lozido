@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../../../services/gemini_service.dart';
 
 class CreateInvoicePage extends StatefulWidget {
   final String houseId;
@@ -107,9 +111,17 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   bool _isSaving = false;
 
+  late stt.SpeechToText _speechToText;
+  bool _isListening = false;
+  String _recognizedText = "";
+  bool _isAnalyzingAI = false;
+  Timer? _silenceTimer;
+  final TextEditingController _voiceTextController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
+    _speechToText = stt.SpeechToText();
     _selectedReason = widget.initialReason ?? "Thu tiền phòng theo chu kỳ";
     _rentFromDate = widget.initialRentFromDate ?? DateTime.now();
     _rentToDate = widget.initialRentToDate ?? DateTime.now().add(const Duration(days: 30));
@@ -175,6 +187,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
 
   @override
   void dispose() {
+    _silenceTimer?.cancel();
+    _voiceTextController.dispose();
     _depositController.dispose();
     for (var item in _serviceItems) {
       item.dispose();
@@ -199,6 +213,112 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   double get _totalAdjustments => _adjustments.fold(0, (sum, item) => sum + item.amount);
 
   double get _grandTotal => _totalRent + _totalDeposit + _totalServices + _totalAdjustments;
+
+  Future<void> _listen() async {
+    if (!_isListening) {
+      bool available = await _speechToText.initialize(
+        onStatus: (val) {
+          if (!mounted) return;
+          if (val == 'done' || val == 'notListening') {
+            setState(() => _isListening = false);
+          }
+        },
+        onError: (val) {
+          print('onError: $val');
+          if (mounted) setState(() => _isListening = false);
+        },
+      );
+      if (available && mounted) {
+        setState(() => _isListening = true);
+        _speechToText.listen(
+          onResult: (val) {
+            if (!mounted) return;
+            setState(() {
+              _recognizedText = val.recognizedWords;
+              _voiceTextController.text = _recognizedText;
+            });
+            
+            // Tự động tắt mic sau 3s không nói
+            _silenceTimer?.cancel();
+            _silenceTimer = Timer(const Duration(seconds: 3), () {
+              if (mounted && _isListening) {
+                _speechToText.stop();
+                setState(() => _isListening = false);
+                if (_voiceTextController.text.isNotEmpty) {
+                  _analyzeAI(_voiceTextController.text);
+                }
+              }
+            });
+          },
+          localeId: 'vi_VN', // Cố định nhận diện tiếng Việt
+          pauseFor: const Duration(seconds: 3),
+        );
+      }
+    } else {
+      _silenceTimer?.cancel();
+      if (mounted) setState(() => _isListening = false);
+      _speechToText.stop();
+      if (_voiceTextController.text.isNotEmpty) {
+        _analyzeAI(_voiceTextController.text);
+      }
+    }
+  }
+
+  Future<void> _analyzeAI(String text) async {
+    if (text.trim().isEmpty) return;
+    if (_isAnalyzingAI) return;
+    if (!mounted) return;
+    setState(() {
+      _isAnalyzingAI = true;
+    });
+    try {
+      final List<Map<String, dynamic>> data = await GeminiService().parseInvoiceAdjustments(text);
+      
+      if (!mounted) return;
+      setState(() {
+        for (var item in data) {
+          final adj = InvoiceAdjustment();
+          adj.reasonController.text = item['reason'];
+          adj.reason = item['reason'];
+          double amt = (item['price'] as num).toDouble();
+          adj.amountController.text = amt.toStringAsFixed(0);
+          adj.amount = amt;
+          
+          adj.amountController.addListener(() {
+            if (!mounted) return;
+            setState(() {
+              String val = adj.amountController.text.replaceAll('.', '').replaceAll(',', '');
+              adj.amount = double.tryParse(val) ?? 0;
+            });
+          });
+          adj.reasonController.addListener(() {
+            adj.reason = adj.reasonController.text;
+          });
+          
+          _adjustments.add(adj);
+        }
+        _voiceTextController.clear();
+        _recognizedText = "";
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Phân tích và thêm thành công!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi phân tích AI: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAnalyzingAI = false;
+        });
+      }
+    }
+  }
 
   String _formatCurrency(double amount) {
     if (amount == 0) return '0';
@@ -1206,6 +1326,49 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionHeader(Icons.tag, "Phát sinh khác (Giảm trừ/Cộng thêm)", "Ví dụ: Lì xì -200000, Thay bóng đèn 50000"),
+                        
+                        // UI Nhập liệu giọng nói AI
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: TextField(
+                            controller: _voiceTextController,
+                            decoration: InputDecoration(
+                              hintText: "Nói vào đây (VD: Phí vệ sinh 50k...)",
+                              labelText: "Nói vào đây",
+                              isDense: true,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_isAnalyzingAI)
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 12.0),
+                                      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber)),
+                                    ),
+                                  IconButton(
+                                    icon: Icon(
+                                      _isListening ? Icons.mic : Icons.mic_none, 
+                                      color: _isListening ? Colors.red : Colors.blueGrey
+                                    ),
+                                    onPressed: _listen,
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.auto_awesome, color: Colors.black87),
+                                    onPressed: () {
+                                      _silenceTimer?.cancel();
+                                      if (_isListening) {
+                                        _speechToText.stop();
+                                        setState(() => _isListening = false);
+                                      }
+                                      _analyzeAI(_voiceTextController.text);
+                                    },
+                                    tooltip: "Phân tích",
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                         
                         ListView.builder(
                           shrinkWrap: true,
