@@ -297,13 +297,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           
           _adjustments.add(adj);
         }
-        _voiceTextController.clear();
-        _recognizedText = "";
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Phân tích và thêm thành công!'), backgroundColor: Colors.green),
         );
+        _voiceTextController.clear();
+        _recognizedText = "";
       }
     } catch (e) {
       if (mounted) {

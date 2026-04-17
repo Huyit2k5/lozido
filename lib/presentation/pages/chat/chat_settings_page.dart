@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ChatSettingsPage extends StatelessWidget {
   final String roomName;
@@ -114,7 +117,16 @@ class ChatSettingsPage extends StatelessWidget {
                   _buildSettingsItem(
                     label: 'Hình nền',
                     trailing: const Text('Không có', style: TextStyle(color: Colors.black54)),
+                    onTap: () {},
                   ),
+                  if (roomName.toLowerCase() == 'lozido cskh') ...[
+                    const Divider(height: 1, indent: 16),
+                    _buildSettingsItem(
+                      label: 'Thêm tài liệu cho Chatbot (PDF)',
+                      trailing: const Icon(Icons.picture_as_pdf, color: Colors.redAccent),
+                      onTap: () => _uploadPdf(context),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -153,14 +165,69 @@ class ChatSettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsItem({required String label, required Widget trailing}) {
+  Widget _buildSettingsItem({required String label, required Widget trailing, VoidCallback? onTap}) {
     return ListTile(
       title: Text(
         label,
         style: const TextStyle(fontSize: 15),
       ),
       trailing: trailing,
-      onTap: () {},
+      onTap: onTap ?? () {},
     );
+  }
+
+  Future<void> _uploadPdf(BuildContext context) async {
+    try {
+      FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final platformFile = result.files.single;
+        String fileName = platformFile.name;
+
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+
+        // Upload to Firebase Storage
+        final storageRef = FirebaseStorage.instance.ref();
+        final pdfsRef = storageRef.child('pdfs/bot_${DateTime.now().millisecondsSinceEpoch}_$fileName');
+        
+        if (kIsWeb) {
+          // Web environment ALWAYS uses bytes
+          await pdfsRef.putData(platformFile.bytes!);
+        } else {
+          // For mobile, sometimes large files bytes are null depending on the OS picker
+          if (platformFile.bytes != null) {
+             await pdfsRef.putData(platformFile.bytes!);
+          } else if (platformFile.path != null) {
+             // We can't import dart:io safely top-level for web, so we skip file upload fallback 
+             // but 'withData: true' usually ensures bytes array is valid for PDFs.
+             await pdfsRef.putData(await platformFile.xFile.readAsBytes()); // alternative if xFile is supported, or just trust bytes
+          }
+        }
+
+        // Hide loading dialog
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tải tài liệu PDF thành công!')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading if error occurs
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải file: $e')),
+        );
+      }
+    }
   }
 }

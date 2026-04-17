@@ -259,8 +259,54 @@ class _MailPageState extends State<MailPage> {
             ],
           ),
           subtitle: const Text("Nhấn để xem chi tiết"),
-          onTap: () {
-            // Logic điều hướng đến Chatbot nếu có
+          onTap: () async {
+            // Hiển thị loading (tùy chọn) trước khi chuyển trang
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (c) => const Center(child: CircularProgressIndicator()),
+            );
+
+            try {
+              final query = await FirebaseFirestore.instance
+                  .collection('chatRooms')
+                  .where('userId', isEqualTo: currentUserId)
+                  .where('roomName', isEqualTo: 'Lozido CSKH')
+                  .limit(1)
+                  .get();
+
+              String roomId;
+              if (query.docs.isNotEmpty) {
+                // Đã có group chatbot
+                roomId = query.docs.first.id;
+              } else {
+                // Tạo mới group
+                final ChatService chatService = ChatService();
+                roomId = await chatService.createNewChatRoom('Lozido CSKH', userId: currentUserId);
+              }
+
+              if (!context.mounted) return;
+              Navigator.pop(context); // Tắt loading
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatRoomPage(
+                    roomId: roomId,
+                    roomName: 'Lozido CSKH',
+                    userId: currentUserId,
+                    userName: currentUserName,
+                  ),
+                ),
+              );
+            } catch (e) {
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Lỗi vào Chatbot: $e')),
+                );
+              }
+            }
           },
         ),
         const Divider(height: 1, indent: 80, color: Color(0xFFEEEEEE)),
