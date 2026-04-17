@@ -10,6 +10,17 @@
         "firebase-debug.*.log",
         "*.local"
       ]
+    },
+    {
+      "source": "functions/chatbot",
+      "codebase": "chatbot",
+      "ignore": [
+        "venv",
+        ".venv",
+        "__pycache__",
+        "*.pyc",
+        ".git"
+      ]
     }
   ],
   "flutter": {
