@@ -2,6 +2,8 @@
     <!-- Permissions for saving image to gallery -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Permission for Speech to text -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:label="lozido_app"
