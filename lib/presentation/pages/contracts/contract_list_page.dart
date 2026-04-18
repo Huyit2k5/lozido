@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import 'contract_detail_page.dart';
 import 'contract_pdf_preview_page.dart';
 import 'create_contract_page.dart';
 import 'contract_provider.dart';
+import '../../../services/chat_service.dart';
 
 class ContractListPage extends StatefulWidget {
   final String houseId;
@@ -81,8 +83,30 @@ class _ContractListPageState extends State<ContractListPage> {
             .doc(roomId)
             .update({'status': 'Đang trống'});
 
+        // 3. Xoá toàn bộ lịch sử chat của phòng (giữ lại chatRoom)
+        try {
+          final chatService = ChatService();
+          final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+          // Lấy tên phòng từ roomId
+          final roomDoc = await FirebaseFirestore.instance
+              .collection('houses')
+              .doc(widget.houseId)
+              .collection('rooms')
+              .doc(roomId)
+              .get();
+          final roomName = roomDoc.data()?['roomName'] ?? '';
+          if (roomName.isNotEmpty) {
+            final chatRoomId = await chatService.findChatRoomByName(roomName, userId);
+            if (chatRoomId != null) {
+              await chatService.deleteAllMessages(chatRoomId);
+            }
+          }
+        } catch (chatError) {
+          debugPrint('Lỗi xoá lịch sử chat: $chatError');
+        }
+
         if (mounted) {
-          AppDialog.show(context, title: "Thành công", message: "Đã kết thúc hợp đồng thành công!", type: AppDialogType.success);
+          AppDialog.show(context, title: "Thành công", message: "Đã kết thúc hợp đồng và xoá lịch sử chat!", type: AppDialogType.success);
         }
       } catch (e) {
         if (mounted) {

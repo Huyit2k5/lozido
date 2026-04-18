@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'add_room_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../services/chat_service.dart';
 
 
 
@@ -55,12 +57,56 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
     );
   }
 
+  // Xoá toàn bộ lịch sử chat (chỉ xoá messages sub-collection, giữ lại chatRoom)
+  Future<void> _deleteChatHistory() async {
+    final act = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xoá lịch sử chat'),
+        content: const Text('Bạn có chắc chắn muốn xoá toàn bộ lịch sử chat của phòng này không? Hành động này không thể hoàn tác.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xoá', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (act == true) {
+      try {
+        final chatService = ChatService();
+        final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        final roomName = _roomData['roomName'] ?? '';
+        final chatRoomId = await chatService.findChatRoomByName(roomName, userId);
+
+        if (chatRoomId != null) {
+          await chatService.deleteAllMessages(chatRoomId);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đã xoá toàn bộ lịch sử chat'), backgroundColor: Colors.orange),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Không tìm thấy phòng chat tương ứng'), backgroundColor: Colors.grey),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+        }
+      }
+    }
+  }
+
+  // Xoá phòng + xoá luôn cả chatRoom (document + messages)
   Future<void> _deleteRoom() async {
     final act = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: const Text('Bạn có chắc chắn muốn xóa phòng này không? Hành động này không thể hoàn tác.'),
+        title: const Text('Xác nhận xóa phòng'),
+        content: const Text('Bạn có chắc chắn muốn xóa phòng này không?\nĐiều này sẽ xoá cả nhóm chat của phòng. Hành động không thể hoàn tác.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa', style: TextStyle(color: Colors.red))),
@@ -70,6 +116,16 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
 
     if (act == true) {
       try {
+        // 1. Xoá chatRoom tương ứng (nếu có)
+        final chatService = ChatService();
+        final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        final roomName = _roomData['roomName'] ?? '';
+        final chatRoomId = await chatService.findChatRoomByName(roomName, userId);
+        if (chatRoomId != null) {
+          await chatService.deleteChatRoom(chatRoomId);
+        }
+
+        // 2. Xoá document phòng
         await FirebaseFirestore.instance
             .collection('houses')
             .doc(widget.houseId)
@@ -77,7 +133,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
             .doc(widget.roomId)
             .delete();
             
-        // Decrease roomCount
+        // 3. Giảm roomCount
         await FirebaseFirestore.instance
             .collection('houses')
             .doc(widget.houseId)
@@ -87,7 +143,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa phòng'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa phòng và nhóm chat'), backgroundColor: Colors.red));
           Navigator.pop(context);
         }
       } catch (e) {
@@ -353,6 +409,27 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
 
           const SizedBox(height: 24),
           
+          // Nút xoá lịch sử chat
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _deleteChatHistory,
+                icon: const Icon(Icons.chat_bubble_outline, color: Colors.orange, size: 18),
+                label: const Text('Xoá toàn bộ lịch sử chat', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 15)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.orange),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Nút xoá phòng (xoá cả chatRoom)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SizedBox(

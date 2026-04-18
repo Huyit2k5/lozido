@@ -5,12 +5,47 @@ import 'package:intl/intl.dart';
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isMe;
+  final bool isBotRoom;
 
   const ChatBubble({
     super.key,
     required this.message,
     required this.isMe,
+    this.isBotRoom = false,
   });
+
+  Widget _buildMessageText(String text) {
+    if (!text.contains('**')) {
+      return Text(
+        text,
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 15,
+        ),
+      );
+    }
+
+    final List<TextSpan> spans = [];
+    final parts = text.split('**');
+
+    for (int i = 0; i < parts.length; i++) {
+      if (parts[i].isEmpty) continue;
+      
+      final isBold = i % 2 != 0; // Odd indices are inside **
+      spans.add(TextSpan(
+        text: parts[i],
+        style: TextStyle(
+          color: Colors.black87,
+          fontSize: 15,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+        ),
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +56,13 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMe) ...[
-            const CircleAvatar(
+            CircleAvatar(
               radius: 20,
-              backgroundColor: Colors.orange,
-              child: Icon(Icons.person, color: Colors.white), // Use icon as placeholder for image
+              backgroundColor: isBotRoom ? Colors.blue : Colors.orange,
+              child: Icon(
+                isBotRoom ? Icons.smart_toy : Icons.person, 
+                color: Colors.white
+              ),
             ),
             const SizedBox(width: 8),
           ],
@@ -38,8 +76,8 @@ class ChatBubble extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
                     child: Text(
                       message.senderName,
-                      style: const TextStyle(
-                        color: Color(0xFF8B0000), // Dark red/maroon
+                      style: TextStyle(
+                        color: isBotRoom ? Colors.blue : const Color(0xFF8B0000),
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -75,13 +113,7 @@ class ChatBubble extends StatelessWidget {
                               const Icon(Icons.error),
                         )
                       else
-                        Text(
-                          message.text,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 15,
-                          ),
-                        ),
+                        _buildMessageText(message.text),
                       const SizedBox(height: 4),
                       Row(
                         mainAxisSize: MainAxisSize.min,
