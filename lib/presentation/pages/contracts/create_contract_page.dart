@@ -273,7 +273,12 @@ class _CreateContractPageState extends State<CreateContractPage> {
       });
 
         final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
-        await ChatService().createNewChatRoom(roomName, userId: FirebaseAuth.instance.currentUser?.uid);
+        await ChatService().createNewChatRoom(
+          roomName, 
+          userId: FirebaseAuth.instance.currentUser?.uid,
+          houseId: widget.houseId,
+          roomId: widget.roomId,
+        );
 
         // Auto create tenant account if useApp is checked
         if (_useApp) {

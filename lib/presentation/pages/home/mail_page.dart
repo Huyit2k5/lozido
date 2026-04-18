@@ -417,6 +417,7 @@ class _MailPageState extends State<MailPage> {
                   roomName: roomName,
                   userId: currentUserId,
                   userName: currentUserName,
+                  isTenant: widget.landlordId != null,
                 ),
               ),
             );

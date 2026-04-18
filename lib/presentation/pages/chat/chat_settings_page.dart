@@ -7,12 +7,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 class ChatSettingsPage extends StatelessWidget {
   final String roomName;
   final String roomId;
+  final bool isTenant;
 
   const ChatSettingsPage({
     super.key,
     required this.roomName,
     required this.roomId,
+    this.isTenant = false,
   });
+
+  bool get isBotRoom => roomName.toLowerCase() == 'lozido cskh';
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +54,9 @@ class ChatSettingsPage extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundColor: roomName.toLowerCase() == 'lozido cskh' ? Colors.blue : const Color(0xFFFF5722),
+                    backgroundColor: isBotRoom ? Colors.blue : const Color(0xFFFF5722),
                     child: Icon(
-                      roomName.toLowerCase() == 'lozido cskh' ? Icons.smart_toy : Icons.home, 
+                      isBotRoom ? Icons.smart_toy : Icons.home, 
                       color: Colors.white, 
                       size: 40
                     ),
@@ -67,7 +71,7 @@ class ChatSettingsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Trao đổi trong $roomName',
+                    isBotRoom ? 'Hỗ trợ trực tuyến Lozido' : 'Trao đổi trong $roomName',
                     style: const TextStyle(
                       fontSize: 13,
                       color: Colors.grey,
@@ -81,9 +85,11 @@ class ChatSettingsPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildActionButton(Icons.person_add_alt_1_outlined, 'Thêm\nthành viên'),
+                if (!isBotRoom)
+                  _buildActionButton(Icons.person_add_alt_1_outlined, 'Thêm\nthành viên'),
                 _buildActionButton(Icons.notifications_off_outlined, 'Tắt\nthông báo'),
-                _buildActionButton(Icons.logout, 'Rời khỏi\nchat', color: Colors.orange[800]),
+                if (!isBotRoom)
+                  _buildActionButton(Icons.logout, 'Rời khỏi\nchat', color: Colors.orange[800]),
               ],
             ),
             const SizedBox(height: 32),
@@ -112,31 +118,119 @@ class ChatSettingsPage extends StatelessWidget {
                     label: 'Pin hội thoại',
                     trailing: const Text('Đã ghim', style: TextStyle(color: Colors.black54)),
                   ),
-                  const Divider(height: 1, indent: 16),
-                  _buildSettingsItem(
-                    label: 'Tổng số thành viên',
-                    trailing: StreamBuilder<int>(
-                      stream: FirebaseFirestore.instance
-                          .collection('chatRooms')
-                          .doc(roomId)
-                          .snapshots()
-                          .map((doc) => (doc.data()?['memberCount'] ?? 0) as int),
-                      builder: (context, snap) {
-                        final count = snap.data ?? 0;
-                        return Text(
-                          'Xem $count Thành viên',
-                          style: const TextStyle(color: Colors.blueAccent),
-                        );
-                      },
+                  if (!isBotRoom) ...[
+                    const Divider(height: 1, indent: 16),
+                    Theme(
+                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      child: StreamBuilder<DocumentSnapshot>(
+                        stream: FirebaseFirestore.instance.collection('chatRooms').doc(roomId).snapshots(),
+                        builder: (context, chatRoomSnap) {
+                          if (!chatRoomSnap.hasData) return const SizedBox.shrink();
+                          final chatRoomData = chatRoomSnap.data!.data() as Map<String, dynamic>? ?? {};
+                          final int tenantCount = chatRoomData['memberCount'] ?? 0;
+                          final String ownerId = chatRoomData['userId'] ?? '';
+                          final String chatRoomName = chatRoomData['roomName'] ?? '';
+
+                          return ExpansionTile(
+                            title: const Text('Thành viên nhóm', style: TextStyle(fontSize: 15)),
+                            trailing: Text(
+                              'Xem ${tenantCount + 1} thành viên',
+                              style: const TextStyle(color: Colors.blueAccent),
+                            ),
+                            childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            children: [
+                              // 1. Fetch Landlord (Owner)
+                              FutureBuilder<DocumentSnapshot>(
+                                future: FirebaseFirestore.instance.collection('users').doc(ownerId).get(),
+                                builder: (context, ownerSnap) {
+                                  String ownerName = 'Đang tải...';
+                                  if (ownerSnap.hasData && ownerSnap.data!.exists) {
+                                    final data = ownerSnap.data!.data() as Map<String, dynamic>;
+                                    ownerName = data['name'] ?? 'Chủ phòng';
+                                  }
+                                  return _buildMemberTile(ownerName, 'Chủ phòng', isOwner: true);
+                                },
+                              ),
+                              // 2. Fetch Tenants from Physical Room via direct lookup (Fast) or Fallback Scan (Slow)
+                              FutureBuilder<List<Map<String, dynamic>>>(
+                                future: FirebaseFirestore.instance
+                                    .collection('chatRooms')
+                                    .doc(roomId)
+                                    .get()
+                                    .then((chatDoc) async {
+                                      final chatData = chatDoc.data() as Map<String, dynamic>? ?? {};
+                                      String? physicalRoomId = chatData['roomId'];
+                                      String? linkedHouseId = chatData['houseId'];
+                                      
+                                      // Fallback: If roomId isn't stored, scan houses by room name (for legacy data)
+                                      if (physicalRoomId == null) {
+                                        final housesSnap = await FirebaseFirestore.instance
+                                            .collection('houses')
+                                            .where('userId', isEqualTo: ownerId)
+                                            .get();
+                                        
+                                        for (var houseDoc in housesSnap.docs) {
+                                          final roomsSnap = await houseDoc.reference
+                                              .collection('rooms')
+                                              .where('roomName', isEqualTo: chatRoomName)
+                                              .limit(1)
+                                              .get();
+                                          if (roomsSnap.docs.isNotEmpty) {
+                                            physicalRoomId = roomsSnap.docs.first.id;
+                                            break; 
+                                          }
+                                        }
+                                      }
+
+                                      if (physicalRoomId == null) return [];
+
+                                      // Query top-level tenants collection for this room
+                                      final tenantsSnap = await FirebaseFirestore.instance
+                                          .collection('tenants')
+                                          .where('roomId', isEqualTo: physicalRoomId)
+                                          .get();
+                                          
+                                      return tenantsSnap.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+                                    }),
+                                builder: (context, membersSnap) {
+                                  if (membersSnap.connectionState == ConnectionState.waiting) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                                    );
+                                  }
+                                  
+                                  final members = membersSnap.data ?? [];
+                                  if (members.isEmpty) {
+                                    return const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                      child: Text('Chưa có thành viên nào khác', style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic)),
+                                    );
+                                  }
+
+                                  return Column(
+                                    children: members.map((memberData) {
+                                      final String displayName = memberData['name'] ?? 'Thành viên';
+                                      String role = memberData['role'] ?? 'Thành viên';
+                                      if (role == 'Tenant') role = 'Người thuê';
+                                      return _buildMemberTile(displayName, role);
+                                    }).toList(),
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                  ],
                   const Divider(height: 1, indent: 16),
                   _buildSettingsItem(
                     label: 'Hình nền',
                     trailing: const Text('Không có', style: TextStyle(color: Colors.black54)),
                     onTap: () {},
                   ),
-                  if (roomName.toLowerCase() == 'lozido cskh') ...[
+                  if (isBotRoom && !isTenant) ...[
                     const Divider(height: 1, indent: 16),
                     _buildSettingsItem(
                       label: 'Thêm tài liệu cho Chatbot (PDF)',
@@ -190,6 +284,68 @@ class ChatSettingsPage extends StatelessWidget {
       ),
       trailing: trailing,
       onTap: onTap ?? () {},
+    );
+  }
+
+  Widget _buildMemberTile(String name, String role, {bool isOwner = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: isOwner ? Colors.blue.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+            child: Icon(
+              isOwner ? Icons.admin_panel_settings : Icons.person,
+              size: 16,
+              color: isOwner ? Colors.blue : Colors.orange,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isOwner ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                Text(
+                  role,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          if (isOwner)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Chủ phòng',
+                style: TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            )
+          else if (role == 'Tenant' || role == 'Người thuê')
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Người thuê',
+                style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
