@@ -9,6 +9,8 @@ import '../contracts/terminate_contract_page.dart';
 import '../contracts/service_selection_page.dart';
 import '../deposit/deposit_page.dart';
 import '../tenants/tenant_list_page.dart';
+import 'transfer_room_modal.dart';
+
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
@@ -367,8 +369,22 @@ class _RoomListPageState extends State<RoomListPage> {
                 _buildModalListTile(
                   icon: Icons.sync_alt,
                   title: 'Chuyển phòng',
-                  onTap: () { Navigator.pop(context); },
+                  onTap: () {
+                    Navigator.pop(context);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => TransferRoomModal(
+                        houseId: widget.houseId,
+                        oldRoomId: roomId,
+                        houseData: widget.houseData,
+                        oldRoomData: roomData,
+                      ),
+                    );
+                  },
                 ),
+
                 const Divider(height: 1, color: Color(0xFFEEEEEE)),
                 _buildModalListTile(
                   icon: Icons.remove_red_eye_outlined,
