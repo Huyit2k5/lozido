@@ -12,6 +12,7 @@ class ChatRoomPage extends StatefulWidget {
   final String roomName;
   final String userId; // The current user's ID
   final String userName; // The current user's name
+  final bool isTenant;
 
   const ChatRoomPage({
     super.key,
@@ -19,6 +20,7 @@ class ChatRoomPage extends StatefulWidget {
     required this.roomName,
     required this.userId,
     required this.userName,
+    this.isTenant = false,
   });
 
   @override
@@ -92,8 +94,18 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         .map((doc) => (doc.data()?['memberCount'] ?? 0) as int),
                     builder: (context, snap) {
                       final count = snap.data ?? 0;
+                      if (widget.roomName.toLowerCase() == 'lozido cskh') {
+                        return const Text(
+                          'Hỗ trợ trực tuyến',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      }
                       return Text(
-                        '$count thành viên',
+                        '${count + 1} thành viên',
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -120,6 +132,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   builder: (context) => ChatSettingsPage(
                     roomName: widget.roomName,
                     roomId: widget.roomId,
+                    isTenant: widget.isTenant,
                   ),
                 ),
               );
