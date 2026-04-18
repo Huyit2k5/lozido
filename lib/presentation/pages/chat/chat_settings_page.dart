@@ -1,14 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class ChatSettingsPage extends StatelessWidget {
   final String roomName;
+  final String roomId;
 
   const ChatSettingsPage({
     super.key,
     required this.roomName,
+    required this.roomId,
   });
 
   @override
@@ -45,10 +48,14 @@ class ChatSettingsPage extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 40,
-                    backgroundColor: Color(0xFFFF5722), // Orange/Red
-                    child: Icon(Icons.home, color: Colors.white, size: 40),
+                    backgroundColor: roomName.toLowerCase() == 'lozido cskh' ? Colors.blue : const Color(0xFFFF5722),
+                    child: Icon(
+                      roomName.toLowerCase() == 'lozido cskh' ? Icons.smart_toy : Icons.home, 
+                      color: Colors.white, 
+                      size: 40
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -108,9 +115,19 @@ class ChatSettingsPage extends StatelessWidget {
                   const Divider(height: 1, indent: 16),
                   _buildSettingsItem(
                     label: 'Tổng số thành viên',
-                    trailing: const Text(
-                      'Xem 2 Thành viên',
-                      style: TextStyle(color: Colors.blueAccent),
+                    trailing: StreamBuilder<int>(
+                      stream: FirebaseFirestore.instance
+                          .collection('chatRooms')
+                          .doc(roomId)
+                          .snapshots()
+                          .map((doc) => (doc.data()?['memberCount'] ?? 0) as int),
+                      builder: (context, snap) {
+                        final count = snap.data ?? 0;
+                        return Text(
+                          'Xem $count Thành viên',
+                          style: const TextStyle(color: Colors.blueAccent),
+                        );
+                      },
                     ),
                   ),
                   const Divider(height: 1, indent: 16),

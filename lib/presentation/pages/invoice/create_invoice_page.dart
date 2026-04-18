@@ -272,7 +272,8 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       _isAnalyzingAI = true;
     });
     try {
-      final List<Map<String, dynamic>> data = await GeminiService().parseInvoiceAdjustments(text);
+      final int totalMembers = widget.roomData['totalMembers'] ?? 1;
+      final List<Map<String, dynamic>> data = await GeminiService().parseInvoiceAdjustments(text, occupantsCount: totalMembers);
       
       if (!mounted) return;
       setState(() {

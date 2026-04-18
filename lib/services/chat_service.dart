@@ -55,4 +55,51 @@ class ChatService {
       return ChatRoom.fromFirestore(doc);
     });
   }
+
+  // Find chatRoom by roomName and userId
+  Future<String?> findChatRoomByName(String roomName, String userId) async {
+    try {
+      final query = await _chatRoomsRef
+          .where('roomName', isEqualTo: roomName)
+          .where('userId', isEqualTo: userId)
+          .limit(1)
+          .get();
+      if (query.docs.isNotEmpty) {
+        return query.docs.first.id;
+      }
+      return null;
+    } catch (e) {
+      print('Error finding chat room: $e');
+      return null;
+    }
+  }
+
+  // Delete all messages in a chatRoom (keep the chatRoom document)
+  Future<void> deleteAllMessages(String chatRoomId) async {
+    try {
+      final messagesRef = _chatRoomsRef.doc(chatRoomId).collection('messages');
+      final snapshots = await messagesRef.get();
+      final batch = _firestore.batch();
+      for (final doc in snapshots.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      print('Error deleting messages: $e');
+      rethrow;
+    }
+  }
+
+  // Delete entire chatRoom document (and its messages sub-collection)
+  Future<void> deleteChatRoom(String chatRoomId) async {
+    try {
+      // First delete all messages
+      await deleteAllMessages(chatRoomId);
+      // Then delete the chatRoom document itself
+      await _chatRoomsRef.doc(chatRoomId).delete();
+    } catch (e) {
+      print('Error deleting chat room: $e');
+      rethrow;
+    }
+  }
 }

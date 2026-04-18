@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
@@ -99,7 +99,7 @@ class _InvoiceImageExportPageState extends State<InvoiceImageExportPage> {
             );
           }
         } else {
-          final result = await ImageGallerySaver.saveImage(
+          final result = await ImageGallerySaverPlus.saveImage(
             image,
             quality: 100,
             name: "HoaDon_${widget.invoiceId}",

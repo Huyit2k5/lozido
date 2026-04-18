@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lozido_app/presentation/pages/auth/auth_wrapper.dart';
 import 'package:intl/intl.dart';
+import '../home/mail_page.dart';
 
 class TenantMainPage extends StatefulWidget {
   const TenantMainPage({super.key});
@@ -14,6 +15,7 @@ class TenantMainPage extends StatefulWidget {
 class _TenantMainPageState extends State<TenantMainPage> {
   final User? currentUser = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  int _currentIndex = 0;
 
   String _formatCurrency(double amount) {
     return NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(amount);
@@ -92,7 +94,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
             );
           }
 
-          return _buildMainContent(houseId, roomId);
+          return _buildMainContent(houseId, roomId, userData);
         },
       ),
     );
@@ -101,6 +103,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
   Widget _buildMainContent(
     String houseId,
     String roomId,
+    Map<String, dynamic> userData,
   ) {
     return StreamBuilder<DocumentSnapshot>(
       stream: _firestore
@@ -123,44 +126,85 @@ class _TenantMainPageState extends State<TenantMainPage> {
                 houseSnapshot.data?.data() as Map<String, dynamic>? ?? {};
             final houseName = houseData['name'] ?? 'Nhà trọ';
             final int closingDate = houseData['closingDate'] ?? 5;
+            final landlordId = houseData['userId'] ?? '';
 
-            return CustomScrollView(
-              slivers: [
-                _buildSliverHeader(houseId, roomId, roomName, houseName),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildProgressCard(houseId, roomId),
+            return Scaffold(
+              backgroundColor: const Color(0xFFF0F2F5),
+              body: IndexedStack(
+                index: _currentIndex,
+                children: [
+                   _buildHomeContent(houseId, roomId, roomName, houseName, closingDate, roomData, houseData),
+                   MailPage(
+                     tenantRoomName: roomName,
+                     landlordId: landlordId,
+                     tenantUid: userData['uid'] ?? currentUser!.uid,
+                     tenantName: userData['name'] ?? 'Thành viên',
+                   ),
+                   const Center(child: Text('Trang cá nhân')),
+                ],
+              ),
+              bottomNavigationBar: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                onTap: (index) => setState(() => _currentIndex = index),
+                selectedItemColor: const Color(0xFF00A651),
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+                  BottomNavigationBarItem(icon: Icon(Icons.mail), label: 'Hộp thư'),
+                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 20,
-                              color: const Color(0xFF00A651),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Menu thao tác',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Một số thao tác với nhà đang thuê',
-                          style: TextStyle(fontSize: 14, color: Colors.black54),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildActionMenuGrid(),
+  Widget _buildHomeContent(
+    String houseId,
+    String roomId,
+    String roomName,
+    String houseName,
+    int closingDate,
+    Map<String, dynamic> roomData,
+    Map<String, dynamic> houseData,
+  ) {
+    return CustomScrollView(
+      slivers: [
+        _buildSliverHeader(houseId, roomId, roomName, houseName),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProgressCard(houseId, roomId),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 20,
+                      color: const Color(0xFF00A651),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Menu thao tác',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Một số thao tác với nhà đang thuê',
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+                const SizedBox(height: 16),
+                _buildActionMenuGrid(),
                         const SizedBox(height: 24),
                         Row(
                           children: [
@@ -242,10 +286,6 @@ class _TenantMainPageState extends State<TenantMainPage> {
                 ),
               ],
             );
-          },
-        );
-      },
-    );
   }
 
   Widget _buildSliverHeader(

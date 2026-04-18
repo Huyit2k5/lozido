@@ -61,10 +61,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         ),
         title: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.orange,
-              child: Icon(Icons.home, color: Colors.white, size: 20),
+              backgroundColor: widget.roomName.toLowerCase() == 'lozido cskh' ? Colors.blue : Colors.orange,
+              child: Icon(
+                widget.roomName.toLowerCase() == 'lozido cskh' ? Icons.smart_toy : Icons.home, 
+                color: Colors.white, 
+                size: 20
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -80,12 +84,22 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const Text(
-                    '2 thành viên',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
+                  StreamBuilder<int>(
+                    stream: FirebaseFirestore.instance
+                        .collection('chatRooms')
+                        .doc(widget.roomId)
+                        .snapshots()
+                        .map((doc) => (doc.data()?['memberCount'] ?? 0) as int),
+                    builder: (context, snap) {
+                      final count = snap.data ?? 0;
+                      return Text(
+                        '$count thành viên',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -105,6 +119,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 MaterialPageRoute(
                   builder: (context) => ChatSettingsPage(
                     roomName: widget.roomName,
+                    roomId: widget.roomId,
                   ),
                 ),
               );
@@ -136,6 +151,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     return ChatBubble(
                       message: message,
                       isMe: message.senderId == widget.userId,
+                      isBotRoom: widget.roomName.toLowerCase() == 'lozido cskh',
                     );
                   },
                 );
