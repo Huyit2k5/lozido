@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'add_room_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'transfer_room_modal.dart';
+
 import '../../../services/chat_service.dart';
 
 
@@ -339,6 +341,35 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
               ),
             ),
           ),
+
+          _buildSectionHeader(
+            icon: Icons.sync_alt,
+            title: 'Thao tác nâng cao',
+            subtitle: 'Chuyển phòng, kết thúc hợp đồng...',
+            action: OutlinedButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => TransferRoomModal(
+                    houseId: widget.houseId,
+                    oldRoomId: widget.roomId,
+                    houseData: widget.houseData,
+                    oldRoomData: _roomData,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.sync_alt, size: 16, color: Colors.blue),
+              label: const Text('Chuyển phòng', style: TextStyle(color: Colors.blue)),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                side: BorderSide(color: Colors.blue.shade200),
+              ),
+            ),
+          ),
+
           
           // Thong tin phong detail Grid
           Container(
