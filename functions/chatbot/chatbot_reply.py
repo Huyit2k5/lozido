@@ -4,6 +4,7 @@ from firebase_admin import initialize_app, firestore
 import google.generativeai as genai
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
+from database_tools import get_houses_list, get_rooms_status, get_unpaid_invoices
 
 # Admin sdk init inside the execution body to prevent deploy timeout
 
@@ -86,10 +87,27 @@ def reply_chatbot_message(event: firestore_fn.Event[firestore_fn.DocumentSnapsho
     except Exception as e:
         print(f"⚠️ Không thể thực hiện RAG hoặc không có context: {str(e)}")
 
-    # 5. Khởi tạo Gemini Model và tạo câu trả lời
-    prompt = f"Bạn là một Chatbot hỗ trợ chăm sóc khách hàng (CSKH). Tên của bạn là Chat Bot Nhà Trọ.\n\n"
+    # 5. Phân quyền: Kiểm tra người gửi là Chủ Nhà (Landlord) hay Người Thuê (Tenant)
+    is_landlord = False
+    try:
+        user_doc = db.collection("users").document(sender_id).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            if user_data.get("role") == "Landlord":
+                is_landlord = True
+    except Exception as e:
+        print(f"Lỗi kiểm tra quyền: {e}")
+
+    # 6. Khởi tạo Gemini Model và tạo câu trả lời
+    prompt = "Bạn là một Chatbot hỗ trợ chăm sóc khách hàng (CSKH). Tên của bạn là Chat Bot Nhà Trọ.\n\n"
+    
+    if is_landlord:
+        prompt += "[QUYỀN CHỦ NHÀ]: Bạn đang nói chuyện với CHỦ TRỌ. Bạn CÓ QUYỀN sử dụng các công cụ tìm kiếm dữ liệu (house, room, invoice) để trả lời họ.\n\n"
+    else:
+        prompt += "[QUYỀN NGƯỜI THUÊ]: Bạn đang nói chuyện với NGƯỜI THUÊ PHÒNG. BẠN TUYỆT ĐỐI KHÔNG ĐƯỢC TIẾT LỘ dữ liệu quản lý. Chỉ trả lời dựa vào các quy định và thông tin chung sau đây:\n\n"
+
     if context_chunks:
-        prompt += "Hãy dựa vào các thông tin sau để trả lời khách hàng:\n"
+        prompt += "Hãy dựa vào các thông tin sau để trả lời:\n"
         prompt += "\n---\n".join(context_chunks)
         prompt += "\n---\n\n"
 
@@ -97,8 +115,15 @@ def reply_chatbot_message(event: firestore_fn.Event[firestore_fn.DocumentSnapsho
     prompt += "Hãy trả lời một cách tự nhiên, lịch sự, ngắn gọn và hữu ích nhé."
 
     try:
-        model = genai.GenerativeModel('gemini-flash-lite-latest')
-        response = model.generate_content(prompt)
+        # Nhóm công cụ truy vấn (Chỉ cấp cho Landlord)
+        active_tools = [get_houses_list, get_rooms_status, get_unpaid_invoices] if is_landlord else None
+
+        model = genai.GenerativeModel(
+            model_name='gemini-flash-lite-latest',
+            tools=active_tools
+        )
+        chat = model.start_chat(enable_automatic_function_calling=True)
+        response = chat.send_message(prompt)
         bot_reply = response.text
 
         # 6. Gửi tin nhắn trả lời ngược lại Firebase
