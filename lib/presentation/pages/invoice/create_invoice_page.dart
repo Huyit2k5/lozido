@@ -232,12 +232,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
         setState(() => _isListening = true);
         _speechToText.listen(
           onResult: (val) {
-            if (!mounted) return;
+            if (!mounted || _isAnalyzingAI) return;
             setState(() {
               _recognizedText = val.recognizedWords;
               _voiceTextController.text = _recognizedText;
             });
-            
             // Tự động tắt mic sau 3s không nói
             _silenceTimer?.cancel();
             _silenceTimer = Timer(const Duration(seconds: 3), () {
@@ -273,7 +272,11 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     });
     try {
       final int totalMembers = widget.roomData['totalMembers'] ?? 1;
-      final List<Map<String, dynamic>> data = await GeminiService().parseInvoiceAdjustments(text, occupantsCount: totalMembers);
+      final List<Map<String, dynamic>> data = await GeminiService().parseInvoiceAdjustments(
+        text, 
+        occupantsCount: totalMembers,
+        rentPrice: _rentPrice,
+      );
       
       if (!mounted) return;
       setState(() {

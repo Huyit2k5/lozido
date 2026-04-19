@@ -11,7 +11,7 @@ class GeminiService {
 
   GeminiService._internal();
 
-  Future<List<Map<String, dynamic>>> parseInvoiceAdjustments(String text, {int occupantsCount = 1}) async {
+  Future<List<Map<String, dynamic>>> parseInvoiceAdjustments(String text, {int occupantsCount = 1, double rentPrice = 0}) async {
     if (text.trim().isEmpty) return [];
 
     final doc = await FirebaseFirestore.instance.collection('config').doc('gemini').get();
@@ -22,22 +22,25 @@ class GeminiService {
     final prompt = "Extract all extra charges and discounts for invoicing. Return JSON ARRAY only. No explanation.\n"
         + "Format: [{\"reason\":\"string\",\"price\":number}]\n\n"
         + "Context:\n"
-        + "- Number of occupants in the room: $occupantsCount\n\n"
+        + "- Number of occupants in the room: $occupantsCount\n"
+        + "- Monthly Rent Price: ${rentPrice.toStringAsFixed(0)} VND\n\n"
         + "Rules:\n"
         + "1. Detect if the item is a surcharge or a discount:\n"
         + "   - Surcharge/Service (Positive): 'phí', 'thêm', 'sửa', 'thay', 'vệ sinh', 'cắt cỏ'...\n"
         + "   - Discount/Reduction (Negative): 'giảm', 'trừ', 'khuyến mãi', 'quà', 'tặng'...\n"
         + "2. If it is a discount or reduction, the price MUST be a negative number.\n"
         + "3. Units: 'k' = 1,000; 'tr' = 1,000,000.\n"
-        + "4. **IMPORTANT**: If the input mentions a price per person (e.g., 'mỗi người', '1 người', 'theo người', 'đầu người', 'per person'), you MUST multiply the unit price by the number of occupants ($occupantsCount) and update the reason to include the count (e.g., 'giữ xe ($occupantsCount người)').\n\n"
+        + "4. **OCCUPANTS**: If input mentions 'per person' (mỗi người, 1 người, đầu người...), multiply unit price by $occupantsCount.\n"
+        + "5. **PERCENTAGES**: If input mentions percentages (%, phần trăm), calculate it based on the Monthly Rent Price ($rentPrice). Example: 'giảm 10%' = ${-0.1 * rentPrice}.\n"
+        + "6. **MISSING PRICE**: If a reason is clear but no price/percentage is found, return \"price\": 0.\n\n"
         + "INPUT: \"phí vệ sinh 50k với cắt cỏ 100k\"\n"
         + "[{\"reason\":\"phí vệ sinh\",\"price\":50000}, {\"reason\":\"cắt cỏ\",\"price\":100000}]\n\n"
+        + "INPUT: \"giảm giá khách quen 10%\"\n"
+        + "[{\"reason\":\"khách quen\",\"price\":${-0.1 * rentPrice}}]\n\n"
         + "INPUT: \"giữ xe 100k 1 người\"\n"
         + "[{\"reason\":\"giữ xe ($occupantsCount người)\",\"price\":${100000 * occupantsCount}}]\n\n"
-        + "INPUT: \"thay bóng đèn 30k giảm giá sinh nhật 100k\"\n"
-        + "[{\"reason\":\"thay bóng đèn\",\"price\":30000}, {\"reason\":\"giảm giá sinh nhật\",\"price\":-100000}]\n\n"
-        + "INPUT: \"thêm người ở 200k trừ tiền rác 20k\"\n"
-        + "[{\"reason\":\"thêm người ở\",\"price\":200000}, {\"reason\":\"tiền rác\",\"price\":-20000}]\n\n"
+        + "INPUT: \"Thay bóng đèn\"\n"
+        + "[{\"reason\":\"Thay bóng đèn\",\"price\":0}]\n\n"
         + "INPUT: \"$text\"\n";
 
     final response = await model.generateContent([Content.text(prompt)]);
