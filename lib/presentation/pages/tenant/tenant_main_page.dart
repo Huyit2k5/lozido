@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../home/mail_page.dart';
 import 'tenant_contract_page.dart';
 import 'tenant_invoice_list_page.dart';
+import 'tenant_profile_page.dart';
 
 
 class TenantMainPage extends StatefulWidget {
@@ -143,7 +144,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                      tenantUid: userData['uid'] ?? currentUser!.uid,
                      tenantName: userData['name'] ?? 'Thành viên',
                    ),
-                   const Center(child: Text('Trang cá nhân')),
+                   TenantProfilePage(userData: userData),
                 ],
               ),
               bottomNavigationBar: BottomNavigationBar(
