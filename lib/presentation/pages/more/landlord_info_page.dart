@@ -13,7 +13,6 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
-  final TextEditingController _jobController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _idCardController = TextEditingController();
   final TextEditingController _issuePlaceController = TextEditingController();
@@ -39,7 +38,6 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
             _nameController.text = data['landlordRepresentativeName'] ?? '';
             _phoneController.text = data['landlordRepresentativePhone'] ?? '';
             _dobController.text = data['landlordDob'] ?? '';
-            _jobController.text = data['landlordJob'] ?? '';
             _addressController.text = data['landlordAddress'] ?? '';
             _idCardController.text = data['landlordIdCard'] ?? '';
             _issuePlaceController.text = data['landlordIdIssuePlace'] ?? '';
@@ -74,7 +72,6 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
           'landlordRepresentativeName': _nameController.text.trim(),
           'landlordRepresentativePhone': _phoneController.text.trim(),
           'landlordDob': _dobController.text.trim(),
-          'landlordJob': _jobController.text.trim(),
           'landlordAddress': _addressController.text.trim(),
           'landlordIdCard': _idCardController.text.trim(),
           'landlordIdIssuePlace': _issuePlaceController.text.trim(),
@@ -109,7 +106,6 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
     _nameController.dispose();
     _phoneController.dispose();
     _dobController.dispose();
-    _jobController.dispose();
     _addressController.dispose();
     _idCardController.dispose();
     _issuePlaceController.dispose();
@@ -231,31 +227,11 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
                           ],
                         ),
                         _buildTextField("Ngày sinh", _dobController, isRequired: true, hintText: "dd/MM/yyyy"),
-                        _buildTextField("Nghề nghiệp", _jobController, isRequired: true),
                         _buildTextField("Địa chỉ", _addressController, isRequired: true),
                         _buildTextField(
                           "Thẻ CCCD",
                           _idCardController,
                           hintText: "Ví dụ: 001304207098 hoặc 2123234",
-                          suffix: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.sync, color: Color(0xFF00A651), size: 16),
-                                SizedBox(width: 4),
-                                Text(
-                                  "Passport",
-                                  style: TextStyle(color: Color(0xFF00A651), fontSize: 13, fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                         Row(
                           children: [

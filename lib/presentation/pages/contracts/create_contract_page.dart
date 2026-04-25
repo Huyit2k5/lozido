@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../../../services/chat_service.dart';
+import '../../../services/gemini_service.dart';
 import 'contract_provider.dart';
 import '../assets/manage_assets_page.dart';
 
@@ -48,6 +51,15 @@ class _CreateContractPageState extends State<CreateContractPage> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   bool _useApp = false;
+
+  // Extra Info Section
+  bool _showExtraInfo = false;
+  final _birthDateCtrl = TextEditingController();
+  final _cccdCtrl = TextEditingController();
+  final _issueDateCtrl = TextEditingController();
+  final _issuePlaceCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  String _gender = 'Nam';
 
   // Section 3
   final _rentPriceCtrl = TextEditingController();
@@ -146,6 +158,13 @@ class _CreateContractPageState extends State<CreateContractPage> {
       _contractTemplate = initial['contractTemplate'] ?? 'Mẫu mặc định';
       _electricPriceCtrl.text = _formatNumber((initial['electricityPrice'] ?? 0).toString());
       _waterPriceCtrl.text = _formatNumber((initial['waterPrice'] ?? 0).toString());
+      
+      _birthDateCtrl.text = initial['birthYear'] ?? '';
+      _cccdCtrl.text = initial['cccd'] ?? '';
+      _issueDateCtrl.text = initial['issueDate'] ?? '';
+      _issuePlaceCtrl.text = initial['issuePlace'] ?? '';
+      _addressCtrl.text = initial['address'] ?? '';
+      _gender = initial['gender'] ?? 'Nam';
     } else {
       _startDateCtrl.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
       _updateEndDate();
@@ -192,6 +211,153 @@ class _CreateContractPageState extends State<CreateContractPage> {
     return double.tryParse(val.replaceAll('.', '').replaceAll(',', '')) ?? 0;
   }
 
+  Widget _buildScanBanner() {
+    return InkWell(
+      onTap: _showScanOptions,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: const Color(0xFFFFF9E6),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), shape: BoxShape.circle),
+              child: const Icon(Icons.document_scanner, color: Colors.amber, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Bạn đã có sẵn hợp đồng?", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                  Text("Quét ngay để tự động điền thông tin", style: TextStyle(color: Colors.black54, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.black54),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showScanOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text("Chọn phương thức tải lên", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text("Chụp ảnh hợp đồng/CCCD"),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.green),
+              title: const Text("Chọn ảnh từ thư viện"),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+              title: const Text("Chọn file PDF"),
+              onTap: () {
+                Navigator.pop(context);
+                _pickPdf();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      await _processWithGemini(bytes, 'image/jpeg');
+    }
+  }
+
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      final bytes = result.files.first.bytes;
+      if (bytes != null) {
+        await _processWithGemini(bytes, 'application/pdf');
+      }
+    }
+  }
+
+  Future<void> _processWithGemini(Uint8List bytes, String mimeType) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final data = await GeminiService().parseContractDocument(bytes, mimeType);
+      
+      if (mounted) {
+        setState(() {
+          if (data['tenantName']?.toString().isNotEmpty == true) _nameCtrl.text = data['tenantName'].toString();
+          if (data['phoneNumber']?.toString().isNotEmpty == true) _phoneCtrl.text = data['phoneNumber'].toString();
+          if (data['cccd']?.toString().isNotEmpty == true) {
+            _cccdCtrl.text = data['cccd'].toString();
+            _showExtraInfo = true;
+          }
+          if (data['birthYear']?.toString().isNotEmpty == true) _birthDateCtrl.text = data['birthYear'].toString();
+          if (data['issueDate']?.toString().isNotEmpty == true) _issueDateCtrl.text = data['issueDate'].toString();
+          if (data['issuePlace']?.toString().isNotEmpty == true) _issuePlaceCtrl.text = data['issuePlace'].toString();
+          if (data['address']?.toString().isNotEmpty == true) _addressCtrl.text = data['address'].toString();
+          if (data['gender']?.toString().isNotEmpty == true) _gender = data['gender'].toString();
+
+          if (data['duration']?.toString().isNotEmpty == true) {
+            final dur = data['duration'].toString();
+            if (['1 Tháng', '3 Tháng', '6 Tháng', '1 Năm', '2 Năm'].contains(dur)) {
+              _selectedDuration = dur;
+            }
+          }
+          if (data['startDate']?.toString().isNotEmpty == true) {
+            _startDateCtrl.text = data['startDate'].toString();
+            _updateEndDate();
+          }
+          if (data['rentPrice'] != null) _rentPriceCtrl.text = _formatNumber(data['rentPrice'].toString());
+          if (data['depositAmount'] != null) _depositCtrl.text = _formatNumber(data['depositAmount'].toString());
+          if (data['billingDate']?.toString().isNotEmpty == true) _billingDateCtrl.text = data['billingDate'].toString();
+          if (data['electricityPrice'] != null) _electricPriceCtrl.text = _formatNumber(data['electricityPrice'].toString());
+          if (data['waterPrice'] != null) _waterPriceCtrl.text = _formatNumber(data['waterPrice'].toString());
+        });
+        
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất thông tin thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi khi xử lý: $e")));
+      }
+    }
+  }
+
   Future<void> _submitContract() async {
     if (!_formKey.currentState!.validate()) return;
     if (_startDateCtrl.text.isEmpty) {
@@ -223,6 +389,12 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'contractTemplate': _contractTemplate,
         'electricityPrice': _parseCurrency(_electricPriceCtrl.text),
         'waterPrice': _parseCurrency(_waterPriceCtrl.text),
+        'birthYear': _birthDateCtrl.text,
+        'gender': _gender,
+        'cccd': _cccdCtrl.text,
+        'issueDate': _issueDateCtrl.text,
+        'issuePlace': _issuePlaceCtrl.text,
+        'address': _addressCtrl.text,
         'assets': assets.map((a) => a.toMap()).toList(),
         'idCardImages': _imageUrls,
         'status': 'Active',
@@ -403,6 +575,12 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'roomId': widget.roomId,
         'email': email,
         'userId': landlordUid,
+        'birthYear': _birthDateCtrl.text,
+        'gender': _gender,
+        'cccd': _cccdCtrl.text,
+        'issueDate': _issueDateCtrl.text,
+        'issuePlace': _issuePlaceCtrl.text,
+        'address': _addressCtrl.text,
       }, SetOptions(merge: true));
 
       debugPrint("Đã tự động tạo tài khoản tenant cho $phoneNumber");
@@ -439,6 +617,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              if (widget.contractId == null) _buildScanBanner(),
               _buildSection1(),
               const SizedBox(height: 8),
               _buildSection2(),
@@ -646,6 +825,75 @@ class _CreateContractPageState extends State<CreateContractPage> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          Center(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _showExtraInfo = !_showExtraInfo;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(_showExtraInfo ? Icons.unfold_less : Icons.unfold_more, size: 16, color: Colors.black87),
+                    const SizedBox(width: 8),
+                    const Text("Thông tin khác của khách", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: Colors.black87)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_showExtraInfo) ...[
+            const SizedBox(height: 16),
+            _buildTextField("Ngày sinh / Năm sinh", _birthDateCtrl, hint: "dd/MM/yyyy"),
+            const SizedBox(height: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Giới tính", style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87, fontSize: 13)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _gender,
+                      isExpanded: true,
+                      items: ['Nam', 'Nữ', 'Khác'].map((String value) {
+                        return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(fontSize: 14)));
+                      }).toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => _gender = v);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.qr_code, color: Colors.deepOrange, size: 24))),
+            const SizedBox(height: 16),
+            _buildTextField("Địa chỉ thường trú", _addressCtrl, hint: "Nhập địa chỉ thường trú"),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildTextField("Ngày cấp", _issueDateCtrl, hint: "dd/MM/yyyy")),
+                const SizedBox(width: 12),
+                Expanded(child: _buildTextField("Nơi cấp", _issuePlaceCtrl, hint: "Nơi cấp")),
+              ],
+            ),
+          ],
         ],
       ),
     );

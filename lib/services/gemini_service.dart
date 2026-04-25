@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
@@ -55,5 +56,65 @@ class GeminiService {
 
     final List<dynamic> data = jsonDecode(cleanJson);
     return data.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  Future<Map<String, dynamic>> parseContractDocument(Uint8List bytes, String mimeType) async {
+    final doc = await FirebaseFirestore.instance.collection('config').doc('gemini').get();
+    final apiKey = doc.data()?['api_key'] ?? '';
+    if (apiKey.isEmpty) throw Exception("Không tìm thấy API Key");
+
+    final model = GenerativeModel(model: 'gemini-flash-lite-latest', apiKey: apiKey);
+    
+    final prompt = """
+Bạn là một AI chuyên trích xuất dữ liệu từ Hợp đồng thuê phòng trọ hoặc hình ảnh Căn cước công dân.
+Hãy đọc tài liệu được đính kèm và trích xuất các thông tin sau, trả về duy nhất một object JSON. Không có bất kỳ đoạn giải thích hay text nào khác.
+
+Định dạng JSON cần trả về:
+{
+  "tenantName": "string (Họ và tên khách thuê / Bên B)",
+  "phoneNumber": "string (Số điện thoại khách thuê)",
+  "gender": "string (Nam hoặc Nữ)",
+  "birthYear": "string (Ngày sinh hoặc năm sinh. VD: 16/06/1990)",
+  "cccd": "string (Số CMND/CCCD/Passport)",
+  "issueDate": "string (Ngày cấp CCCD)",
+  "issuePlace": "string (Nơi cấp CCCD)",
+  "duration": "string (Thời hạn thuê, ví dụ: '6 Tháng', '1 Năm')",
+  "startDate": "string (Ngày bắt đầu thuê, ví dụ: '18/04/2026')",
+  "rentPrice": "number (Giá tiền thuê phòng trọ tính theo VNĐ, chỉ để số, VD: 15000000)",
+  "depositAmount": "number (Tiền thế chân / cọc tính theo VNĐ, chỉ để số, VD: 0)",
+  "billingDate": "string (Ngày thanh toán hàng tháng, VD: '1' hoặc '15')",
+  "address": "string (Địa chỉ thường trú / Chỗ ở hiện tại)",
+  "electricityPrice": "number (Tiền điện, VD: 3500)",
+  "waterPrice": "number (Tiền nước, VD: 20000)"
+}
+
+Lưu ý:
+- Nếu thông tin nào không có trong tài liệu, hãy để null hoặc chuỗi rỗng "".
+- Với giá tiền, hãy bỏ các ký tự "đ", ".", "," và chuyển thành số nguyên. Ví dụ "15.000.000đ" -> 15000000.
+- Ngày tháng cố gắng format theo dạng "dd/MM/yyyy" hoặc giữ nguyên số ngày (ví dụ thanh toán vào ngày "1 dương lịch" -> "1").
+""";
+
+    final content = [
+      Content.multi([
+        TextPart(prompt),
+        DataPart(mimeType, bytes),
+      ])
+    ];
+
+    final response = await model.generateContent(content);
+    final responseText = response.text ?? "{}";
+
+    String cleanJson = responseText;
+    if (cleanJson.contains("```json")) {
+      cleanJson = cleanJson.split("```json")[1].split("```")[0].trim();
+    } else if (cleanJson.contains("```")) {
+      cleanJson = cleanJson.split("```")[1].split("```")[0].trim();
+    }
+
+    try {
+      return jsonDecode(cleanJson) as Map<String, dynamic>;
+    } catch (e) {
+      return {};
+    }
   }
 }
