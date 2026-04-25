@@ -70,7 +70,6 @@ def reply_chatbot_message(event: firestore_fn.Event[firestore_fn.DocumentSnapsho
         query_vector = query_embedding_response['embedding']
 
         # Truy vấn tất cả file trong knowledge base (Ở đây query giới hạn 1 file hoặc tìm trong group)
-        # Vì collection group chunks mới hỗ trợ vector query
         docs = db.collection_group("chunks") \
                  .find_nearest(
                      vector_field="embedding",
