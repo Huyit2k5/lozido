@@ -83,6 +83,7 @@ Hãy đọc tài liệu được đính kèm và trích xuất các thông tin s
   "rentPrice": "number (Giá tiền thuê phòng trọ tính theo VNĐ, chỉ để số, VD: 15000000)",
   "depositAmount": "number (Tiền thế chân / cọc tính theo VNĐ, chỉ để số, VD: 0)",
   "billingDate": "string (Ngày thanh toán hàng tháng, VD: '1' hoặc '15')",
+  "address": "string (Địa chỉ thường trú / Chỗ ở hiện tại)",
   "electricityPrice": "number (Tiền điện, VD: 3500)",
   "waterPrice": "number (Tiền nước, VD: 20000)"
 }

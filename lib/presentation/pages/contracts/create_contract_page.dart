@@ -58,6 +58,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
   final _cccdCtrl = TextEditingController();
   final _issueDateCtrl = TextEditingController();
   final _issuePlaceCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
   String _gender = 'Nam';
 
   // Section 3
@@ -162,6 +163,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
       _cccdCtrl.text = initial['cccd'] ?? '';
       _issueDateCtrl.text = initial['issueDate'] ?? '';
       _issuePlaceCtrl.text = initial['issuePlace'] ?? '';
+      _addressCtrl.text = initial['address'] ?? '';
       _gender = initial['gender'] ?? 'Nam';
     } else {
       _startDateCtrl.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
@@ -325,6 +327,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           if (data['birthYear']?.toString().isNotEmpty == true) _birthDateCtrl.text = data['birthYear'].toString();
           if (data['issueDate']?.toString().isNotEmpty == true) _issueDateCtrl.text = data['issueDate'].toString();
           if (data['issuePlace']?.toString().isNotEmpty == true) _issuePlaceCtrl.text = data['issuePlace'].toString();
+          if (data['address']?.toString().isNotEmpty == true) _addressCtrl.text = data['address'].toString();
           if (data['gender']?.toString().isNotEmpty == true) _gender = data['gender'].toString();
 
           if (data['duration']?.toString().isNotEmpty == true) {
@@ -391,6 +394,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'cccd': _cccdCtrl.text,
         'issueDate': _issueDateCtrl.text,
         'issuePlace': _issuePlaceCtrl.text,
+        'address': _addressCtrl.text,
         'assets': assets.map((a) => a.toMap()).toList(),
         'idCardImages': _imageUrls,
         'status': 'Active',
@@ -576,6 +580,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'cccd': _cccdCtrl.text,
         'issueDate': _issueDateCtrl.text,
         'issuePlace': _issuePlaceCtrl.text,
+        'address': _addressCtrl.text,
       }, SetOptions(merge: true));
 
       debugPrint("Đã tự động tạo tài khoản tenant cho $phoneNumber");
@@ -877,7 +882,9 @@ class _CreateContractPageState extends State<CreateContractPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: Padding(padding: EdgeInsets.all(12), child: Icon(Icons.qr_code, color: Colors.deepOrange, size: 24))),
+            _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.qr_code, color: Colors.deepOrange, size: 24))),
+            const SizedBox(height: 16),
+            _buildTextField("Địa chỉ thường trú", _addressCtrl, hint: "Nhập địa chỉ thường trú"),
             const SizedBox(height: 16),
             Row(
               children: [

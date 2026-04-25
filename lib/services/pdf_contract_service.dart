@@ -16,6 +16,14 @@ class PdfContractService {
     required Map<String, dynamic> contractData,
     required String roomName,
     required String ownerName,
+    String landlordDob = '..............................',
+    String landlordIdCard = '..............................',
+    String landlordIdIssueDate = '..............................',
+    String landlordIdIssuePlace = '..............................',
+    String landlordRepresentativeName = '..............................',
+    String landlordRepresentativePhone = '..............................',
+    String landlordAddress = '..............................',
+    String tenantAddress = '..............................',
   }) async {
     final pdf = pw.Document();
 
@@ -60,14 +68,14 @@ class PdfContractService {
               ),
             ),
             
-            // BÊN A
             pw.Text('BÊN A : BÊN CHO THUÊ (PHÒNG TRỌ)', style: boldStyle),
             pw.SizedBox(height: 8),
             pw.Text('Họ và tên: $ownerName', style: textStyle),
-            pw.Text('Năm sinh: ..............................', style: textStyle),
-            pw.Text('CMND/CCCD: ..............................', style: textStyle),
-            pw.Text('Ngày cấp: .............................. Nơi cấp: ..............................', style: textStyle),
-            pw.Text('Thường trú: .....................................................................', style: textStyle),
+            pw.Text('Năm sinh: $landlordDob', style: textStyle),
+            pw.Text('CMND/CCCD: $landlordIdCard', style: textStyle),
+            pw.Text('Ngày cấp: $landlordIdIssueDate Nơi cấp: $landlordIdIssuePlace', style: textStyle),
+            pw.Text('Đại diện: $landlordRepresentativeName - SĐT: $landlordRepresentativePhone', style: textStyle),
+            pw.Text('Thường trú: $landlordAddress', style: textStyle),
             pw.SizedBox(height: 16),
 
             // BÊN B
@@ -78,7 +86,7 @@ class PdfContractService {
             pw.Text('Năm sinh: $birthYear', style: textStyle),
             pw.Text('CMND/CCCD: $cccd', style: textStyle),
             pw.Text('Ngày cấp: $issueDate  Nơi cấp: $issuePlace', style: textStyle),
-            pw.Text('Thường trú: .....................................................................', style: textStyle),
+            pw.Text('Thường trú: $tenantAddress', style: textStyle),
             pw.SizedBox(height: 16),
 
             pw.Text('Hai bên cùng thỏa thuận và đồng ý với nội dung sau:', style: textStyle),

@@ -20,6 +20,14 @@ class ContractPdfPreviewPage extends StatefulWidget {
 
 class _ContractPdfPreviewPageState extends State<ContractPdfPreviewPage> {
   String _ownerName = '..............................';
+  String _landlordDob = '..............................';
+  String _landlordIdCard = '..............................';
+  String _landlordIdIssueDate = '..............................';
+  String _landlordIdIssuePlace = '..............................';
+  String _landlordRepresentativeName = '..............................';
+  String _landlordRepresentativePhone = '..............................';
+  String _landlordAddress = '..............................';
+  String _tenantAddress = '..............................';
   bool _isLoadingName = true;
 
   @override
@@ -35,9 +43,21 @@ class _ContractPdfPreviewPageState extends State<ContractPdfPreviewPage> {
         final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
         if (doc.exists) {
           final data = doc.data();
-          if (data != null && data['name'] != null) {
-            _ownerName = data['name'];
+          if (data != null) {
+            if (data['name'] != null) _ownerName = data['name'];
+            if (data['landlordDob'] != null) _landlordDob = data['landlordDob'];
+            if (data['landlordIdCard'] != null) _landlordIdCard = data['landlordIdCard'];
+            if (data['landlordIdIssueDate'] != null) _landlordIdIssueDate = data['landlordIdIssueDate'];
+            if (data['landlordIdIssuePlace'] != null) _landlordIdIssuePlace = data['landlordIdIssuePlace'];
+            if (data['landlordRepresentativeName'] != null) _landlordRepresentativeName = data['landlordRepresentativeName'];
+            if (data['landlordRepresentativePhone'] != null) _landlordRepresentativePhone = data['landlordRepresentativePhone'];
+            if (data['landlordAddress'] != null) _landlordAddress = data['landlordAddress'];
           }
+        }
+        
+        // Fetch tenant address from contract data if available
+        if (widget.contractData['address'] != null) {
+          _tenantAddress = widget.contractData['address'];
         }
       }
     } catch (e) {
@@ -75,6 +95,14 @@ class _ContractPdfPreviewPageState extends State<ContractPdfPreviewPage> {
           contractData: widget.contractData,
           roomName: widget.roomName,
           ownerName: _ownerName,
+          landlordDob: _landlordDob,
+          landlordIdCard: _landlordIdCard,
+          landlordIdIssueDate: _landlordIdIssueDate,
+          landlordIdIssuePlace: _landlordIdIssuePlace,
+          landlordRepresentativeName: _landlordRepresentativeName,
+          landlordRepresentativePhone: _landlordRepresentativePhone,
+          landlordAddress: _landlordAddress,
+          tenantAddress: _tenantAddress,
         ),
         pdfFileName: 'hop_dong_${widget.roomName.replaceAll(' ', '_')}.pdf',
         canChangeOrientation: false,

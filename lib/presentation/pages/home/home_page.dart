@@ -551,11 +551,25 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              _buildGridItem(
-                icon: Icons.post_add_rounded,
-                color: Colors.green,
-                title: "Lập hợp đồng\nmới",
-                badge: "5",
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('houses')
+                    .doc(houseId)
+                    .collection('rooms')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final emptyRoomsCount = snapshot.data?.docs.where((doc) {
+                        final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'Đang trống';
+                        return status != 'Đã thuê' && status != 'Đã có người';
+                      }).length ?? 0;
+                  
+                  return _buildGridItem(
+                    icon: Icons.post_add_rounded,
+                    color: Colors.green,
+                    title: "Lập hợp đồng\nmới",
+                    badge: emptyRoomsCount > 0 ? emptyRoomsCount.toString() : null,
+                  );
+                },
               ),
               _buildGridItem(
                 icon: Icons.find_replace_rounded,
@@ -610,18 +624,35 @@ class _HomePageState extends State<HomePage> {
             crossAxisSpacing: 12,
             childAspectRatio: 0.95,
             children: [
-              _buildGridItem(
-                icon: Icons.fact_check_outlined,
-                color: Colors.green,
-                title: "Quản lý\nphòng",
-                badge: "0/5",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          RoomListPage(houseId: houseId, houseData: houseData),
-                    ),
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('houses')
+                    .doc(houseId)
+                    .collection('rooms')
+                    .snapshots(),
+                builder: (context, roomSnapshot) {
+                  int totalRooms = roomSnapshot.data?.docs.length ?? 0;
+                  int rentedRooms = roomSnapshot.data?.docs
+                          .where((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            return data['status'] == 'Đã thuê' || data['status'] == 'Đã có người';
+                          })
+                          .length ??
+                      0;
+                  return _buildGridItem(
+                    icon: Icons.fact_check_outlined,
+                    color: Colors.green,
+                    title: "Quản lý\nphòng",
+                    badge: "$rentedRooms/$totalRooms",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RoomListPage(
+                              houseId: houseId, houseData: houseData),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
