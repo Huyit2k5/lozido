@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lozido_app/presentation/pages/auth/auth_wrapper.dart';
 import 'package:intl/intl.dart';
 import '../home/mail_page.dart';
+import 'tenant_contract_page.dart';
+import 'tenant_invoice_list_page.dart';
+import 'tenant_profile_page.dart';
+
 
 class TenantMainPage extends StatefulWidget {
   const TenantMainPage({super.key});
@@ -140,7 +144,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                      tenantUid: userData['uid'] ?? currentUser!.uid,
                      tenantName: userData['name'] ?? 'Thành viên',
                    ),
-                   const Center(child: Text('Trang cá nhân')),
+                   TenantProfilePage(userData: userData),
                 ],
               ),
               bottomNavigationBar: BottomNavigationBar(
@@ -204,7 +208,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                   style: TextStyle(fontSize: 14, color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
-                _buildActionMenuGrid(),
+                _buildActionMenuGrid(houseId, roomId),
                         const SizedBox(height: 24),
                         Row(
                           children: [
@@ -403,37 +407,50 @@ class _TenantMainPageState extends State<TenantMainPage> {
           .doc(houseId)
           .collection('contracts')
           .where('roomId', isEqualTo: roomId)
-          .where('status', isEqualTo: 'Có hiệu lực')
-          .limit(1)
           .get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const SizedBox.shrink(); // Hide if no active contract
+          return _buildEmptyProgressCard();
         }
 
+        // Tìm hợp đồng đầu tiên (nếu có thể nên sort theo ngày mới nhất)
         final contractData =
             snapshot.data!.docs.first.data() as Map<String, dynamic>;
-        final startDateTs = contractData['startDate'] as Timestamp?;
-        final endDateTs = contractData['endDate'] as Timestamp?;
+        // Xử lý linh hoạt loại dữ liệu ngày tháng (Timestamp hoặc String)
+        DateTime? parseDate(dynamic value) {
+          if (value == null) return null;
+          if (value is Timestamp) return value.toDate();
+          if (value is String) {
+            try {
+              // Thử parse string dd/MM/yyyy
+              if (value.contains('/')) {
+                 final parts = value.split('/');
+                 if (parts.length == 3) {
+                    return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
+                 }
+              }
+              return DateTime.parse(value);
+            } catch (e) {
+              return null;
+            }
+          }
+          return null;
+        }
 
+        DateTime? start = parseDate(contractData['startDate']);
+        DateTime? end = parseDate(contractData['endDate']);
         DateTime now = DateTime.now();
-        DateTime? start = startDateTs?.toDate();
-        DateTime? end = endDateTs?.toDate();
 
-        int monthsStayed = 0;
-        int daysStayed = 0;
+        int totalDays = 0;
         double progress = 0.5;
 
         if (start != null) {
           Duration diff = now.difference(start);
           if (diff.isNegative) {
-            monthsStayed = 0;
-            daysStayed = 0;
+            totalDays = 0;
             progress = 0.0;
           } else {
-            int totalDays = diff.inDays;
-            monthsStayed = totalDays ~/ 30;
-            daysStayed = totalDays % 30;
+            totalDays = diff.inDays;
 
             if (end != null) {
               int totalDuration = end.difference(start).inDays;
@@ -448,13 +465,20 @@ class _TenantMainPageState extends State<TenantMainPage> {
         }
 
         final dateFormat = DateFormat('dd/MM/yyyy');
-        String startStr = start != null ? dateFormat.format(start) : 'N/A';
+        String startStr = start != null ? dateFormat.format(start) : 'Chưa cập nhật';
         String endStr = end != null ? dateFormat.format(end) : 'Vô thời hạn';
 
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -478,7 +502,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                '$monthsStayed',
+                                '$totalDays',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -486,7 +510,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                                 ),
                               ),
                               const Text(
-                                'Ng\u00e0y đã ở',
+                                'Ngày đã ở',
                                 style: TextStyle(fontSize: 10),
                               ),
                             ],
@@ -501,11 +525,11 @@ class _TenantMainPageState extends State<TenantMainPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Số tháng đã ở',
+                          'Thời gian cư trú',
                           style: TextStyle(color: Colors.black54),
                         ),
                         Text(
-                          '$monthsStayed tháng, $daysStayed ngày',
+                          '$totalDays ngày',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -535,33 +559,6 @@ class _TenantMainPageState extends State<TenantMainPage> {
                       ],
                     ),
                   ),
-                  OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      side: const BorderSide(color: Color(0xFF00A651)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Xem chi tiết',
-                          style: TextStyle(
-                            color: Color(0xFF00A651),
-                            fontSize: 13,
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Color(0xFF00A651),
-                          size: 14,
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -577,7 +574,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                       child: Column(
                         children: [
                           const Text(
-                            'Ngày vào ở',
+                            'Ngày bắt đầu HĐ',
                             style: TextStyle(
                               color: Colors.black54,
                               fontSize: 12,
@@ -595,27 +592,12 @@ class _TenantMainPageState extends State<TenantMainPage> {
                       height: 30,
                       color: Colors.grey.shade300,
                     ),
-                    Transform.translate(
-                      offset: const Offset(0, -15),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        child: const Icon(
-                          Icons.calendar_month,
-                          size: 16,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         children: [
                           const Text(
-                            'Ngày kết thúc',
+                            'Ngày kết thúc HĐ',
                             style: TextStyle(
                               color: Colors.black54,
                               fontSize: 12,
@@ -640,6 +622,36 @@ class _TenantMainPageState extends State<TenantMainPage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyProgressCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+             color: Colors.black.withOpacity(0.02),
+             blurRadius: 4, offset: const Offset(0, 2)
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: const [
+          Text(
+            'Thông tin vào ở',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Chủ nhà chưa tạo hợp đồng hoặc cập nhật ngày dọn vào của bạn.',
+            style: TextStyle(color: Colors.black54, fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 
@@ -706,7 +718,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
     );
   }
 
-  Widget _buildActionMenuGrid() {
+  Widget _buildActionMenuGrid(String houseId, String roomId) {
     final actions = [
       {'icon': Icons.description_outlined, 'title': 'Hợp đồng\nthuê nhà'},
       {'icon': Icons.receipt_long_outlined, 'title': 'Tất cả\nhóa đơn'},
@@ -729,29 +741,100 @@ class _TenantMainPageState extends State<TenantMainPage> {
         childAspectRatio: 0.9,
       ),
       itemBuilder: (context, index) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                actions[index]['icon'] as IconData,
-                size: 40,
-                color: const Color(0xFF81C784),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                actions[index]['title'] as String,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+        return GestureDetector(
+          onTap: () async {
+            print("Tapped menu action: ${actions[index]['title']}");
+            if ((actions[index]['title'] as String).contains('Hợp đồng')) {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(child: CircularProgressIndicator()),
+              );
+              
+              try {
+                final snapshot = await _firestore
+                    .collection('houses')
+                    .doc(houseId)
+                    .collection('contracts')
+                    .where('roomId', isEqualTo: roomId)
+                    .limit(1)
+                    .get();
+
+                if (context.mounted) Navigator.pop(context); // Close dialog
+
+                if (snapshot.docs.isNotEmpty) {
+                  final contractData = snapshot.docs.first.data() as Map<String, dynamic>;
+                  final contractId = snapshot.docs.first.id;
+                  
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TenantContractPage(
+                          contractData: contractData,
+                          contractId: contractId,
+                        ),
+                      ),
+                    );
+                  }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Không tìm thấy hợp đồng nào cho phòng này.')),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // Close dialog
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Lỗi: $e')),
+                  );
+                }
+              }
+            } else if ((actions[index]['title'] as String).contains('hóa đơn')) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TenantInvoiceListPage(
+                    houseId: houseId,
+                    roomId: roomId,
+                  ),
                 ),
-              ),
-            ],
+              );
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  actions[index]['icon'] as IconData,
+                  size: 40,
+                  color: const Color(0xFF81C784),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  actions[index]['title'] as String,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
