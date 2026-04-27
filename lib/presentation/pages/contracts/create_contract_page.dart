@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,6 +13,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 import '../../../services/chat_service.dart';
 import '../../../services/gemini_service.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'contract_provider.dart';
 import '../assets/manage_assets_page.dart';
 import '../../widgets/app_dialog.dart';
@@ -303,6 +307,204 @@ class _CreateContractPageState extends State<CreateContractPage> {
       final bytes = result.files.first.bytes;
       if (bytes != null) {
         await _processWithGemini(bytes, 'application/pdf');
+      }
+    }
+  }
+
+  Future<void> _showCCCDScanOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text("Quét thẻ Căn Cước Công Dân", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text("Chụp ảnh mặt trước CCCD"),
+              onTap: () {
+                Navigator.pop(context);
+                _processCCCDImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.green),
+              title: const Text("Chọn ảnh mặt trước từ thư viện"),
+              onTap: () {
+                Navigator.pop(context);
+                _processCCCDImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processCCCDImage(ImageSource source) async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Tính năng quét CCCD bằng Google ML Kit chỉ hỗ trợ trên thiết bị di động (Android/iOS). Trên Web/PC vui lòng dùng tính năng quét bằng Gemini."),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+    if (pickedFile == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final inputImage = InputImage.fromFilePath(pickedFile.path);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      
+      String text = recognizedText.text;
+      await textRecognizer.close();
+
+      String? cccd;
+      String? name;
+      String? dob;
+      String? gender;
+      String? address;
+
+      // Clean lines and remove empty ones
+      final lines = text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        final lowerLine = line.toLowerCase();
+        
+        // CCCD Number (12 digits)
+        if (cccd == null) {
+          final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(line);
+          if (cccdMatch != null) cccd = cccdMatch.group(0);
+        }
+
+        // DOB
+        if (dob == null && lowerLine.contains('sinh')) {
+           final dobMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(line);
+           if (dobMatch != null) {
+             dob = dobMatch.group(0);
+           } else if (i + 1 < lines.length) {
+             final nextLineMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(lines[i+1]);
+             if (nextLineMatch != null) dob = nextLineMatch.group(0);
+           }
+        }
+
+        // Name
+        if (name == null && lowerLine.contains('họ và tên')) {
+           if (i + 1 < lines.length) {
+             name = lines[i+1].toUpperCase();
+           } else {
+             // Fallback to match capitalized string if "Họ và tên" is in same line but no colon separation logic handles well
+             final potentialName = line.replaceAll(RegExp(r'(?i)họ và tên\s*[/:]*\s*'), '').trim();
+             if (potentialName.isNotEmpty) name = potentialName.toUpperCase();
+           }
+        }
+
+        // Gender
+        if (gender == null && lowerLine.contains('giới tính')) {
+           if (lowerLine.contains('nam')) {
+             gender = 'Nam';
+           } else if (lowerLine.contains('nữ')) {
+             gender = 'Nữ';
+           } else if (i + 1 < lines.length) {
+             final nextLower = lines[i+1].toLowerCase();
+             if (nextLower.contains('nam')) gender = 'Nam';
+             else if (nextLower.contains('nữ')) gender = 'Nữ';
+           }
+        }
+
+        // Address (Nơi thường trú)
+        if (address == null && (lowerLine.contains('thường trú') || lowerLine.contains('residence'))) {
+           if (i + 1 < lines.length) {
+             address = lines[i+1];
+             if (i + 2 < lines.length && !lines[i+2].toLowerCase().contains("có giá trị")) {
+                address += ", " + lines[i+2];
+             }
+           }
+        }
+      }
+
+      // Fallbacks if not found by line matching
+      if (cccd == null) {
+        final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(text);
+        if (cccdMatch != null) cccd = cccdMatch.group(0);
+      }
+      if (dob == null) {
+        final dobMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(text);
+        if (dobMatch != null) dob = dobMatch.group(0);
+      }
+      if (gender == null) {
+        final genderMatch = RegExp(r'\b(Nam|Nữ)\b', caseSensitive: false).firstMatch(text);
+        if (genderMatch != null) {
+          String g = genderMatch.group(0) ?? '';
+          gender = g.toLowerCase() == 'nam' ? 'Nam' : 'Nữ';
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          if (cccd != null) _cccdCtrl.text = cccd;
+          if (dob != null) _birthDateCtrl.text = dob;
+          if (gender != null) _gender = gender;
+          if (name != null && name.isNotEmpty) _nameCtrl.text = name;
+          if (address != null && address.isNotEmpty) _addressCtrl.text = address;
+        });
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+      }
+
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi xử lý OCR: $e")));
+      }
+    }
+  }
+
+  Future<void> _uploadImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
+    if (pickedFile == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final file = File(pickedFile.path);
+      final ext = pickedFile.path.split('.').last;
+      final fileName = 'contract_docs_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final ref = FirebaseStorage.instance.ref().child('contracts/${widget.houseId}/$fileName');
+      
+      final uploadTask = await ref.putFile(file);
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      if (mounted) {
+        setState(() {
+          _imageUrls.add(downloadUrl);
+        });
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tải ảnh lên thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi tải ảnh lên: $e")));
       }
     }
   }
@@ -928,7 +1130,11 @@ class _CreateContractPageState extends State<CreateContractPage> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.qr_code, color: Colors.deepOrange, size: 24))),
+            _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: IconButton(
+              icon: const Icon(Icons.qr_code_scanner, color: Colors.deepOrange, size: 24),
+              onPressed: _showCCCDScanOptions,
+              tooltip: 'Quét thẻ CCCD bằng OCR',
+            )),
             const SizedBox(height: 16),
             _buildTextField("Địa chỉ thường trú", _addressCtrl, hint: "Nhập địa chỉ thường trú"),
             const SizedBox(height: 16),
@@ -1148,7 +1354,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _uploadImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt_outlined, size: 18, color: Colors.black87),
                   label: const Text("Chụp ảnh", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
                   style: OutlinedButton.styleFrom(
@@ -1161,7 +1367,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _uploadImage(ImageSource.gallery),
                   icon: const Icon(Icons.add, size: 18, color: Colors.black87),
                   label: const Text("Thêm từ thư viện", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
                   style: OutlinedButton.styleFrom(
