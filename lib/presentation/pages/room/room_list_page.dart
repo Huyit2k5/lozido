@@ -14,8 +14,14 @@ import 'transfer_room_modal.dart';
 class RoomListPage extends StatefulWidget {
   final String houseId;
   final Map<String, dynamic> houseData;
+  final bool showOnlyEmpty;
 
-  const RoomListPage({super.key, required this.houseId, required this.houseData});
+  const RoomListPage({
+    super.key, 
+    required this.houseId, 
+    required this.houseData,
+    this.showOnlyEmpty = false,
+  });
 
   @override
   State<RoomListPage> createState() => _RoomListPageState();
@@ -76,9 +82,9 @@ class _RoomListPageState extends State<RoomListPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Danh sách phòng",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        title: Text(
+          widget.showOnlyEmpty ? "Lập hợp đồng mới" : "Danh sách phòng",
+          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -195,15 +201,24 @@ class _RoomListPageState extends State<RoomListPage> {
               final roomFloor = data['floor'] ?? 0;
               return roomFloor == targetFloor;
             }).toList();
+          }
 
-            if (displayDocs.isEmpty) {
-              return const Center(
-                child: Text(
-                  "Không có phòng ở tầng này",
-                  style: TextStyle(color: Colors.black54),
-                ),
-              );
-            }
+          // Thêm bộ lọc phòng trống nếu cần
+          if (widget.showOnlyEmpty) {
+            displayDocs = displayDocs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              final status = data['status'] ?? 'Đang trống';
+              return status != 'Đã thuê' && status != 'Đã có người';
+            }).toList();
+          }
+
+          if (displayDocs.isEmpty) {
+            return Center(
+              child: Text(
+                widget.showOnlyEmpty ? "Không có phòng nào đang trống" : "Không có phòng ở tầng này",
+                style: const TextStyle(color: Colors.black54),
+              ),
+            );
           }
 
           return ListView.builder(

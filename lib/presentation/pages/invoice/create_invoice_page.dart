@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../services/gemini_service.dart';
+import '../../widgets/app_dialog.dart';
 
 class CreateInvoicePage extends StatefulWidget {
   final String houseId;
@@ -421,6 +422,30 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   }
 
   Future<void> _saveInvoice() async {
+    // 1. Kiểm tra khoảng thời gian (Số ngày không được âm)
+    if (_rentToDate.isBefore(_rentFromDate)) {
+      AppDialog.show(
+        context,
+        title: 'Lỗi ngày tháng',
+        message: 'Khoảng thời gian tính tiền không hợp lệ. Ngày kết thúc không được trước ngày bắt đầu.',
+        type: AppDialogType.error,
+      );
+      return;
+    }
+
+    // 2. Kiểm tra chỉ số dịch vụ (Không được nhỏ hơn chỉ số cũ)
+    for (var svc in _serviceItems) {
+      if (svc.isUsed && svc.isMetered && svc.newIndex < svc.oldIndex) {
+        AppDialog.show(
+          context,
+          title: 'Lỗi chỉ số',
+          message: 'Chỉ số mới của dịch vụ "${svc.name}" không được nhỏ hơn chỉ số cũ.',
+          type: AppDialogType.error,
+        );
+        return;
+      }
+    }
+
     setState(() {
       _isSaving = true;
     });

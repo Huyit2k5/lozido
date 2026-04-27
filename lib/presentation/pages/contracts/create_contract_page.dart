@@ -15,9 +15,11 @@ import '../../../services/chat_service.dart';
 import '../../../services/gemini_service.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'contract_provider.dart';
 import '../assets/manage_assets_page.dart';
+import '../../widgets/app_dialog.dart';
 
 
 class CreateContractPage extends StatefulWidget {
@@ -345,16 +347,9 @@ class _CreateContractPageState extends State<CreateContractPage> {
   }
 
   Future<void> _processCCCDImage(ImageSource source) async {
-    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Tính năng quét CCCD bằng Google ML Kit chỉ hỗ trợ trên thiết bị di động (Android/iOS). Trên Web/PC vui lòng dùng tính năng quét bằng Gemini."),
-        backgroundColor: Colors.orange,
-      ));
-      return;
-    }
-
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source);
+    // Giảm dung lượng ảnh trước khi gửi lên API để tiết kiệm băng thông và chi phí
+    final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
     if (pickedFile == null) return;
 
     showDialog(
@@ -364,12 +359,48 @@ class _CreateContractPageState extends State<CreateContractPage> {
     );
 
     try {
-      final inputImage = InputImage.fromFilePath(pickedFile.path);
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      // Chuyển ảnh thành base64
+      final bytes = await pickedFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      // Lấy API Key từ Firestore (config/google -> cloud_vision_api)
+      final configDoc = await FirebaseFirestore.instance.collection('config').doc('google').get();
+      final apiKey = configDoc.data()?['cloud_vision_api'] ?? '';
       
-      String text = recognizedText.text;
-      await textRecognizer.close();
+      if (apiKey.isEmpty) {
+        throw Exception("Không tìm thấy Cloud Vision API Key. Vui lòng kiểm tra Firestore.");
+      }
+
+      // Gọi Google Cloud Vision API
+      final uri = Uri.parse('https://vision.googleapis.com/v1/images:annotate?key=$apiKey');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "requests": [
+            {
+              "image": {"content": base64Image},
+              "features": [
+                {"type": "TEXT_DETECTION"}
+              ]
+            }
+          ]
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception("Lỗi gọi Cloud Vision API: ${response.body}");
+      }
+
+      final jsonResponse = jsonDecode(response.body);
+      final annotations = jsonResponse['responses']?[0]?['textAnnotations'];
+      
+      if (annotations == null || annotations.isEmpty) {
+        throw Exception("Không tìm thấy văn bản trong ảnh");
+      }
+
+      // textAnnotations[0]['description'] chứa toàn bộ văn bản được trích xuất
+      String text = annotations[0]['description'];
 
       String? cccd;
       String? name;
@@ -384,14 +415,31 @@ class _CreateContractPageState extends State<CreateContractPage> {
         final line = lines[i];
         final lowerLine = line.toLowerCase();
         
-        // CCCD Number (12 digits)
+        // 1. Số CCCD (12 số)
         if (cccd == null) {
           final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(line);
-          if (cccdMatch != null) cccd = cccdMatch.group(0);
+          if (cccdMatch != null) {
+            cccd = cccdMatch.group(0);
+          } else if (lowerLine.contains('số') || lowerLine.contains('no.')) {
+            if (i + 1 < lines.length) {
+              final nextLineMatch = RegExp(r'\b\d{12}\b').firstMatch(lines[i+1]);
+              if (nextLineMatch != null) cccd = nextLineMatch.group(0);
+            }
+          }
         }
 
-        // DOB
-        if (dob == null && lowerLine.contains('sinh')) {
+        // 2. Họ và tên (Lấy dòng in hoa tiếp theo)
+        if (name == null && (lowerLine.contains('họ và tên') || lowerLine.contains('full name'))) {
+          String contentAfterLabel = line.replaceAll(RegExp(r'(họ và tên|full name)\s*[/:]*\s*', caseSensitive: false), '').trim();
+          if (contentAfterLabel.length > 3) {
+            name = contentAfterLabel.toUpperCase();
+          } else if (i + 1 < lines.length) {
+            name = lines[i+1].toUpperCase();
+          }
+        }
+
+        // 3. Ngày sinh (dd/mm/yyyy)
+        if (dob == null && (lowerLine.contains('ngày sinh') || lowerLine.contains('date of birth'))) {
            final dobMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(line);
            if (dobMatch != null) {
              dob = dobMatch.group(0);
@@ -401,19 +449,8 @@ class _CreateContractPageState extends State<CreateContractPage> {
            }
         }
 
-        // Name
-        if (name == null && lowerLine.contains('họ và tên')) {
-           if (i + 1 < lines.length) {
-             name = lines[i+1].toUpperCase();
-           } else {
-             // Fallback to match capitalized string if "Họ và tên" is in same line but no colon separation logic handles well
-             final potentialName = line.replaceAll(RegExp(r'(?i)họ và tên\s*[/:]*\s*'), '').trim();
-             if (potentialName.isNotEmpty) name = potentialName.toUpperCase();
-           }
-        }
-
-        // Gender
-        if (gender == null && lowerLine.contains('giới tính')) {
+        // 4. Giới tính
+        if (gender == null && (lowerLine.contains('giới tính') || lowerLine.contains('sex'))) {
            if (lowerLine.contains('nam')) {
              gender = 'Nam';
            } else if (lowerLine.contains('nữ')) {
@@ -425,14 +462,28 @@ class _CreateContractPageState extends State<CreateContractPage> {
            }
         }
 
-        // Address (Nơi thường trú)
+        // 5. Nơi thường trú (Cải tiến đã làm ở bước trước)
         if (address == null && (lowerLine.contains('thường trú') || lowerLine.contains('residence'))) {
-           if (i + 1 < lines.length) {
-             address = lines[i+1];
-             if (i + 2 < lines.length && !lines[i+2].toLowerCase().contains("có giá trị")) {
-                address += ", " + lines[i+2];
+           String currentLineContent = line.replaceAll(RegExp(r'(nơi thường trú|place of residence|residence)\s*[/:]*\s*', caseSensitive: false), '').trim();
+           address = currentLineContent;
+
+           int nextIdx = i + 1;
+           while (nextIdx < lines.length) {
+             String nextLine = lines[nextIdx].toLowerCase();
+             if (nextLine.contains('có giá trị') || nextLine.contains('expiry') || 
+                 nextLine.contains('đặc điểm') || nextLine.contains('identifying') ||
+                 nextLine.contains('quê quán') || nextLine.contains('place of origin')) {
+               break;
              }
+             
+             if (address!.isEmpty) {
+               address = lines[nextIdx];
+             } else {
+               address += ", " + lines[nextIdx];
+             }
+             nextIdx++;
            }
+           i = nextIdx - 1;
         }
       }
 
@@ -562,8 +613,40 @@ class _CreateContractPageState extends State<CreateContractPage> {
 
   Future<void> _submitContract() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // 1. Kiểm tra ngày bắt đầu
     if (_startDateCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập ngày vào ở")));
+      AppDialog.show(context, title: 'Thiếu thông tin', message: "Vui lòng nhập ngày bắt đầu hợp đồng (Ngày vào ở)", type: AppDialogType.error);
+      return;
+    }
+
+    // 2. Kiểm tra ngày thu tiền
+    if (_billingDateCtrl.text.isEmpty) {
+      AppDialog.show(context, title: 'Thiếu thông tin', message: "Vui lòng nhập ngày thu tiền hàng tháng", type: AppDialogType.error);
+      return;
+    }
+
+    // 3. So sánh ngày bắt đầu và kết thúc
+    try {
+      final partsStart = _startDateCtrl.text.split('/');
+      final start = DateTime(int.parse(partsStart[2]), int.parse(partsStart[1]), int.parse(partsStart[0]));
+      
+      if (_endDateCtrl.text.isNotEmpty) {
+        final partsEnd = _endDateCtrl.text.split('/');
+        final end = DateTime(int.parse(partsEnd[2]), int.parse(partsEnd[1]), int.parse(partsEnd[0]));
+        
+        if (end.isBefore(start)) {
+          AppDialog.show(
+            context,
+            title: 'Lỗi ngày tháng',
+            message: 'Ngày kết thúc hợp đồng không được trước ngày bắt đầu.',
+            type: AppDialogType.error,
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      AppDialog.show(context, title: 'Lỗi định dạng', message: 'Định dạng ngày tháng không hợp lệ (dd/MM/yyyy)', type: AppDialogType.error);
       return;
     }
 
@@ -571,6 +654,19 @@ class _CreateContractPageState extends State<CreateContractPage> {
     
     try {
       final assets = Provider.of<ContractProvider>(context, listen: false).assets;
+      final rentPrice = _parseCurrency(_rentPriceCtrl.text);
+      final depositAmount = _parseCurrency(_depositCtrl.text);
+
+      if (rentPrice > 1000000000) {
+        AppDialog.show(context, title: 'Giá thuê quá lớn', message: 'Giá thuê tối đa là 1.000.000.000đ', type: AppDialogType.error);
+        setState(() => _isSubmitting = false);
+        return;
+      }
+      if (depositAmount > 1000000000) {
+        AppDialog.show(context, title: 'Tiền cọc quá lớn', message: 'Tiền cọc tối đa là 1.000.000.000đ', type: AppDialogType.error);
+        setState(() => _isSubmitting = false);
+        return;
+      }
 
       final contractData = {
         'roomId': widget.roomId,
@@ -584,8 +680,8 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'phoneNumber': _phoneCtrl.text,
         'totalMembers': int.tryParse(_membersCtrl.text) ?? 1,
         'useApp': _useApp,
-        'rentPrice': _parseCurrency(_rentPriceCtrl.text),
-        'depositAmount': _parseCurrency(_depositCtrl.text),
+        'rentPrice': rentPrice,
+        'depositAmount': depositAmount,
         'paymentCycle': int.tryParse(_paymentCycleCtrl.text) ?? 1,
         'billingDate': _billingDateCtrl.text,
         'contractTemplate': _contractTemplate,
