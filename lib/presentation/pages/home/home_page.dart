@@ -568,6 +568,18 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.green,
                     title: "Lập hợp đồng\nmới",
                     badge: emptyRoomsCount > 0 ? emptyRoomsCount.toString() : null,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RoomListPage(
+                            houseId: houseId,
+                            houseData: houseData,
+                            showOnlyEmpty: true,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
