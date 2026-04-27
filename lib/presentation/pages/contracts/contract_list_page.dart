@@ -393,7 +393,7 @@ class _ContractListPageState extends State<ContractListPage> {
         // Lấy tất cả các hợp đồng (cả cũ và mới) nếu đã chọn đích danh một phòng
       } else {
         // Mặc định chỉ lấy các hợp đồng đang hoạt động
-        query = query.where('status', whereIn: ['Còn hạn', 'Đang hiệu lực', 'Active']);
+        query = query.where('status', isEqualTo: 'Active');
       }
     }
 
@@ -549,7 +549,7 @@ class _ContractListPageState extends State<ContractListPage> {
               ),
               const Divider(height: 1),
 
-              if (data['status'] == 'Active' || data['status'] == 'Còn hạn') ...[
+              if (data['status'] == 'Active') ...[
                 ListTile(
                   leading: const Icon(Icons.block, color: Colors.red),
                   title: const Text('Kết thúc hợp đồng', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),

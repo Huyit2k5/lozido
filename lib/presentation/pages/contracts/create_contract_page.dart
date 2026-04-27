@@ -14,6 +14,7 @@ import '../../../services/chat_service.dart';
 import '../../../services/gemini_service.dart';
 import 'contract_provider.dart';
 import '../assets/manage_assets_page.dart';
+import '../../widgets/app_dialog.dart';
 
 
 class CreateContractPage extends StatefulWidget {
@@ -360,8 +361,40 @@ class _CreateContractPageState extends State<CreateContractPage> {
 
   Future<void> _submitContract() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // 1. Kiểm tra ngày bắt đầu
     if (_startDateCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập ngày vào ở")));
+      AppDialog.show(context, title: 'Thiếu thông tin', message: "Vui lòng nhập ngày bắt đầu hợp đồng (Ngày vào ở)", type: AppDialogType.error);
+      return;
+    }
+
+    // 2. Kiểm tra ngày thu tiền
+    if (_billingDateCtrl.text.isEmpty) {
+      AppDialog.show(context, title: 'Thiếu thông tin', message: "Vui lòng nhập ngày thu tiền hàng tháng", type: AppDialogType.error);
+      return;
+    }
+
+    // 3. So sánh ngày bắt đầu và kết thúc
+    try {
+      final partsStart = _startDateCtrl.text.split('/');
+      final start = DateTime(int.parse(partsStart[2]), int.parse(partsStart[1]), int.parse(partsStart[0]));
+      
+      if (_endDateCtrl.text.isNotEmpty) {
+        final partsEnd = _endDateCtrl.text.split('/');
+        final end = DateTime(int.parse(partsEnd[2]), int.parse(partsEnd[1]), int.parse(partsEnd[0]));
+        
+        if (end.isBefore(start)) {
+          AppDialog.show(
+            context,
+            title: 'Lỗi ngày tháng',
+            message: 'Ngày kết thúc hợp đồng không được trước ngày bắt đầu.',
+            type: AppDialogType.error,
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      AppDialog.show(context, title: 'Lỗi định dạng', message: 'Định dạng ngày tháng không hợp lệ (dd/MM/yyyy)', type: AppDialogType.error);
       return;
     }
 
@@ -369,6 +402,19 @@ class _CreateContractPageState extends State<CreateContractPage> {
     
     try {
       final assets = Provider.of<ContractProvider>(context, listen: false).assets;
+      final rentPrice = _parseCurrency(_rentPriceCtrl.text);
+      final depositAmount = _parseCurrency(_depositCtrl.text);
+
+      if (rentPrice > 1000000000) {
+        AppDialog.show(context, title: 'Giá thuê quá lớn', message: 'Giá thuê tối đa là 1.000.000.000đ', type: AppDialogType.error);
+        setState(() => _isSubmitting = false);
+        return;
+      }
+      if (depositAmount > 1000000000) {
+        AppDialog.show(context, title: 'Tiền cọc quá lớn', message: 'Tiền cọc tối đa là 1.000.000.000đ', type: AppDialogType.error);
+        setState(() => _isSubmitting = false);
+        return;
+      }
 
       final contractData = {
         'roomId': widget.roomId,
@@ -382,8 +428,8 @@ class _CreateContractPageState extends State<CreateContractPage> {
         'phoneNumber': _phoneCtrl.text,
         'totalMembers': int.tryParse(_membersCtrl.text) ?? 1,
         'useApp': _useApp,
-        'rentPrice': _parseCurrency(_rentPriceCtrl.text),
-        'depositAmount': _parseCurrency(_depositCtrl.text),
+        'rentPrice': rentPrice,
+        'depositAmount': depositAmount,
         'paymentCycle': int.tryParse(_paymentCycleCtrl.text) ?? 1,
         'billingDate': _billingDateCtrl.text,
         'contractTemplate': _contractTemplate,
