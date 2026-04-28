@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:lozido_app/presentation/widgets/app_dialog.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class EditTenantPage extends StatefulWidget {
   final String houseId;
@@ -641,6 +644,8 @@ class _EditTenantPageState extends State<EditTenantPage> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
                 children: [
+                  _buildScanBanner(),
+                  const SizedBox(height: 16),
                   _buildFormField(
                     label: 'Ngày sinh',
                     controller: _birthdayCtrl,
@@ -650,8 +655,6 @@ class _EditTenantPageState extends State<EditTenantPage> {
                       onPressed: () => _pickDate(_birthdayCtrl),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  _buildFormField(label: 'Nghề nghiệp', controller: _occupationCtrl, hint: 'Nhập nghề nghiệp'),
                   const SizedBox(height: 12),
                   _buildFormField(label: 'Địa chỉ', controller: _addressCtrl, hint: 'Nhập địa chỉ'),
                   const SizedBox(height: 12),
@@ -682,6 +685,350 @@ class _EditTenantPageState extends State<EditTenantPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildScanBanner() {
+    return InkWell(
+      onTap: _showCCCDScanOptions,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF9E6),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.amber.withOpacity(0.2), shape: BoxShape.circle),
+              child: const Icon(Icons.document_scanner, color: Colors.amber, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Tải ảnh CCCD?", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                  Text("Quét ngay để tự động điền thông tin", style: TextStyle(color: Colors.black54, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.black54),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCCCDScanOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text("Quét thẻ Căn Cước Công Dân", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text("Chụp ảnh 2 mặt CCCD"),
+              onTap: () {
+                Navigator.pop(context);
+                _processCCCDImagesFromCamera();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.green),
+              title: const Text("Chọn ảnh 2 mặt CCCD từ thư viện"),
+              onTap: () {
+                Navigator.pop(context);
+                _processCCCDImagesFromGallery();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processCCCDImagesFromCamera() async {
+    final picker = ImagePicker();
+    
+    // Front
+    final frontFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    if (frontFile == null) return;
+    
+    // Dialog for Back
+    if (mounted) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Tiếp tục"),
+          content: const Text("Vui lòng chụp mặt sau của CCCD để quét đầy đủ thông tin (Ngày cấp, Nơi cấp)."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Bỏ qua", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Chụp ảnh"),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldContinue == true) {
+        final backFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+        if (backFile != null) {
+          _processCCCDImages([frontFile, backFile]);
+          return;
+        }
+      }
+    }
+    
+    _processCCCDImages([frontFile]);
+  }
+
+  Future<void> _processCCCDImagesFromGallery() async {
+    final picker = ImagePicker();
+    final List<XFile> images = await picker.pickMultiImage(imageQuality: 70);
+    if (images.isNotEmpty) {
+      _processCCCDImages(images.take(2).toList());
+    }
+  }
+
+  Future<void> _processCCCDImages(List<XFile> files) async {
+    if (files.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final configDoc = await FirebaseFirestore.instance.collection('config').doc('google').get();
+      final apiKey = configDoc.data()?['cloud_vision_api'] ?? '';
+      
+      if (apiKey.isEmpty) {
+        throw Exception("Không tìm thấy Cloud Vision API Key. Vui lòng kiểm tra Firestore.");
+      }
+
+      List<Map<String, dynamic>> requests = [];
+      for (var file in files) {
+        final bytes = await file.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        requests.add({
+          "image": {"content": base64Image},
+          "features": [
+            {"type": "TEXT_DETECTION"}
+          ]
+        });
+      }
+
+      final uri = Uri.parse('https://vision.googleapis.com/v1/images:annotate?key=$apiKey');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "requests": requests
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception("Lỗi gọi Cloud Vision API: ${response.body}");
+      }
+
+      final jsonResponse = jsonDecode(response.body);
+      String combinedText = "";
+
+      for (var res in jsonResponse['responses'] ?? []) {
+         final annotations = res['textAnnotations'];
+         if (annotations != null && annotations.isNotEmpty) {
+            combinedText += annotations[0]['description'] + "\n";
+         }
+      }
+      
+      if (combinedText.trim().isEmpty) {
+        throw Exception("Không tìm thấy văn bản trong ảnh");
+      }
+
+      String text = combinedText;
+
+      String? cccd;
+      String? name;
+      String? dob;
+      String? gender;
+      String? address;
+      String? issueDate;
+      String? issuePlace;
+
+      final lines = text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        final lowerLine = line.toLowerCase();
+        
+        // Front parsing
+        if (cccd == null) {
+          final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(line);
+          if (cccdMatch != null) {
+            cccd = cccdMatch.group(0);
+          } else if (lowerLine.contains('số') || lowerLine.contains('no.')) {
+            if (i + 1 < lines.length) {
+              final nextLineMatch = RegExp(r'\b\d{12}\b').firstMatch(lines[i+1]);
+              if (nextLineMatch != null) cccd = nextLineMatch.group(0);
+            }
+          }
+        }
+
+        if (name == null && (lowerLine.contains('họ và tên') || lowerLine.contains('full name'))) {
+          String contentAfterLabel = line.replaceAll(RegExp(r'(họ và tên|full name)\s*[/:]*\s*', caseSensitive: false), '').trim();
+          if (contentAfterLabel.length > 3) {
+            name = contentAfterLabel.toUpperCase();
+          } else if (i + 1 < lines.length) {
+            name = lines[i+1].toUpperCase();
+          }
+        }
+
+        if (dob == null && (lowerLine.contains('ngày sinh') || lowerLine.contains('date of birth'))) {
+           final dobMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(line);
+           if (dobMatch != null) {
+             dob = dobMatch.group(0);
+           } else if (i + 1 < lines.length) {
+             final nextLineMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(lines[i+1]);
+             if (nextLineMatch != null) dob = nextLineMatch.group(0);
+           }
+        }
+
+        if (gender == null && (lowerLine.contains('giới tính') || lowerLine.contains('sex'))) {
+           if (lowerLine.contains('nam')) {
+             gender = 'Nam';
+           } else if (lowerLine.contains('nữ')) {
+             gender = 'Nữ';
+           } else if (i + 1 < lines.length) {
+             final nextLower = lines[i+1].toLowerCase();
+             if (nextLower.contains('nam')) gender = 'Nam';
+             else if (nextLower.contains('nữ')) gender = 'Nữ';
+           }
+        }
+
+        if (address == null && (lowerLine.contains('thường trú') || lowerLine.contains('residence'))) {
+           String currentLineContent = line.replaceAll(RegExp(r'(nơi thường trú|place of residence|residence)\s*[/:]*\s*', caseSensitive: false), '').trim();
+           address = currentLineContent;
+
+           int nextIdx = i + 1;
+           while (nextIdx < lines.length) {
+             String nextLine = lines[nextIdx].toLowerCase();
+             if (nextLine.contains('có giá trị') || nextLine.contains('expiry') || 
+                 nextLine.contains('đặc điểm') || nextLine.contains('identifying') ||
+                 nextLine.contains('quê quán') || nextLine.contains('place of origin') ||
+                 nextLine.contains('ngày, tháng, năm') || nextLine.contains('date, month, year')) {
+               break;
+             }
+             
+             if (address!.isEmpty) {
+               address = lines[nextIdx];
+             } else {
+               address += ", " + lines[nextIdx];
+             }
+             nextIdx++;
+           }
+           i = nextIdx - 1;
+        }
+
+        // Back parsing
+        if (issueDate == null && (lowerLine.contains('ngày, tháng, năm') || lowerLine.contains('date, month, year') || (lowerLine.contains('ngày') && lowerLine.contains('tháng') && lowerLine.contains('năm')))) {
+           final issueDateMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(line);
+           if (issueDateMatch != null && issueDateMatch.group(0) != dob) {
+               issueDate = issueDateMatch.group(0);
+           } else {
+               int nextIdx = i + 1;
+               while (nextIdx < lines.length && nextIdx <= i + 3) {
+                   final nextMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(lines[nextIdx]);
+                   if (nextMatch != null && nextMatch.group(0) != dob) {
+                       issueDate = nextMatch.group(0);
+                       break;
+                   }
+                   nextIdx++;
+               }
+           }
+        }
+
+        if (issuePlace == null) {
+           if (lowerLine.contains('nơi cấp') || lowerLine.contains('place of issue')) {
+               String currentLineContent = line.replaceAll(RegExp(r'(nơi cấp|place of issue)\s*[/:]*\s*', caseSensitive: false), '').trim();
+               if (currentLineContent.isNotEmpty) {
+                   issuePlace = currentLineContent;
+               } else if (i + 1 < lines.length) {
+                   issuePlace = lines[i+1];
+               }
+           } else if (lowerLine.contains('cục trưởng cục cảnh sát')) {
+               issuePlace = line;
+               if (i + 1 < lines.length && (lines[i+1].toLowerCase().contains('quản lý hành chính') || lines[i+1].toLowerCase().contains('cư trú'))) {
+                   issuePlace = issuePlace! + ' ' + lines[i+1];
+               }
+           } else if (lowerLine.contains('quản lý hành chính về trật tự xã hội')) {
+               issuePlace = "Cục Cảnh sát quản lý hành chính về trật tự xã hội";
+           } else if (lowerLine.contains('giám đốc công an')) {
+               issuePlace = line;
+           }
+        }
+      }
+
+      // Fallbacks
+      if (cccd == null) {
+        final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(text);
+        if (cccdMatch != null) cccd = cccdMatch.group(0);
+      }
+      if (dob == null) {
+        final dobMatches = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').allMatches(text).map((m) => m.group(0)).toList();
+        if (dobMatches.isNotEmpty) {
+           dob = dobMatches.first;
+        }
+      }
+      if (issueDate == null) {
+        final dateMatches = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').allMatches(text).map((m) => m.group(0)).toList();
+        for (var d in dateMatches) {
+            if (d != dob) {
+                issueDate = d;
+                break;
+            }
+        }
+      }
+      if (gender == null) {
+        final genderMatch = RegExp(r'\b(Nam|Nữ)\b', caseSensitive: false).firstMatch(text);
+        if (genderMatch != null) {
+          String g = genderMatch.group(0) ?? '';
+          gender = g.toLowerCase() == 'nam' ? 'Nam' : 'Nữ';
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          if (cccd != null) _cccdNumberCtrl.text = cccd;
+          if (dob != null) _birthdayCtrl.text = dob;
+          if (gender != null) _gender = gender;
+          if (name != null && name.isNotEmpty) _nameCtrl.text = name;
+          if (address != null && address.isNotEmpty) _addressCtrl.text = address;
+          if (issueDate != null) _cccdDateCtrl.text = issueDate;
+          if (issuePlace != null) _cccdPlaceCtrl.text = issuePlace;
+          _showAdditionalInfo = true; // Bật hiển thị form nếu có data
+        });
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+      }
+
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi xử lý OCR: $e")));
+      }
+    }
   }
 
   Widget _buildVehicleSection() {
