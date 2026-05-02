@@ -326,18 +326,18 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: Colors.blue),
-              title: const Text("Chụp ảnh mặt trước CCCD"),
+              title: const Text("Chụp ảnh 2 mặt CCCD"),
               onTap: () {
                 Navigator.pop(context);
-                _processCCCDImage(ImageSource.camera);
+                _processCCCDImagesFromCamera();
               },
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: Colors.green),
-              title: const Text("Chọn ảnh mặt trước từ thư viện"),
+              title: const Text("Chọn ảnh 2 mặt CCCD từ thư viện"),
               onTap: () {
                 Navigator.pop(context);
-                _processCCCDImage(ImageSource.gallery);
+                _processCCCDImagesFromGallery();
               },
             ),
           ],
@@ -346,11 +346,55 @@ class _CreateContractPageState extends State<CreateContractPage> {
     );
   }
 
-  Future<void> _processCCCDImage(ImageSource source) async {
+  Future<void> _processCCCDImagesFromCamera() async {
     final picker = ImagePicker();
-    // Giảm dung lượng ảnh trước khi gửi lên API để tiết kiệm băng thông và chi phí
-    final pickedFile = await picker.pickImage(source: source, imageQuality: 70);
-    if (pickedFile == null) return;
+    
+    // Front
+    final frontFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    if (frontFile == null) return;
+    
+    // Dialog for Back
+    if (mounted) {
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Tiếp tục"),
+          content: const Text("Vui lòng chụp mặt sau của CCCD để quét đầy đủ thông tin (Ngày cấp, Nơi cấp)."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Bỏ qua", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Chụp ảnh"),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldContinue == true) {
+        final backFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+        if (backFile != null) {
+          _processCCCDImages([frontFile, backFile]);
+          return;
+        }
+      }
+    }
+    
+    _processCCCDImages([frontFile]);
+  }
+
+  Future<void> _processCCCDImagesFromGallery() async {
+    final picker = ImagePicker();
+    final List<XFile> images = await picker.pickMultiImage(imageQuality: 70);
+    if (images.isNotEmpty) {
+      _processCCCDImages(images.take(2).toList());
+    }
+  }
+
+  Future<void> _processCCCDImages(List<XFile> files) async {
+    if (files.isEmpty) return;
 
     showDialog(
       context: context,
@@ -359,11 +403,6 @@ class _CreateContractPageState extends State<CreateContractPage> {
     );
 
     try {
-      // Chuyển ảnh thành base64
-      final bytes = await pickedFile.readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      // Lấy API Key từ Firestore (config/google -> cloud_vision_api)
       final configDoc = await FirebaseFirestore.instance.collection('config').doc('google').get();
       final apiKey = configDoc.data()?['cloud_vision_api'] ?? '';
       
@@ -371,20 +410,24 @@ class _CreateContractPageState extends State<CreateContractPage> {
         throw Exception("Không tìm thấy Cloud Vision API Key. Vui lòng kiểm tra Firestore.");
       }
 
-      // Gọi Google Cloud Vision API
+      List<Map<String, dynamic>> requests = [];
+      for (var file in files) {
+        final bytes = await file.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        requests.add({
+          "image": {"content": base64Image},
+          "features": [
+            {"type": "TEXT_DETECTION"}
+          ]
+        });
+      }
+
       final uri = Uri.parse('https://vision.googleapis.com/v1/images:annotate?key=$apiKey');
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          "requests": [
-            {
-              "image": {"content": base64Image},
-              "features": [
-                {"type": "TEXT_DETECTION"}
-              ]
-            }
-          ]
+          "requests": requests
         }),
       );
 
@@ -393,29 +436,36 @@ class _CreateContractPageState extends State<CreateContractPage> {
       }
 
       final jsonResponse = jsonDecode(response.body);
-      final annotations = jsonResponse['responses']?[0]?['textAnnotations'];
+      String combinedText = "";
+
+      for (var res in jsonResponse['responses'] ?? []) {
+         final annotations = res['textAnnotations'];
+         if (annotations != null && annotations.isNotEmpty) {
+            combinedText += annotations[0]['description'] + "\n";
+         }
+      }
       
-      if (annotations == null || annotations.isEmpty) {
+      if (combinedText.trim().isEmpty) {
         throw Exception("Không tìm thấy văn bản trong ảnh");
       }
 
-      // textAnnotations[0]['description'] chứa toàn bộ văn bản được trích xuất
-      String text = annotations[0]['description'];
+      String text = combinedText;
 
       String? cccd;
       String? name;
       String? dob;
       String? gender;
       String? address;
+      String? issueDate;
+      String? issuePlace;
 
-      // Clean lines and remove empty ones
       final lines = text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
 
       for (int i = 0; i < lines.length; i++) {
         final line = lines[i];
         final lowerLine = line.toLowerCase();
         
-        // 1. Số CCCD (12 số)
+        // Front parsing
         if (cccd == null) {
           final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(line);
           if (cccdMatch != null) {
@@ -428,7 +478,6 @@ class _CreateContractPageState extends State<CreateContractPage> {
           }
         }
 
-        // 2. Họ và tên (Lấy dòng in hoa tiếp theo)
         if (name == null && (lowerLine.contains('họ và tên') || lowerLine.contains('full name'))) {
           String contentAfterLabel = line.replaceAll(RegExp(r'(họ và tên|full name)\s*[/:]*\s*', caseSensitive: false), '').trim();
           if (contentAfterLabel.length > 3) {
@@ -438,7 +487,6 @@ class _CreateContractPageState extends State<CreateContractPage> {
           }
         }
 
-        // 3. Ngày sinh (dd/mm/yyyy)
         if (dob == null && (lowerLine.contains('ngày sinh') || lowerLine.contains('date of birth'))) {
            final dobMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(line);
            if (dobMatch != null) {
@@ -449,7 +497,6 @@ class _CreateContractPageState extends State<CreateContractPage> {
            }
         }
 
-        // 4. Giới tính
         if (gender == null && (lowerLine.contains('giới tính') || lowerLine.contains('sex'))) {
            if (lowerLine.contains('nam')) {
              gender = 'Nam';
@@ -462,7 +509,6 @@ class _CreateContractPageState extends State<CreateContractPage> {
            }
         }
 
-        // 5. Nơi thường trú (Cải tiến đã làm ở bước trước)
         if (address == null && (lowerLine.contains('thường trú') || lowerLine.contains('residence'))) {
            String currentLineContent = line.replaceAll(RegExp(r'(nơi thường trú|place of residence|residence)\s*[/:]*\s*', caseSensitive: false), '').trim();
            address = currentLineContent;
@@ -472,7 +518,8 @@ class _CreateContractPageState extends State<CreateContractPage> {
              String nextLine = lines[nextIdx].toLowerCase();
              if (nextLine.contains('có giá trị') || nextLine.contains('expiry') || 
                  nextLine.contains('đặc điểm') || nextLine.contains('identifying') ||
-                 nextLine.contains('quê quán') || nextLine.contains('place of origin')) {
+                 nextLine.contains('quê quán') || nextLine.contains('place of origin') ||
+                 nextLine.contains('ngày, tháng, năm') || nextLine.contains('date, month, year')) {
                break;
              }
              
@@ -485,16 +532,65 @@ class _CreateContractPageState extends State<CreateContractPage> {
            }
            i = nextIdx - 1;
         }
+
+        // Back parsing
+        if (issueDate == null && (lowerLine.contains('ngày, tháng, năm') || lowerLine.contains('date, month, year') || (lowerLine.contains('ngày') && lowerLine.contains('tháng') && lowerLine.contains('năm')))) {
+           final issueDateMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(line);
+           if (issueDateMatch != null && issueDateMatch.group(0) != dob) {
+               issueDate = issueDateMatch.group(0);
+           } else {
+               int nextIdx = i + 1;
+               while (nextIdx < lines.length && nextIdx <= i + 3) {
+                   final nextMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(lines[nextIdx]);
+                   if (nextMatch != null && nextMatch.group(0) != dob) {
+                       issueDate = nextMatch.group(0);
+                       break;
+                   }
+                   nextIdx++;
+               }
+           }
+        }
+
+        if (issuePlace == null) {
+           if (lowerLine.contains('nơi cấp') || lowerLine.contains('place of issue')) {
+               String currentLineContent = line.replaceAll(RegExp(r'(nơi cấp|place of issue)\s*[/:]*\s*', caseSensitive: false), '').trim();
+               if (currentLineContent.isNotEmpty) {
+                   issuePlace = currentLineContent;
+               } else if (i + 1 < lines.length) {
+                   issuePlace = lines[i+1];
+               }
+           } else if (lowerLine.contains('cục trưởng cục cảnh sát')) {
+               issuePlace = line;
+               if (i + 1 < lines.length && (lines[i+1].toLowerCase().contains('quản lý hành chính') || lines[i+1].toLowerCase().contains('cư trú'))) {
+                   issuePlace = issuePlace! + ' ' + lines[i+1];
+               }
+           } else if (lowerLine.contains('quản lý hành chính về trật tự xã hội')) {
+               issuePlace = "Cục Cảnh sát quản lý hành chính về trật tự xã hội";
+           } else if (lowerLine.contains('giám đốc công an')) {
+               issuePlace = line;
+           }
+        }
       }
 
-      // Fallbacks if not found by line matching
+      // Fallbacks
       if (cccd == null) {
         final cccdMatch = RegExp(r'\b\d{12}\b').firstMatch(text);
         if (cccdMatch != null) cccd = cccdMatch.group(0);
       }
       if (dob == null) {
-        final dobMatch = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').firstMatch(text);
-        if (dobMatch != null) dob = dobMatch.group(0);
+        final dobMatches = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').allMatches(text).map((m) => m.group(0)).toList();
+        if (dobMatches.isNotEmpty) {
+           dob = dobMatches.first;
+        }
+      }
+      if (issueDate == null) {
+        final dateMatches = RegExp(r'\b\d{2}/\d{2}/\d{4}\b').allMatches(text).map((m) => m.group(0)).toList();
+        for (var d in dateMatches) {
+            if (d != dob) {
+                issueDate = d;
+                break;
+            }
+        }
       }
       if (gender == null) {
         final genderMatch = RegExp(r'\b(Nam|Nữ)\b', caseSensitive: false).firstMatch(text);
@@ -511,6 +607,9 @@ class _CreateContractPageState extends State<CreateContractPage> {
           if (gender != null) _gender = gender;
           if (name != null && name.isNotEmpty) _nameCtrl.text = name;
           if (address != null && address.isNotEmpty) _addressCtrl.text = address;
+          if (issueDate != null) _issueDateCtrl.text = issueDate;
+          if (issuePlace != null) _issuePlaceCtrl.text = issuePlace;
+          _showExtraInfo = true; // Bật hiển thị form nếu có data
         });
         Navigator.pop(context); // Close loading
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
