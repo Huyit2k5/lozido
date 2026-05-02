@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/currency_formatter.dart';
 
 class InvoicePaymentSheet extends StatefulWidget {
   final String houseId;
@@ -169,7 +170,7 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
             TextFormField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [CurrencyInputFormatter()],
               textAlign: TextAlign.center,
               style: const TextStyle(
                   color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20),
