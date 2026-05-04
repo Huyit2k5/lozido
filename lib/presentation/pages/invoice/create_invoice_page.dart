@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../services/gemini_service.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../../widgets/app_dialog.dart';
 
 class CreateInvoicePage extends StatefulWidget {
@@ -517,6 +518,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             .doc(widget.roomId)
             .update({'services': updatedServices});
       }
+
 
       if (mounted) {
         _showSuccessDialog();
@@ -1111,7 +1113,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                           child: TextField(
                             controller: _depositController,
                             keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            inputFormatters: [CurrencyInputFormatter()],
                             decoration: InputDecoration(
                               hintText: "Nhập số tiền cọc (nếu có)",
                               suffixIcon: Container(
@@ -1426,9 +1428,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                     flex: 2,
                                     child: TextField(
                                       controller: adj.amountController,
-                                      keyboardType: TextInputType.numberWithOptions(signed: true),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [CurrencyInputFormatter()],
                                       decoration: InputDecoration(
-                                        hintText: "-100k / 100k",
+                                        hintText: "100.000",
                                         isDense: true,
                                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

@@ -243,6 +243,20 @@ class _DepositPageState extends State<DepositPage> {
         'depositAmount': depositAmount, // cache for easy UI display in lists
       });
 
+      // Thêm vào collection transactions
+      await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('transactions')
+          .add({
+        'type': 'Thu',
+        'category': 'Thu cọc',
+        'amount': depositAmount,
+        'date': Timestamp.fromDate(_depositDate!),
+        'note': 'Cọc giữ chỗ - ${_tenantNameController.text.trim()} - Phòng ${widget.roomData['roomName'] ?? ''}',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
       _showSuccessModal();
     } catch (e) {
       if (mounted) {

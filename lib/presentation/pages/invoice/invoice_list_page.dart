@@ -26,6 +26,7 @@ class _InvoiceListPageState extends State<InvoiceListPage> {
 
   final List<String> _statuses = [
     'Chưa thu',
+    'Chờ xác nhận',
     'Đang nợ tiền',
     'Đã thu xong',
     'Đã bị hủy',
@@ -279,6 +280,9 @@ class _InvoiceListPageState extends State<InvoiceListPage> {
         break;
       case 'Đang nợ tiền':
         statusColor = Colors.red;
+        break;
+      case 'Chờ xác nhận':
+        statusColor = Colors.blue;
         break;
       case 'Đã bị hủy':
         statusColor = Colors.grey;

@@ -193,7 +193,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
                     icon: Icons.qr_code_scanner,
                     color: Colors.blueAccent,
                     onTap: () {
-                      _showPaymentSuccessDialog(context, "Chuyển khoản / Quét tiền");
+                      _handleBankTransfer(context);
                     }
                   ),
                   const SizedBox(height: 12),
@@ -266,20 +266,43 @@ class TenantInvoicePaymentPage extends StatelessWidget {
     );
   }
 
-  void _showPaymentSuccessDialog(BuildContext context, String method) {
+  Future<void> _handleBankTransfer(BuildContext context) async {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Xác nhận thanh toán"),
-        content: Text("Bạn đã chọn thanh toán qua $method. Tính năng mô phỏng API ngân hàng hiện chưa tích hợp chức năng chuyển khoản thực tế."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Đóng", style: TextStyle(color: Colors.black87)),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
     );
+
+    try {
+      final invoiceRef = FirebaseFirestore.instance
+          .collection('houses')
+          .doc(houseId)
+          .collection('invoices')
+          .doc(invoiceId);
+
+      await invoiceRef.update({
+        'status': 'Chờ xác nhận', // Chuyển khoản qua app thì để chờ chủ nhà xác nhận
+      });
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã gửi thông tin chuyển khoản. Vui lòng chờ xác nhận!'),
+            backgroundColor: Color(0xFF00A651),
+          ),
+        );
+        Navigator.pop(context); 
+        Navigator.pop(context); 
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _handleCashPayment(BuildContext context) async {

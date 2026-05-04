@@ -20,12 +20,17 @@ class CurrencyInputFormatter extends TextInputFormatter {
     double doubleValue = double.parse(value);
     
     // Định dạng kiểu tiền Việt Nam (sử dụng dấu chấm làm phân cách hàng nghìn)
-    final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: '', decimalDigits: 0);
-    String formattedString = formatter.format(doubleValue).trim();
+    final formattedString = formatCurrency(doubleValue);
 
     return newValue.copyWith(
       text: formattedString,
       selection: TextSelection.collapsed(offset: formattedString.length),
     );
   }
+}
+
+/// Định dạng số tiền theo chuẩn Việt Nam (vd: 1.000.000)
+String formatCurrency(num value) {
+  final formatter = NumberFormat.currency(locale: 'vi_VN', symbol: '', decimalDigits: 0);
+  return formatter.format(value).trim();
 }

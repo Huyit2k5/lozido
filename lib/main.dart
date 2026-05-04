@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'package:lozido_app/presentation/pages/auth/auth_wrapper.dart';
 
@@ -9,6 +10,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  await initializeDateFormatting('vi_VN', null);
   
   // Tự động đăng nhập ẩn danh nếu chưa đăng nhập bất kỳ tài khoản nào
   try {
