@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lozido_app/core/utils/currency_formatter.dart';
 import 'add_house_page.dart';
 import 'mail_page.dart';
 import '../room/room_list_page.dart';
@@ -10,11 +11,11 @@ import 'empty_rooms_page.dart';
 import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 import 'tenant_app_settings_page.dart';
-
-
-
 import '../invoice/select_room_invoice_page.dart';
 import '../invoice/invoice_list_page.dart';
+import '../invoice/owed_invoice_list_page.dart';
+import '../finance/transaction_list_page.dart';
+import '../finance/service_summary_page.dart';
 import '../contracts/contract_list_page.dart';
 import '../tenants/all_tenants_page.dart';
 import '../assets/assets_list_page.dart';
@@ -519,6 +520,10 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(height: 20),
 
+        // Debt Banner: Số tiền khách đang nợ
+        _buildDebtBanner(houseId, houseData),
+        const SizedBox(height: 20),
+
         // Section: Thao tác thường dùng
         _buildSectionHeader(
           "Thao tác thường dùng",
@@ -613,6 +618,17 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.request_quote_outlined,
                 color: Colors.green,
                 title: "Hóa đơn\ncần thu tiền",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OwedInvoiceListPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -804,6 +820,57 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+        const SizedBox(height: 24),
+
+        // Section: Thao tác khác
+        _buildSectionHeader(
+          "Thao tác khác",
+          "Chứa các thao tác nâng cao cho việc quản lý",
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              _buildBannerItem(
+                icon: Icons.account_balance_wallet_outlined,
+                iconBg: Colors.grey.shade100,
+                iconColor: const Color(0xFF00A651),
+                title: "Khoản thu / chi & Tổng kết",
+                subtitle: "Tổng kết việc kinh doanh & Quản lý các khoản thu (tiền vào), chi (tiền ra) trong hệ thống của bạn",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TransactionListPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildBannerItem(
+                icon: Icons.analytics_outlined,
+                iconBg: Colors.grey.shade100,
+                iconColor: const Color(0xFF00A651),
+                title: "Tổng kết dịch vụ khách sử dụng",
+                subtitle: "Thống kê dịch vụ điện nước, wifi, rác... khách sử dụng",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ServiceSummaryPage(
+                        houseId: houseId,
+                        houseData: houseData,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 30),
       ],
     );
@@ -966,14 +1033,47 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildOverviewStatCard(
-                          icon: Icons.warning_amber_rounded,
-                          iconColor: Colors.black87,
-                          iconBgColor: Colors.amber.shade400,
-                          title: "Số phòng sắp kết thúc hợp đồng",
-                          count: 0,
-                          percent: "0%",
-                          percentColor: Colors.orange.shade700,
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('houses')
+                              .doc(houseId)
+                              .collection('contracts')
+                              .where('status', isEqualTo: 'Active')
+                              .snapshots(),
+                          builder: (context, snap) {
+                            int endingSoon = 0;
+                            final now = DateTime.now();
+                            final sevenDaysLater = now.add(const Duration(days: 7));
+                            if (snap.hasData) {
+                              for (var doc in snap.data!.docs) {
+                                final d = doc.data() as Map<String, dynamic>;
+                                final endDateStr = d['endDate']?.toString() ?? '';
+                                if (endDateStr.isNotEmpty) {
+                                  try {
+                                    final parts = endDateStr.split('/');
+                                    final endDate = DateTime(
+                                      int.parse(parts[2]),
+                                      int.parse(parts[1]),
+                                      int.parse(parts[0]),
+                                    );
+                                    if (endDate.isAfter(now) && endDate.isBefore(sevenDaysLater)) {
+                                      endingSoon++;
+                                    }
+                                  } catch (_) {}
+                                }
+                              }
+                            }
+                            final pct = totalRooms > 0 ? "${((endingSoon / totalRooms) * 100).toInt()}%" : "0%";
+                            return _buildOverviewStatCard(
+                              icon: Icons.warning_amber_rounded,
+                              iconColor: Colors.black87,
+                              iconBgColor: Colors.amber.shade400,
+                              title: "Số phòng sắp kết thúc hợp đồng",
+                              count: endingSoon,
+                              percent: pct,
+                              percentColor: Colors.orange.shade700,
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -994,14 +1094,46 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildOverviewStatCard(
-                          icon: Icons.access_time_rounded,
-                          iconColor: Colors.white,
-                          iconBgColor: Colors.black87,
-                          title: "Số phòng quá hạn hợp đồng",
-                          count: 0,
-                          percent: "0%",
-                          percentColor: Colors.orange.shade700,
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('houses')
+                              .doc(houseId)
+                              .collection('contracts')
+                              .where('status', isEqualTo: 'Active')
+                              .snapshots(),
+                          builder: (context, snap) {
+                            int expired = 0;
+                            final now = DateTime.now();
+                            if (snap.hasData) {
+                              for (var doc in snap.data!.docs) {
+                                final d = doc.data() as Map<String, dynamic>;
+                                final endDateStr = d['endDate']?.toString() ?? '';
+                                if (endDateStr.isNotEmpty) {
+                                  try {
+                                    final parts = endDateStr.split('/');
+                                    final endDate = DateTime(
+                                      int.parse(parts[2]),
+                                      int.parse(parts[1]),
+                                      int.parse(parts[0]),
+                                    );
+                                    if (endDate.isBefore(now)) {
+                                      expired++;
+                                    }
+                                  } catch (_) {}
+                                }
+                              }
+                            }
+                            final pct = totalRooms > 0 ? "${((expired / totalRooms) * 100).toInt()}%" : "0%";
+                            return _buildOverviewStatCard(
+                              icon: Icons.access_time_rounded,
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.black87,
+                              title: "Số phòng quá hạn hợp đồng",
+                              count: expired,
+                              percent: pct,
+                              percentColor: Colors.orange.shade700,
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -1010,29 +1142,193 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildOverviewStatCard(
-                          icon: Icons.attach_money_rounded,
-                          iconColor: Colors.white,
-                          iconBgColor: Colors.green.shade500,
-                          title: "Số phòng đang nợ",
-                          count: 0,
-                          percent: "0%",
-                          percentColor: Colors.orange.shade700,
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('houses')
+                              .doc(houseId)
+                              .collection('invoices')
+                              .snapshots(),
+                          builder: (context, snap) {
+                            int debtRooms = 0;
+                            if (snap.hasData) {
+                              final seenRooms = <String>{};
+                              for (var doc in snap.data!.docs) {
+                                final d = doc.data() as Map<String, dynamic>;
+                                final grandTotal = (d['grandTotal'] ?? 0).toDouble();
+                                final paidAmount = (d['paidAmount'] ?? 0).toDouble();
+                                final status = d['status'] ?? '';
+                                final roomName = (d['roomName'] ?? '').toString();
+                                if ((grandTotal - paidAmount > 0) && status != 'Đã bị hủy' && roomName.isNotEmpty) {
+                                  seenRooms.add(roomName);
+                                }
+                              }
+                              debtRooms = seenRooms.length;
+                            }
+                            final pct = totalRooms > 0 ? "${((debtRooms / totalRooms) * 100).toInt()}%" : "0%";
+                            return _buildOverviewStatCard(
+                              icon: Icons.attach_money_rounded,
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.green.shade500,
+                              title: "Số phòng đang nợ",
+                              count: debtRooms,
+                              percent: pct,
+                              percentColor: Colors.orange.shade700,
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildOverviewStatCard(
-                          icon: Icons.anchor_rounded,
-                          iconColor: Colors.white,
-                          iconBgColor: Colors.blueGrey.shade500,
-                          title: "Số phòng đang cọc",
-                          count: 0,
-                          percent: "0%",
-                          percentColor: Colors.green.shade600,
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('houses')
+                              .doc(houseId)
+                              .collection('deposits')
+                              .where('status', isEqualTo: 'Active')
+                              .snapshots(),
+                          builder: (context, snap) {
+                            int depositRooms = snap.data?.docs.length ?? 0;
+                            final pct = totalRooms > 0 ? "${((depositRooms / totalRooms) * 100).toInt()}%" : "0%";
+                            return _buildOverviewStatCard(
+                              icon: Icons.anchor_rounded,
+                              iconColor: Colors.white,
+                              iconBgColor: Colors.blueGrey.shade500,
+                              title: "Số phòng đang cọc",
+                              count: depositRooms,
+                              percent: pct,
+                              percentColor: Colors.green.shade600,
+                            );
+                          },
                         ),
                       ),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Section: Thống kê tài chính
+            _buildSectionHeader(
+              "Thống kê tài chính",
+              "Thống kê các loại tiền bạn đang quản lý",
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  // 1. Số tiền khách nợ
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('houses')
+                        .doc(houseId)
+                        .collection('invoices')
+                        .snapshots(),
+                    builder: (context, snap) {
+                      double totalRemaining = 0;
+                      if (snap.hasData) {
+                        for (var doc in snap.data!.docs) {
+                          final d = doc.data() as Map<String, dynamic>;
+                          final status = d['status'] ?? '';
+                          if (status == 'Đã bị hủy') continue;
+                          final grandTotal = (d['grandTotal'] ?? 0).toDouble();
+                          final paidAmount = (d['paidAmount'] ?? 0).toDouble();
+                          totalRemaining += (grandTotal - paidAmount);
+                        }
+                      }
+                      return _buildFinanceCard(
+                        title: "Số tiền khách nợ",
+                        subtitle: "Tổng tiền khách thuê đang nợ",
+                        amount: totalRemaining,
+                        iconStr: "\$",
+                        iconBgColor: const Color(0xFFF44336),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OwedInvoiceListPage(
+                                houseId: houseId,
+                                houseData: houseData,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  // 2. Số tiền cọc
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('houses')
+                        .doc(houseId)
+                        .collection('contracts')
+                        .where('status', isEqualTo: 'Active')
+                        .snapshots(),
+                    builder: (context, snap) {
+                      double totalDeposit = 0;
+                      if (snap.hasData) {
+                        for (var doc in snap.data!.docs) {
+                          final d = doc.data() as Map<String, dynamic>;
+                          totalDeposit += num.tryParse(d['depositAmount']?.toString() ?? '0')?.toDouble() ?? 0.0;
+                        }
+                      }
+                      return _buildFinanceCard(
+                        title: "Số tiền cọc",
+                        subtitle: "Tổng tiền khách thuê đặt cọc khi ở",
+                        amount: totalDeposit,
+                        iconStr: "\$",
+                        iconBgColor: const Color(0xFF607D8B),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ContractListPage(
+                                houseId: houseId,
+                                houseData: houseData,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  // 3. Số tiền khách cọc giữ chỗ
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('houses')
+                        .doc(houseId)
+                        .collection('deposits')
+                        .where('status', isEqualTo: 'Active')
+                        .snapshots(),
+                    builder: (context, snap) {
+                      double totalHoldDeposit = 0;
+                      if (snap.hasData) {
+                        for (var doc in snap.data!.docs) {
+                          final d = doc.data() as Map<String, dynamic>;
+                          totalHoldDeposit += num.tryParse(d['depositAmount']?.toString() ?? '0')?.toDouble() ?? 0.0;
+                        }
+                      }
+                      return _buildFinanceCard(
+                        title: "Số tiền khách cọc giữ chỗ",
+                        subtitle: "Tổng tiền khách thuê đang cọc giữ chỗ",
+                        amount: totalHoldDeposit,
+                        iconStr: "\$",
+                        iconBgColor: const Color(0xFF4CAF50),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DepositRoomListPage(
+                                houseId: houseId,
+                                houseData: houseData,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1141,6 +1437,314 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFinanceCard({
+    required String title,
+    required String subtitle,
+    required double amount,
+    required String iconStr,
+    required Color iconBgColor,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  iconStr,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "${formatCurrency(amount)} đ",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.black54,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBannerItem({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconBg,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.black38, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDebtBanner(String houseId, Map<String, dynamic> houseData) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('houses')
+          .doc(houseId)
+          .collection('invoices')
+          .snapshots(),
+      builder: (context, snapshot) {
+        int debtCount = 0;
+        double totalDebt = 0;
+
+        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+          for (var doc in snapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final grandTotal = (data['grandTotal'] ?? 0).toDouble();
+            final paidAmount = (data['paidAmount'] ?? 0).toDouble();
+            final status = data['status'] ?? '';
+            final remaining = grandTotal - paidAmount;
+            if (remaining > 0 && status != 'Đã bị hủy') {
+              debtCount++;
+              totalDebt += remaining;
+            }
+          }
+        }
+
+        if (debtCount == 0) return const SizedBox.shrink();
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OwedInvoiceListPage(
+                  houseId: houseId,
+                  houseData: houseData,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFE0E0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.receipt_long_outlined,
+                        color: Colors.red,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  "Số tiền khách đang nợ",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  "Đang nợ",
+                                  style: TextStyle(
+                                    color: Colors.red.shade700,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Tổng hợp từ hóa đơn phát hành",
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "${formatCurrency(totalDebt)} đ",
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  color: Colors.orange.shade700, size: 16),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  "Hệ thống đã nhắc khách qua ZALO & APP",
+                                  style: TextStyle(
+                                    color: Colors.orange.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right,
+                                  color: Colors.black38, size: 20),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -77,6 +77,9 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
       case 'Đang nợ tiền':
         statusColor = Colors.red;
         break;
+      case 'Chờ xác nhận':
+        statusColor = Colors.blue;
+        break;
       case 'Đã bị hủy':
         statusColor = Colors.grey;
         break;
@@ -360,8 +363,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 height: 48,
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.attach_money, color: Colors.white),
-                  label: const Text("Thu tiền",
-                      style: TextStyle(
+                  label: Text(status == 'Chờ xác nhận' ? "Xác nhận & Thu tiền" : "Thu tiền",
+                      style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 16)),

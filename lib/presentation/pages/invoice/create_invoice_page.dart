@@ -519,6 +519,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             .update({'services': updatedServices});
       }
 
+
       if (mounted) {
         _showSuccessDialog();
       }

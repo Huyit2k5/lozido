@@ -825,6 +825,21 @@ class _CreateContractPageState extends State<CreateContractPage> {
             .collection('contracts')
             .add(contractData);
 
+        // Cập nhật deposit (nếu có) -> chuyển sang trạng thái 'Converted' vì khách đã vào ở
+        final depositSnapshot = await FirebaseFirestore.instance
+            .collection('houses')
+            .doc(widget.houseId)
+            .collection('deposits')
+            .where('roomId', isEqualTo: widget.roomId)
+            .where('status', isEqualTo: 'Active')
+            .get();
+        for (var depositDoc in depositSnapshot.docs) {
+          await depositDoc.reference.update({
+            'status': 'Converted',
+            'convertedAt': FieldValue.serverTimestamp(),
+          });
+        }
+
         await FirebaseFirestore.instance
             .collection('houses').doc(widget.houseId)
             .collection('rooms').doc(widget.roomId)

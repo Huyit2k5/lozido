@@ -37,8 +37,8 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
     final paidAmount = (widget.invoiceData['paidAmount'] ?? 0).toDouble();
     _remaining = grandTotal - paidAmount;
     
-    // Auto fill with remaining
-    _amountController.text = _remaining.toInt().toString();
+    // Auto fill with remaining (formatted)
+    _amountController.text = formatCurrency(_remaining);
   }
 
   Future<void> _submitPayment() async {
@@ -83,16 +83,40 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
         'createdAt': Timestamp.now(),
       };
 
-      await FirebaseFirestore.instance
+      final transactionRef = FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('transactions')
+          .doc();
+
+      final invoiceRef = FirebaseFirestore.instance
           .collection('houses')
           .doc(widget.houseId)
           .collection('invoices')
-          .doc(widget.invoiceId)
-          .update({
+          .doc(widget.invoiceId);
+
+      final batch = FirebaseFirestore.instance.batch();
+
+      batch.update(invoiceRef, {
         'paidAmount': newPaid,
         'status': newStatus,
         'payments': FieldValue.arrayUnion([newPaymentRecord]),
       });
+
+      batch.set(transactionRef, {
+        'type': 'Thu',
+        'category': 'Thu tiền phòng',
+        'amount': amount,
+        'date': Timestamp.fromDate(_paymentDate),
+        'note': _noteController.text.isNotEmpty 
+            ? _noteController.text 
+            : 'Thu tiền hóa đơn tháng ${widget.invoiceData['billingMonth'] ?? ''} - ${widget.invoiceData['roomName'] ?? ''}',
+        'createdAt': FieldValue.serverTimestamp(),
+        'paymentMethod': _paymentMethod,
+        'systemGenerated': true,
+      });
+
+      await batch.commit();
 
       if (mounted) {
         Navigator.pop(context, true); // Return true to signal refresh
@@ -157,7 +181,7 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // Amount Input
             RichText(
               text: const TextSpan(
