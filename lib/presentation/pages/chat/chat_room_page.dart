@@ -30,6 +30,13 @@ class ChatRoomPage extends StatefulWidget {
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final ChatService _chatService = ChatService();
 
+  @override
+  void initState() {
+    super.initState();
+    // Đánh dấu đã đọc khi mở phòng chat
+    _chatService.markRoomAsRead(widget.roomId, widget.userId);
+  }
+
   void _sendMessage(String text, bool isSticker) {
     if (text.isEmpty) return;
 
@@ -119,10 +126,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.phone_outlined, color: Colors.green),
-            onPressed: () {},
-          ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.black),
             onPressed: () {

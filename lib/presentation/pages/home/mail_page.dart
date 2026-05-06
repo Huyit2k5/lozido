@@ -297,13 +297,17 @@ class _MailPageState extends State<MailPage> {
                 final String roomName = data['roomName'] ?? 'Không tên';
                 final String roomId = doc.id;
                 final bool isBot = roomName.toLowerCase() == 'lozido cskh';
-                
+                final int unreadCount = (data['unreadCounts']?[currentUserId] as num?)?.toInt() ?? 0;
+                final String lastMessage = data['lastMessage'] as String? ?? "Nhấn để xem chi tiết";
+
                 return _buildChatRoomTile(
                   roomId: roomId,
                   roomName: roomName,
                   isBot: isBot,
                   currentUserId: currentUserId,
                   currentUserName: currentUserName,
+                  unreadCount: unreadCount,
+                  lastMessage: lastMessage,
                 );
               }).toList(),
             );
@@ -356,6 +360,8 @@ class _MailPageState extends State<MailPage> {
     required String currentUserId,
     required String currentUserName,
     bool isPinned = false,
+    int unreadCount = 0,
+    String lastMessage = "Nhấn để xem chi tiết",
   }) {
     return Column(
       children: [
@@ -374,25 +380,57 @@ class _MailPageState extends State<MailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isBot ? Colors.green.withOpacity(0.1) : const Color(0xFFFF5722),
-                  border: isBot ? Border.all(color: Colors.green) : null,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  isBot ? "Chatbot CSKH" : "Nhà trọ",
-                  style: TextStyle(
-                    color: isBot ? Colors.green : Colors.white, 
-                    fontSize: 10, 
-                    fontWeight: FontWeight.bold
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isBot ? Colors.green.withOpacity(0.1) : const Color(0xFFFF5722),
+                      border: isBot ? Border.all(color: Colors.green) : null,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      isBot ? "Chatbot CSKH" : "Nhà trọ",
+                      style: TextStyle(
+                        color: isBot ? Colors.green : Colors.white, 
+                        fontSize: 10, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      lastMessage, 
+                      style: TextStyle(
+                        color: unreadCount > 0 ? Colors.black87 : Colors.grey,
+                        fontWeight: unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const Text("Nhấn để xem chi tiết"),
             ],
           ),
+          trailing: unreadCount > 0
+              ? Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : null,
           onTap: () async {
             String finalRoomId = roomId;
             

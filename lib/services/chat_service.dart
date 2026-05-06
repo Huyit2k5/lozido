@@ -18,6 +18,7 @@ class ChatService {
         'userId': userId ?? 'system',
         'houseId': houseId,
         'roomId': roomId,
+        'unreadCounts': userId != null ? {userId: 0} : {},
       });
       return docRef.id;
     } catch (e) {
@@ -45,6 +46,36 @@ class ChatService {
           .doc(roomId)
           .collection('messages')
           .add(message.toFirestore());
+
+      // Cập nhật lastMessage và unreadCounts
+      DocumentSnapshot roomDoc = await _chatRoomsRef.doc(roomId).get();
+      Map<String, dynamic> data = roomDoc.data() as Map<String, dynamic>? ?? {};
+      Map<String, dynamic> unreadCounts = data['unreadCounts'] ?? {};
+      
+      Map<String, dynamic> updates = {
+        'lastMessage': message.isSticker ? '[Sticker]' : message.text,
+        'lastMessageTime': message.timestamp,
+      };
+      
+      // Tăng unreadCount cho những người đã có trong phòng (ngoại trừ người gửi)
+      for (String key in unreadCounts.keys) {
+        if (key != message.senderId) {
+          updates['unreadCounts.$key'] = FieldValue.increment(1);
+        }
+      }
+      
+      // Nếu chủ phòng chưa có trong map, thêm vào
+      String? ownerId = data['userId'];
+      if (ownerId != null && ownerId != message.senderId && !unreadCounts.containsKey(ownerId)) {
+         updates['unreadCounts.$ownerId'] = 1;
+      }
+      
+      // Đảm bảo người gửi có trong map (để sau này nhận thông báo)
+      if (!unreadCounts.containsKey(message.senderId)) {
+         updates['unreadCounts.${message.senderId}'] = 0;
+      }
+
+      await _chatRoomsRef.doc(roomId).update(updates);
     } catch (e) {
       print('Error sending message: $e');
       rethrow;
@@ -103,5 +134,16 @@ class ChatService {
       print('Error deleting chat room: $e');
       rethrow;
     }
+  }
+
+  // Đánh dấu phòng chat đã đọc
+  Future<void> markRoomAsRead(String roomId, String userId) async {
+     try {
+       await _chatRoomsRef.doc(roomId).update({
+         'unreadCounts.$userId': 0
+       });
+     } catch (e) {
+       print('Error marking room as read: $e');
+     }
   }
 }

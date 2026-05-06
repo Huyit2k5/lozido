@@ -7,6 +7,7 @@ class ChatMessage {
   final String text;
   final Timestamp timestamp;
   final bool isSticker;
+  final bool isRead;
 
   ChatMessage({
     this.id,
@@ -15,6 +16,7 @@ class ChatMessage {
     required this.text,
     required this.timestamp,
     required this.isSticker,
+    this.isRead = false,
   });
 
   factory ChatMessage.fromFirestore(DocumentSnapshot doc) {
@@ -26,6 +28,7 @@ class ChatMessage {
       text: data['text'] ?? '',
       timestamp: data['timestamp'] ?? Timestamp.now(),
       isSticker: data['isSticker'] ?? false,
+      isRead: data['isRead'] ?? false,
     );
   }
 
@@ -36,6 +39,7 @@ class ChatMessage {
       'text': text,
       'timestamp': timestamp,
       'isSticker': isSticker,
+      'isRead': isRead,
     };
   }
 }

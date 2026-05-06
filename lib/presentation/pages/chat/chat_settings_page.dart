@@ -82,16 +82,6 @@ class ChatSettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                if (!isBotRoom)
-                  _buildActionButton(Icons.person_add_alt_1_outlined, 'Thêm\nthành viên'),
-                _buildActionButton(Icons.notifications_off_outlined, 'Tắt\nthông báo'),
-                if (!isBotRoom)
-                  _buildActionButton(Icons.logout, 'Rời khỏi\nchat', color: Colors.orange[800]),
-              ],
-            ),
             const SizedBox(height: 32),
             // Settings List Container
             Container(
@@ -114,10 +104,6 @@ class ChatSettingsPage extends StatelessWidget {
                     ),
                   ),
                   const Divider(height: 1, indent: 16),
-                  _buildSettingsItem(
-                    label: 'Pin hội thoại',
-                    trailing: const Text('Đã ghim', style: TextStyle(color: Colors.black54)),
-                  ),
                   if (!isBotRoom) ...[
                     const Divider(height: 1, indent: 16),
                     Theme(
@@ -225,11 +211,6 @@ class ChatSettingsPage extends StatelessWidget {
                     ),
                   ],
                   const Divider(height: 1, indent: 16),
-                  _buildSettingsItem(
-                    label: 'Hình nền',
-                    trailing: const Text('Không có', style: TextStyle(color: Colors.black54)),
-                    onTap: () {},
-                  ),
                   if (isBotRoom && !isTenant) ...[
                     const Divider(height: 1, indent: 16),
                     _buildSettingsItem(
