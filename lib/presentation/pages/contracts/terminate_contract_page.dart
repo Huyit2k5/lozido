@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../invoice/create_invoice_page.dart';
+import '../../../../firebase_options.dart';
+import '../../../../services/chat_service.dart';
 
 class TerminateContractPage extends StatefulWidget {
   final String houseId;
@@ -108,7 +112,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
         ),
       );
 
-      // --- KEEPING EXISTING FIREBASE LOGIC EXACTLY AS REQUESTED ---
+      // 1. Cập nhật trạng thái hợp đồng → Đã kết thúc
       final activeContracts = await FirebaseFirestore.instance
           .collection('houses')
           .doc(widget.houseId)
@@ -127,18 +131,33 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
             .update({'status': 'Đã kết thúc', 'endedAt': FieldValue.serverTimestamp()});
       }
 
+      // 2. Cập nhật trạng thái phòng → Đang trống + xóa thông tin tenant
       await FirebaseFirestore.instance
           .collection('houses')
           .doc(widget.houseId)
           .collection('rooms')
           .doc(widget.roomId)
-          .update({'status': 'Đang trống'});
-      // -------------------------------------------------------------
+          .update({
+            'status': 'Đang trống',
+            'tenantName': FieldValue.delete(),
+            'tenantPhone': FieldValue.delete(),
+            'contractStartDate': FieldValue.delete(),
+            'contractEndDate': FieldValue.delete(),
+          });
+
+      // 3. Xóa account tenant + dữ liệu liên quan
+      final phone = _contractData?['phoneNumber'] as String? ?? '';
+      if (phone.isNotEmpty) {
+        await _deleteTenantAccount(phone);
+      }
 
       if (mounted) {
         Navigator.pop(context); // close loading
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã kết thúc hợp đồng thành công!')),
+          const SnackBar(
+            content: Text('Đã kết thúc hợp đồng thành công!'),
+            backgroundColor: Color(0xFF00A651),
+          ),
         );
         Navigator.pop(context); // return to previous page
       }
@@ -148,6 +167,94 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi: $e')),
         );
+      }
+    }
+  }
+
+  /// Xóa toàn bộ dữ liệu liên quan đến tenant khi kết thúc hợp đồng:
+  /// 1. Firebase Auth account
+  /// 2. Firestore document: tenants/{phoneNumber}
+  /// 3. Các hóa đơn chưa thu của phòng
+  /// 4. Chat room liên quan
+  Future<void> _deleteTenantAccount(String phoneNumber) async {
+    FirebaseApp? tempApp;
+    try {
+      // ── 1. Xóa Firebase Auth account ──────────────────────────────────
+      final tenantDoc = await FirebaseFirestore.instance
+          .collection('tenants')
+          .doc(phoneNumber)
+          .get();
+
+      if (tenantDoc.exists) {
+        final password = tenantDoc.data()?['password'] as String?;
+        if (password != null && password.isNotEmpty) {
+          try {
+            final email = '$phoneNumber@lozido.com';
+            tempApp = await Firebase.initializeApp(
+              name: 'TenantAccountDeleter_${DateTime.now().millisecondsSinceEpoch}',
+              options: Firebase.app().options,
+            );
+            final auth = FirebaseAuth.instanceFor(app: tempApp);
+            final credential = await auth.signInWithEmailAndPassword(
+              email: email,
+              password: password,
+            );
+            await credential.user?.delete();
+            debugPrint('[Terminate] Đã xóa Firebase Auth account: $phoneNumber');
+          } catch (authErr) {
+            debugPrint('[Terminate] Không thể xóa Auth account ($phoneNumber): $authErr');
+          } finally {
+            if (tempApp != null) {
+              await tempApp.delete();
+              tempApp = null;
+            }
+          }
+        }
+
+        // ── 2. Xóa Firestore tenant document ──────────────────────────
+        await FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(phoneNumber)
+            .delete();
+        debugPrint('[Terminate] Đã xóa Firestore tenant doc: $phoneNumber');
+      }
+
+      // ── 3. Xóa các hóa đơn chưa thu của phòng ─────────────────────
+      final unpaidInvoices = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(widget.houseId)
+          .collection('invoices')
+          .where('roomId', isEqualTo: widget.roomId)
+          .where('status', isEqualTo: 'Chưa thu')
+          .get();
+
+      if (unpaidInvoices.docs.isNotEmpty) {
+        final batch = FirebaseFirestore.instance.batch();
+        for (final doc in unpaidInvoices.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+        debugPrint('[Terminate] Đã xóa ${unpaidInvoices.docs.length} hóa đơn chưa thu của phòng ${widget.roomId}');
+      }
+
+      // ── 4. Xóa chat room liên quan ─────────────────────────────────
+      final chatRoomsSnapshot = await FirebaseFirestore.instance
+          .collection('chatRooms')
+          .where('houseId', isEqualTo: widget.houseId)
+          .where('roomId', isEqualTo: widget.roomId)
+          .get();
+
+      final chatService = ChatService();
+      for (final chatDoc in chatRoomsSnapshot.docs) {
+        await chatService.deleteAllMessages(chatDoc.id);
+        debugPrint('[Terminate] Đã xóa lịch sử chat của room: ${chatDoc.id}');
+      }
+    } catch (e) {
+      // Không throw để không chặn luồng kết thúc hợp đồng
+      debugPrint('[Terminate] Lỗi khi dọn dữ liệu tenant ($phoneNumber): $e');
+    } finally {
+      if (tempApp != null) {
+        try { await tempApp.delete(); } catch (_) {}
       }
     }
   }
