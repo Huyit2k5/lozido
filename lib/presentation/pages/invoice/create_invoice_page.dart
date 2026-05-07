@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:convert';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../services/gemini_service.dart';
+import '../../../services/notification_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../widgets/app_dialog.dart';
 
@@ -519,6 +520,16 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             .update({'services': updatedServices});
       }
 
+      // Gửi thông báo đến người thuê
+      await NotificationService().sendNotificationToTenant(
+        houseId: widget.houseId,
+        roomId: widget.roomId,
+        title: '🧾 Hóa đơn mới tháng ${widget.billingMonthDate.month}/${widget.billingMonthDate.year}',
+        content:
+            'Chủ nhà vừa lập hóa đơn tháng ${widget.billingMonthDate.month}/${widget.billingMonthDate.year} '
+            'cho phòng ${widget.roomData['roomName'] ?? ''}. '
+            'Tổng: ${_formatCurrency(_grandTotal)}đ. Hạn nộp: ${DateFormat('dd/MM/yyyy').format(_dueDate)}.',
+      );
 
       if (mounted) {
         _showSuccessDialog();

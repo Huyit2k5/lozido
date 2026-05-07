@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
 import '../../../services/chat_service.dart';
+import '../../../services/notification_service.dart';
 import '../../pages/chat/chat_room_page.dart';
 
 // ==========================================================
@@ -44,6 +45,7 @@ class NotificationModel {
   final DateTime date;
   final String timeAgo;
   final bool isUnread;
+  final String type; // invoice | chat | system
 
   NotificationModel({
     required this.id,
@@ -52,6 +54,7 @@ class NotificationModel {
     required this.date,
     required this.timeAgo,
     required this.isUnread,
+    this.type = 'system',
   });
 }
 
@@ -79,37 +82,20 @@ class MailPage extends StatefulWidget {
 
 class _MailPageState extends State<MailPage> {
   // 0: Tin nhắn, 1: Thông báo
-  int _selectedTabIndex = 0; 
+  int _selectedTabIndex = 0;
 
-  final StreamController<List<NotificationModel>> _notiStreamController = StreamController.broadcast();
+  final NotificationService _notificationService = NotificationService();
+
+  String get _currentUserId {
+    final user = FirebaseAuth.instance.currentUser;
+    return widget.tenantUid ?? user?.uid ?? '';
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadNotificationMockData();
   }
 
-
-  void _loadNotificationMockData() {
-    _notiStreamController.add([
-      NotificationModel(
-        id: '1',
-        title: '🔥 Sắp tới ngày chốt tiền cho: \'Ăn Chặn',
-        content: 'Mai là ngày bạn cần chốt tiền thuê cho danh sách sau: Phòng 1,Phòng 2,Phòng 3,Phòng 4,Phòng 5...',
-        date: DateTime(2026, 3, 1),
-        timeAgo: '4 tuần trước',
-        isUnread: true,
-      ),
-      NotificationModel(
-        id: '2',
-        title: '🔥 Hôm nay là ngày chốt tiền cho: \'Ăn Chặn',
-        content: 'Hôm nay bạn cần chốt tiền thuê cho danh sách sau: Phòng 1,Phòng 2,Phòng 3,Phòng 4,Phòng 5...',
-        date: DateTime(2026, 3, 1),
-        timeAgo: '4 tuần trước',
-        isUnread: true,
-      ),
-    ]);
-  }
 
   void _showCreateChatRoomDialog(BuildContext context, String currentUserId) async {
     final housesSnapshot = await FirebaseFirestore.instance
@@ -176,7 +162,6 @@ class _MailPageState extends State<MailPage> {
 
   @override
   void dispose() {
-    _notiStreamController.close();
     super.dispose();
   }
 
@@ -187,35 +172,44 @@ class _MailPageState extends State<MailPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header được tách ra thành widget riêng biệt
-            CustomHeader(
-              selectedIndex: _selectedTabIndex,
-              onTabChanged: (index) {
-                setState(() {
-                  _selectedTabIndex = index;
-                });
-              },
-              onAddPressed: () async {
-                final ChatService chatService = ChatService();
-                final user = FirebaseAuth.instance.currentUser;
-                final String currentUserId = user?.uid ?? "anonymous";
-                final String currentUserName = user?.displayName ?? "Người dùng";
+            // Header - bọc StreamBuilder để hiển thị số thông báo chưa đọc realtime
+            StreamBuilder<List<NotificationModel>>(
+              stream: _notificationService.getNotifications(_currentUserId),
+              builder: (context, notiSnap) {
+                final int unreadCount = (notiSnap.data ?? [])
+                    .where((n) => n.isUnread)
+                    .length;
+                return CustomHeader(
+                  selectedIndex: _selectedTabIndex,
+                  unreadNotiCount: unreadCount,
+                  onTabChanged: (index) {
+                    setState(() {
+                      _selectedTabIndex = index;
+                    });
+                  },
+                  onAddPressed: () async {
+                    final ChatService chatService = ChatService();
+                    final user = FirebaseAuth.instance.currentUser;
+                    final String currentUserId = user?.uid ?? "anonymous";
+                    final String currentUserName = user?.displayName ?? "Người dùng";
 
-                // Tạo phòng chat mới với tên mặc định hoặc yêu cầu nhập
-                String roomId = await chatService.createNewChatRoom("Nhà trọ 198 Phan Văn Trị");
-                if (mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatRoomPage(
-                        roomId: roomId,
-                        roomName: "Nhà trọ 198 Phan Văn Trị",
-                        userId: currentUserId,
-                        userName: currentUserName,
-                      ),
-                    ),
-                  );
-                }
+                    // Tạo phòng chat mới với tên mặc định hoặc yêu cầu nhập
+                    String roomId = await chatService.createNewChatRoom("Nhà trọ 198 Phan Văn Trị");
+                    if (mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatRoomPage(
+                            roomId: roomId,
+                            roomName: "Nhà trọ 198 Phan Văn Trị",
+                            userId: currentUserId,
+                            userName: currentUserName,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                );
               },
             ),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -414,23 +408,50 @@ class _MailPageState extends State<MailPage> {
               ),
             ],
           ),
-          trailing: unreadCount > 0
-              ? Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    unreadCount > 99 ? '99+' : unreadCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+          trailing: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('chatRooms')
+                .doc(roomId)
+                .snapshots(),
+            builder: (context, snap) {
+              final data = snap.data?.data() as Map<String, dynamic>? ?? {};
+              final bool notifyLandlord = data['notifyLandlord'] == true || data['notifyLandlord'] == null;
+              final bool notifyTenant = data['notifyTenant'] == true || data['notifyTenant'] == null;
+              final bool isTenant = widget.landlordId != null;
+              final bool isMuted = isTenant ? !notifyTenant : !notifyLandlord;
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isMuted)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6.0),
+                      child: Icon(
+                        Icons.notifications_off_outlined,
+                        color: Colors.grey.shade400,
+                        size: 18,
+                      ),
                     ),
-                  ),
-                )
-              : null,
+                  if (unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : unreadCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           onTap: () async {
             String finalRoomId = roomId;
             
@@ -466,30 +487,48 @@ class _MailPageState extends State<MailPage> {
     );
   }
 
-  // Giao diện khi chọn tab Thông báo (áp dụng StreamBuilder chuẩn bị cho Firestore)
+  // Giao diện khi chọn tab Thông báo - Realtime từ Firestore
   Widget _buildNotificationsTab() {
+    final userId = _currentUserId;
+    if (userId.isEmpty) {
+      return const Center(child: Text('Không thể tải thông báo.'));
+    }
+
     return StreamBuilder<List<NotificationModel>>(
-      stream: _notiStreamController.stream,
+      stream: _notificationService.getNotifications(userId),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("Không có thông báo nào."));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.notifications_none, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 12),
+                Text(
+                  'Chưa có thông báo nào.',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+                ),
+              ],
+            ),
+          );
         }
 
         final items = snapshot.data!;
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          itemCount: items.length + 1, // +1 vì làm nhóm giả định là Header date Group "1/3/2026"
+          itemCount: items.length,
           itemBuilder: (context, index) {
-            if (index == 0) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Text(
-                  "1/3/2026", 
-                  style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500)
-                ),
-              );
-            }
-            return NotificationItemWidget(model: items[index - 1]);
+            return NotificationItemWidget(
+              model: items[index],
+              onTap: () {
+                if (items[index].isUnread) {
+                  _notificationService.markAsRead(items[index].id);
+                }
+              },
+            );
           },
         );
       },
@@ -506,12 +545,14 @@ class CustomHeader extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onTabChanged;
   final VoidCallback onAddPressed;
+  final int unreadNotiCount;
 
   const CustomHeader({
     Key? key,
     required this.selectedIndex,
     required this.onTabChanged,
     required this.onAddPressed,
+    this.unreadNotiCount = 0,
   }) : super(key: key);
 
   @override
@@ -557,10 +598,12 @@ class CustomHeader extends StatelessWidget {
                 const SizedBox(width: 4),
                 BounceTabItem(
                   title: 'Thông báo',
-                  subtitle: '0 - chưa đọc',
+                  subtitle: unreadNotiCount > 0
+                      ? '$unreadNotiCount - chưa đọc'
+                      : 'Không có mới',
                   iconPath: Icons.notifications_none,
                   isSelected: selectedIndex == 1,
-                  showSmallBell: true, // icon chuông phụ tại góc
+                  showSmallBell: unreadNotiCount > 0,
                   onTap: () => onTabChanged(1),
                 ),
               ],
@@ -731,77 +774,107 @@ class _BounceTabItemState extends State<BounceTabItem> with SingleTickerProvider
 // Custom ListItem Layout cho Thông Báo với dạng Card nhẹ
 class NotificationItemWidget extends StatelessWidget {
   final NotificationModel model;
+  final VoidCallback? onTap;
 
-  const NotificationItemWidget({Key? key, required this.model}) : super(key: key);
+  const NotificationItemWidget({Key? key, required this.model, this.onTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon chuông 
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                 const Icon(Icons.notifications, color: Color(0xFF81C784), size: 24),
-                 if (model.isUnread)
-                   Positioned(
-                     top: 0,
-                     right: 0,
-                     child: Container(
-                       width: 8,
-                       height: 8,
-                       decoration: const BoxDecoration(color: Color(0xFF81C784), shape: BoxShape.circle),
-                     ),
-                   )
-              ],
-            ),
+    final bool isInvoice = model.type == 'invoice';
+    final bool isChat = model.type == 'chat';
+
+    final Color iconColor = isInvoice
+        ? const Color(0xFFFF8C00)
+        : isChat
+            ? const Color(0xFF26A69A)
+            : const Color(0xFF81C784);
+
+    final IconData iconData = isInvoice
+        ? Icons.receipt_long
+        : isChat
+            ? Icons.chat_bubble
+            : Icons.notifications;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: model.isUnread ? iconColor.withOpacity(0.04) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: model.isUnread ? iconColor.withOpacity(0.25) : Colors.grey.shade200,
           ),
-          const SizedBox(width: 12),
-          // Bố cục thân text thông báo
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  model.title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  model.content,
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  model.timeAgo,
-                  style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(iconData, color: iconColor, size: 24),
+                  if (model.isUnread)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(color: iconColor, shape: BoxShape.circle),
+                      ),
+                    )
+                ],
+              ),
             ),
-          )
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    model.title,
+                    style: TextStyle(
+                      fontWeight: model.isUnread ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    model.content,
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    model.timeAgo,
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            if (model.isUnread)
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(color: iconColor, shape: BoxShape.circle),
+              ),
+          ],
+        ),
       ),
     );
   }
