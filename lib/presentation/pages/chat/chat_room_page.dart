@@ -30,6 +30,22 @@ class ChatRoomPage extends StatefulWidget {
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final ChatService _chatService = ChatService();
 
+  @override
+  void initState() {
+    super.initState();
+    // Đánh dấu đã đọc khi mở phòng chat
+    _chatService.markRoomAsRead(widget.roomId, widget.userId);
+    // Đánh dấu user đang active trong phòng (tránh nhận thông báo khi đang chat)
+    _chatService.joinRoom(widget.roomId, widget.userId);
+  }
+
+  @override
+  void dispose() {
+    // Xóa khỏi activeUsers khi thoát phòng chat
+    _chatService.leaveRoom(widget.roomId, widget.userId);
+    super.dispose();
+  }
+
   void _sendMessage(String text, bool isSticker) {
     if (text.isEmpty) return;
 
@@ -43,6 +59,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
     _chatService.sendMessage(widget.roomId, message);
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -119,9 +136,32 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.phone_outlined, color: Colors.green),
-            onPressed: () {},
+          // Biểu tượng chuông gạch khi tắt thông báo phòng này
+          StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('chatRooms')
+                .doc(widget.roomId)
+                .snapshots(),
+            builder: (context, snap) {
+              if (!snap.hasData) return const SizedBox.shrink();
+              final data = snap.data!.data() as Map<String, dynamic>? ?? {};
+              final bool notifyLandlord = data['notifyLandlord'] as bool? ?? true;
+              final bool notifyTenant = data['notifyTenant'] as bool? ?? true;
+              final bool isMuted =
+                  widget.isTenant ? !notifyTenant : !notifyLandlord;
+              if (!isMuted) return const SizedBox.shrink();
+              return Tooltip(
+                message: 'Thông báo đã tắt',
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.notifications_off_outlined,
+                    color: Colors.grey.shade500,
+                    size: 22,
+                  ),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.black),
@@ -139,6 +179,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             },
           ),
         ],
+
       ),
       body: Column(
         children: [

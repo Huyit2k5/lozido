@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import '../../../services/notification_service.dart';
 
 class TenantInvoicePaymentPage extends StatelessWidget {
   final String houseId;
@@ -281,19 +282,37 @@ class TenantInvoicePaymentPage extends StatelessWidget {
           .doc(invoiceId);
 
       await invoiceRef.update({
-        'status': 'Chờ xác nhận', // Chuyển khoản qua app thì để chờ chủ nhà xác nhận
+        'status': 'Chờ xác nhận',
       });
 
+      // Lấy UID chủ nhà và gửi thông báo
+      final houseDoc = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(houseId)
+          .get();
+      final String? landlordId = (houseDoc.data() ?? {})['userId'] as String?;
+      if (landlordId != null && landlordId.isNotEmpty) {
+        await NotificationService().sendNotification(
+          targetUserId: landlordId,
+          title: '💳 Người thuê đã chuyển khoản - Đang chờ xác nhận',
+          content:
+              '${invoiceData['tenantName'] ?? 'Người thuê'} đã thực hiện chuyển khoản cho hóa đơn '
+              'phòng ${invoiceData['roomName'] ?? ''}. '
+              'Vui lòng kiểm tra và xác nhận thanh toán.',
+          type: 'invoice',
+        );
+      }
+
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã gửi thông tin chuyển khoản. Vui lòng chờ xác nhận!'),
             backgroundColor: Color(0xFF00A651),
           ),
         );
-        Navigator.pop(context); 
-        Navigator.pop(context); 
+        Navigator.pop(context);
+        Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
@@ -319,23 +338,39 @@ class TenantInvoicePaymentPage extends StatelessWidget {
           .collection('invoices')
           .doc(invoiceId)
           .update({'status': 'Chờ xác nhận'});
-          
+
+      // Lấy UID chủ nhà và gửi thông báo
+      final houseDoc = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(houseId)
+          .get();
+      final String? landlordId = (houseDoc.data() ?? {})['userId'] as String?;
+      if (landlordId != null && landlordId.isNotEmpty) {
+        await NotificationService().sendNotification(
+          targetUserId: landlordId,
+          title: '💵 Người thuê đã báo đóng tiền mặt - Đang chờ xác nhận',
+          content:
+              '${invoiceData['tenantName'] ?? 'Người thuê'} đã báo đóng tiền mặt cho hóa đơn '
+              'phòng ${invoiceData['roomName'] ?? ''}. '
+              'Vui lòng kiểm tra và xác nhận thanh toán.',
+          type: 'invoice',
+        );
+      }
+
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
-        
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã gửi yêu cầu thanh toán tiền mặt. Vui lòng chờ chủ nhà xác nhận!'),
             backgroundColor: Color(0xFF00A651),
           ),
         );
-        
-        Navigator.pop(context); // Pop back out of payment page
-        Navigator.pop(context); // Pop back out of detail page
+        Navigator.pop(context);
+        Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi cập nhật: $e')),
         );
