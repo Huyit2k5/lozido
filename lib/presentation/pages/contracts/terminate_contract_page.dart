@@ -246,8 +246,8 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
 
       final chatService = ChatService();
       for (final chatDoc in chatRoomsSnapshot.docs) {
-        await chatService.deleteChatRoom(chatDoc.id);
-        debugPrint('[Terminate] Đã xóa chat room: ${chatDoc.id}');
+        await chatService.deleteAllMessages(chatDoc.id);
+        debugPrint('[Terminate] Đã xóa lịch sử chat của room: ${chatDoc.id}');
       }
     } catch (e) {
       // Không throw để không chặn luồng kết thúc hợp đồng
