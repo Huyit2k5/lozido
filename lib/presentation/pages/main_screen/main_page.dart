@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../home/mail_page.dart';
 import '../more/more_page.dart';
+import '../tasks/tasks_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -16,7 +17,7 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _pages = [
     const HomePage(),
     const MailPage(),
-    const Center(child: Text("Màn hình Công việc", style: TextStyle(fontSize: 18))),
+    const TasksPage(isLandlord: true),
     const Center(child: Text("Màn hình Tìm khách", style: TextStyle(fontSize: 18))),
     const MorePage(),
   ];
