@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddTaskPage extends StatefulWidget {
-  const AddTaskPage({super.key});
+  final String initialScope;
+  const AddTaskPage({super.key, this.initialScope = 'Việc cá nhân'});
 
   @override
   State<AddTaskPage> createState() => _AddTaskPageState();
@@ -13,7 +14,13 @@ class _AddTaskPageState extends State<AddTaskPage> {
   DateTime? _startDate = DateTime.now();
   DateTime? _endDate = DateTime.now();
   String _priority = 'Trung bình';
-  String _scope = 'Nhà cho thuê';
+  late String _scope;
+  @override
+  void initState() {
+    super.initState();
+    _scope = widget.initialScope;
+  }
+
   final List<String> _scopes = ['Nhà cho thuê', 'Việc cá nhân', 'Hệ thống'];
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
