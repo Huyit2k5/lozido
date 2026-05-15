@@ -170,9 +170,13 @@ class _TaskPageState extends State<TaskPage>
             heroTag: 'add',
             backgroundColor: const Color(0xFF4CAF50),
             onPressed: () {
+              final scopes = ['Nhà cho thuê', 'Việc cá nhân', 'Hệ thống'];
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => AddTaskPage()),
+                MaterialPageRoute(
+                  builder: (_) =>
+                      AddTaskPage(initialScope: scopes[_tabController.index]),
+                ),
               );
             },
             child: const Icon(Icons.add, color: Colors.white),
