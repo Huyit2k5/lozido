@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 enum TaskStatus {
@@ -7,6 +8,7 @@ enum TaskStatus {
   pendingTermination,
   terminationCompleted,
   terminationDenied,
+  cancelled,
 }
 
 enum TaskPriority {
@@ -77,6 +79,8 @@ class TaskModel {
         return const Color(0xFF00A651);
       case TaskStatus.terminationDenied:
         return Colors.red;
+      case TaskStatus.cancelled:
+        return Colors.grey;
     }
   }
 
@@ -94,6 +98,8 @@ class TaskModel {
         return "Đã đồng ý";
       case TaskStatus.terminationDenied:
         return "Đã từ chối yêu cầu";
+      case TaskStatus.cancelled:
+        return "Đã hủy yêu cầu";
     }
   }
 
@@ -115,10 +121,10 @@ class TaskModel {
       'description': description,
       'taskType': taskType,
       'performer': performer,
-      'createdAt': createdAt.toIso8601String(),
-      'deadline': deadline.toIso8601String(),
-      'executionDate': executionDate?.toIso8601String(),
-      'contractEndDate': contractEndDate.toIso8601String(),
+      'createdAt': createdAt,
+      'deadline': deadline,
+      'executionDate': executionDate,
+      'contractEndDate': contractEndDate,
       'houseName': houseName,
       'scope': scope,
       'priority': priority.index,
@@ -134,21 +140,34 @@ class TaskModel {
   }
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is Timestamp) return value.toDate();
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
     return TaskModel(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      taskType: json['taskType'],
-      performer: json['performer'],
-      createdAt: DateTime.parse(json['createdAt']),
-      deadline: DateTime.parse(json['deadline']),
-      executionDate: json['executionDate'] != null ? DateTime.parse(json['executionDate']) : null,
-      contractEndDate: DateTime.parse(json['contractEndDate']),
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'Không tiêu đề',
+      description: json['description'] ?? '',
+      taskType: json['taskType'] ?? 'Khác',
+      performer: json['performer'] ?? '',
+      createdAt: parseDate(json['createdAt']),
+      deadline: parseDate(json['deadline']),
+      executionDate: json['executionDate'] != null ? parseDate(json['executionDate']) : null,
+      contractEndDate: parseDate(json['contractEndDate']),
       houseName: json['houseName'],
       scope: json['scope'],
-      priority: TaskPriority.values[json['priority'] ?? 1],
-      imagePaths: List<String>.from(json['imagePaths'] ?? []),
-      status: TaskStatus.values[json['status']],
+      priority: TaskPriority.values[((json['priority'] is int) && json['priority'] < TaskPriority.values.length) ? json['priority'] : 1],
+      imagePaths: (json['imagePaths'] is List) ? List<String>.from(json['imagePaths']) : const [],
+      status: TaskStatus.values[((json['status'] is int) && json['status'] < TaskStatus.values.length) ? json['status'] : 0],
       contractId: json['contractId'],
       sender: json['sender'],
       denialReason: json['denialReason'],

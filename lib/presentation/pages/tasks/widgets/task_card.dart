@@ -7,8 +7,9 @@ import 'package:lozido_app/presentation/pages/tasks/widgets/create_task_sheet.da
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
+  final bool isLandlord;
 
-  const TaskCard({super.key, required this.task});
+  const TaskCard({super.key, required this.task, this.isLandlord = true});
 
   @override
   Widget build(BuildContext context) {
@@ -120,28 +121,63 @@ class TaskCard extends StatelessWidget {
             if (isTerminationTask)
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: canOperate ? () => _handleDenyTermination(context) : null,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: canOperate ? Colors.red : Colors.grey),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  if (canOperate) ...[
+                    if (isLandlord) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _handleDenyTermination(context),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text("Từ chối", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        ),
                       ),
-                      child: Text("Từ chối", style: TextStyle(color: canOperate ? Colors.red : Colors.grey, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: canOperate ? () => _handleConfirmTermination(context) : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canOperate ? const Color(0xFF00A651) : Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        elevation: 0,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _handleConfirmTermination(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00A651),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                          child: const Text("Xác nhận kết thúc", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
                       ),
-                      child: Text("Xác nhận kết thúc", style: TextStyle(color: canOperate ? Colors.white : Colors.grey.shade600, fontWeight: FontWeight.bold)),
+                    ] else ...[
+                      // Khách thuê: Nút Hủy yêu cầu
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _handleCancelRequest(context),
+                          icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                          label: const Text("Hủy yêu cầu", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ] else ...[
+                    // Trạng thái đã hoàn tất/đã hủy -> Hiển thị nút xám thông báo
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          disabledBackgroundColor: Colors.grey.shade200,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          task.status == TaskStatus.cancelled ? "Đã hủy yêu cầu" : task.statusText, 
+                          style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold)
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(width: 12),
                   _buildMenuButton(context),
                 ],
@@ -154,7 +190,7 @@ class TaskCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: canOperate ? () => _handleConfirm(context) : null,
                       icon: Icon(Icons.check_box_outlined, color: canOperate ? const Color(0xFF00A651) : Colors.grey),
-                      label: Text("Xác nhận", style: TextStyle(color: canOperate ? const Color(0xFF00A651) : Colors.grey, fontWeight: FontWeight.bold)),
+                      label: Text(canOperate ? "Xác nhận" : task.statusText, style: TextStyle(color: canOperate ? const Color(0xFF00A651) : Colors.grey, fontWeight: FontWeight.bold)),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: canOperate ? const Color(0xFF00A651) : Colors.grey),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -163,20 +199,21 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton.icon(
-                      onPressed: canOperate ? () => _handleIgnore(context) : null,
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      label: const Text("Bỏ qua", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: canOperate ? Colors.deepOrange : Colors.grey.shade300,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 0,
+                  if (canOperate)
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleIgnore(context),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        label: const Text("Bỏ qua", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepOrange,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(width: 12),
                   _buildMenuButton(context),
                 ],
@@ -228,6 +265,37 @@ class TaskCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Chủ nhà đã xác nhận kết thúc hợp đồng."), backgroundColor: Color(0xFF00A651)),
       );
+    }
+  }
+
+  void _handleCancelRequest(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Hủy yêu cầu"),
+        content: const Text("Bạn có chắc chắn muốn hủy yêu cầu kết thúc hợp đồng này? Hợp đồng sẽ quay lại trạng thái bình thường."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Không")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Xác nhận hủy", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        // Cập nhật trạng thái thành 'cancelled' thay vì xóa
+        await context.read<TaskProvider>().updateTaskStatus(task.id, TaskStatus.cancelled);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Đã hủy yêu cầu kết thúc hợp đồng."), backgroundColor: Colors.black87),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Không thể hủy yêu cầu: $e"), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 

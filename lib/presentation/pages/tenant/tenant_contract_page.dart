@@ -28,6 +28,15 @@ class TenantContractPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    // Đảm bảo dữ liệu được tải cho khách thuê
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskProvider>().loadTasks(
+        uid: currentUserId,
+        isLandlord: false,
+      );
+    });
+
     final taskProvider = context.watch<TaskProvider>();
     final terminationTask = taskProvider.getTerminationTask(contractId);
     final isPending = terminationTask?.status == TaskStatus.pendingTermination;
@@ -106,17 +115,17 @@ class TenantContractPage extends StatelessWidget {
                      children: [
                         Container(
                            width: 8, height: 8,
-                           decoration: BoxDecoration(
-                             color: isDenied ? Colors.red : (isCompleted ? Colors.green : (isPending ? Colors.orange : (isActive ? Colors.green : Colors.red))),
-                             shape: BoxShape.circle
-                           ),
+                            decoration: BoxDecoration(
+                              color: isDenied ? Colors.red : (isCompleted ? Colors.green : (isPending ? Colors.orange : (isActive ? Colors.green : Colors.red))),
+                              shape: BoxShape.circle
+                            ),
                         ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                              _getTerminationStatusText(isActive, isPending, isCompleted, isDenied, terminationTask),
                              style: TextStyle(
-                               color: isDenied ? Colors.red : (isCompleted ? Colors.green : (isPending ? Colors.black87 : Colors.black54)), 
+                               color: isDenied ? Colors.red : (isCompleted ? Colors.green : (isPending ? Colors.orange : Colors.black54)), 
                                fontSize: 13, 
                                fontWeight: (isPending || isCompleted || isDenied) ? FontWeight.bold : FontWeight.w500
                              ),
@@ -253,7 +262,7 @@ class TenantContractPage extends StatelessWidget {
   }
 
   String _getTerminationStatusText(bool isActive, bool isPending, bool isCompleted, bool isDenied, TaskModel? task) {
-    if (isPending) return "Đang báo kết thúc hợp đồng";
+    if (isPending) return "Đang yêu cầu báo kết thúc hợp đồng";
     if (isCompleted) return "Chủ nhà đã xác nhận kết thúc hợp đồng";
     if (isDenied) return "Đã từ chối yêu cầu";
     return isActive ? "Trong thời hạn hợp đồng" : "Đã hết hạn hợp đồng";

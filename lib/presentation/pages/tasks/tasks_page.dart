@@ -18,6 +18,15 @@ class _TasksPageState extends State<TasksPage> {
 
   @override
   Widget build(BuildContext context) {
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    // Kích hoạt load data phù hợp với vai trò
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskProvider>().loadTasks(
+        uid: currentUserId,
+        isLandlord: widget.isLandlord,
+      );
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -171,7 +180,10 @@ class _TasksPageState extends State<TasksPage> {
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: tasks.length,
-            itemBuilder: (context, index) => TaskCard(task: tasks[index]),
+            itemBuilder: (context, index) => TaskCard(
+              task: tasks[index],
+              isLandlord: widget.isLandlord,
+            ),
           );
         },
       );

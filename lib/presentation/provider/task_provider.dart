@@ -1,32 +1,29 @@
-import 'dart:convert';
-import 'dart:io';
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:lozido_app/models/task_model.dart';
 
 class TaskProvider extends ChangeNotifier {
   List<TaskModel> _tasks = [];
   bool _isLoading = true;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  StreamSubscription? _tasksSubscription;
 
-  TaskProvider() {
-    loadTasks();
-  }
+  String? _lastUid;
+  bool? _lastIsLandlord;
 
   List<TaskModel> get tasks => [..._tasks];
   
-  // Đếm số công việc chưa hoàn thành (Yêu cầu mới hoặc Chờ xác nhận)
   int get uncompletedTasksCount => _tasks.where((t) => 
     t.status == TaskStatus.newRequest || 
     t.status == TaskStatus.pendingTermination
   ).length;
   
-  // Lọc task theo người tạo (dành cho khách thuê)
   List<TaskModel> getTasksByCreator(String uid) {
     return _tasks.where((t) => t.creatorId == uid).toList();
   }
 
-  // Đếm số công việc chưa hoàn thành cho một người tạo cụ thể
   int getUncompletedCountForCreator(String uid) {
     return _tasks.where((t) => 
       t.creatorId == uid && 
@@ -36,105 +33,130 @@ class TaskProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
-  Future<File> get _localFile async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/tasks.json');
-  }
-
-  Future<void> loadTasks() async {
+  void loadTasks({String? uid, bool isLandlord = true}) {
+    // Tránh load lại nếu tham số không thay đổi
+    if (_lastUid == uid && _lastIsLandlord == isLandlord && _tasksSubscription != null) {
+      return;
+    }
+    
+    _lastUid = uid;
+    _lastIsLandlord = isLandlord;
     _isLoading = true;
     notifyListeners();
-    try {
-      final file = await _localFile;
-      if (await file.exists()) {
-        final contents = await file.readAsString();
-        final List<dynamic> jsonData = jsonDecode(contents);
-        _tasks = jsonData.map((item) => TaskModel.fromJson(item)).toList();
-      } else {
-        _tasks = _getSeedData();
-        await saveTasks();
+    
+    _tasksSubscription?.cancel();
+    debugPrint("Bắt đầu tải tasks từ Firestore (isLandlord: $isLandlord, uid: $uid)...");
+    
+    Query query = _firestore.collection('tasks');
+    
+    // Nếu là khách thuê, chỉ tải các task do mình tạo
+    if (!isLandlord && uid != null) {
+      query = query.where('creatorId', isEqualTo: uid);
+    }
+    
+    _tasksSubscription = query.snapshots().listen((snapshot) {
+      debugPrint("Đã nhận được ${snapshot.docs.length} documents từ Firestore");
+      
+      final List<TaskModel> loadedTasks = [];
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          final task = TaskModel.fromJson({...data, 'id': doc.id});
+          loadedTasks.add(task);
+        } catch (e) {
+          debugPrint("Lỗi khi parse document ${doc.id}: $e");
+        }
       }
-    } catch (e) {
-      debugPrint("Lỗi khi tải dữ liệu: $e");
-      _tasks = _getSeedData();
-    }
-    _isLoading = false;
-    notifyListeners();
+      
+      // Sắp xếp: Ưu tiên công việc "Cần làm" (0, 3) lên đầu, "Đã xong" (1, 2, 4, 5) xuống cuối.
+      // Trong cùng nhóm thì sắp xếp theo thời gian mới nhất.
+      loadedTasks.sort((a, b) {
+        bool isADone = a.status == TaskStatus.confirmed || 
+                       a.status == TaskStatus.ignored || 
+                       a.status == TaskStatus.terminationCompleted || 
+                       a.status == TaskStatus.terminationDenied ||
+                       a.status == TaskStatus.cancelled;
+                       
+        bool isBDone = b.status == TaskStatus.confirmed || 
+                       b.status == TaskStatus.ignored || 
+                       b.status == TaskStatus.terminationCompleted || 
+                       b.status == TaskStatus.terminationDenied ||
+                       b.status == TaskStatus.cancelled;
+        
+        if (!isADone && isBDone) return -1;
+        if (isADone && !isBDone) return 1;
+        
+        return b.createdAt.compareTo(a.createdAt);
+      });
+      
+      _tasks = loadedTasks;
+      _isLoading = false;
+      notifyListeners();
+    }, onError: (e) {
+      debugPrint("Lỗi khi tải dữ liệu từ Firestore: $e");
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
-  Future<void> saveTasks() async {
+  Future<void> addTask(TaskModel task) async {
     try {
-      final file = await _localFile;
-      final jsonData = _tasks.map((task) => task.toJson()).toList();
-      await file.writeAsString(jsonEncode(jsonData));
+      debugPrint("Đang ghi task ${task.id} lên Firestore...");
+      debugPrint("Data: ${task.toJson()}");
+      await _firestore.collection('tasks').doc(task.id).set(task.toJson());
+      debugPrint("Ghi task thành công!");
     } catch (e) {
-      debugPrint("Lỗi khi lưu dữ liệu: $e");
+      debugPrint("Lỗi khi thêm task lên Firestore: $e");
     }
   }
 
-  List<TaskModel> _getSeedData() {
-    return [
-      TaskModel(
-        id: '1',
-        title: "Yêu cầu Báo kết thúc hợp đồng",
-        description: "Khách thuê Ako đang yêu cầu Báo kết thúc hợp đồng",
-        taskType: "Hợp đồng",
-        performer: "Nhan",
-        createdAt: DateTime.now().subtract(const Duration(days: 14)),
-        deadline: DateTime(2026, 4, 18),
-        contractEndDate: DateTime(2026, 4, 18),
-        houseName: "Nhà 1",
-        status: TaskStatus.newRequest,
-      ),
-      TaskModel(
-        id: '2',
-        title: "Sửa chữa điều hòa phòng 201",
-        description: "Điều hòa không mát, cần thợ kiểm tra",
-        taskType: "Sửa chữa",
-        performer: "Kỹ thuật",
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        deadline: DateTime.now().add(const Duration(days: 1)),
-        contractEndDate: DateTime.now().add(const Duration(days: 30)),
-        houseName: "Nhà 2",
-        scope: "Phòng 201",
-        status: TaskStatus.newRequest,
-      ),
-    ];
+  Future<void> updateTaskStatus(String id, TaskStatus newStatus) async {
+    try {
+      debugPrint("Đang cập nhật trạng thái task $id thành ${newStatus.index}...");
+      await _firestore.collection('tasks').doc(id).update({
+        'status': newStatus.index,
+      });
+      debugPrint("Cập nhật trạng thái thành công!");
+    } catch (e) {
+      debugPrint("Lỗi khi cập nhật trạng thái trên Firestore: $e");
+    }
   }
 
-  void addTask(TaskModel task) {
-    _tasks.insert(0, task);
-    saveTasks();
-    notifyListeners();
+  Future<void> updateTask(TaskModel updatedTask) async {
+    try {
+      debugPrint("Đang cập nhật toàn bộ task ${updatedTask.id}...");
+      await _firestore.collection('tasks').doc(updatedTask.id).set(updatedTask.toJson());
+      debugPrint("Cập nhật task thành công!");
+    } catch (e) {
+      debugPrint("Lỗi khi cập nhật task trên Firestore: $e");
+    }
   }
 
-  void updateTaskStatus(String id, TaskStatus newStatus) {
-    final index = _tasks.indexWhere((task) => task.id == id);
-    if (index != -1) {
-      final task = _tasks.removeAt(index);
-      task.status = newStatus;
-      _tasks.add(task); // Chuyển về cuối
-      saveTasks();
+  Future<void> deleteTask(String id) async {
+    // Optimistic UI: Xóa tạm thời trong bộ nhớ để người dùng thấy ngay
+    final removedTaskIndex = _tasks.indexWhere((t) => t.id == id);
+    TaskModel? removedTask;
+    if (removedTaskIndex != -1) {
+      removedTask = _tasks.removeAt(removedTaskIndex);
       notifyListeners();
     }
-  }
 
-  void updateTask(TaskModel updatedTask) {
-    final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
-    if (index != -1) {
-      _tasks[index] = updatedTask;
-      saveTasks();
-      notifyListeners();
+    try {
+      debugPrint("Đang xóa task $id trên Firestore...");
+      await _firestore.collection('tasks').doc(id).delete();
+      debugPrint("Xóa task thành công trên Firestore!");
+    } catch (e) {
+      debugPrint("Lỗi khi xóa task trên Firestore: $e");
+      // Nếu lỗi, khôi phục lại task trong bộ nhớ
+      if (removedTask != null) {
+        _tasks.insert(removedTaskIndex, removedTask);
+        notifyListeners();
+      }
+      rethrow; // Đẩy lỗi ra ngoài để UI xử lý
     }
   }
 
-  void deleteTask(String id) {
-    _tasks.removeWhere((task) => task.id == id);
-    saveTasks();
-    notifyListeners();
-  }
-
-  void createNewTask({
+  Future<void> createNewTask({
     required String title,
     required String description,
     required String taskType,
@@ -152,9 +174,11 @@ class TaskProvider extends ChangeNotifier {
     double? contractValue,
     double? deposit,
     String? creatorId,
-  }) {
+  }) async {
+    debugPrint("Bắt đầu createNewTask: $title");
+    final id = const Uuid().v4();
     final newTask = TaskModel(
-      id: const Uuid().v4(),
+      id: id,
       title: title,
       description: description,
       taskType: taskType,
@@ -174,7 +198,7 @@ class TaskProvider extends ChangeNotifier {
       deposit: deposit,
       creatorId: creatorId,
     );
-    addTask(newTask);
+    await addTask(newTask);
   }
 
   bool hasPendingTermination(String contractId) {
@@ -194,26 +218,18 @@ class TaskProvider extends ChangeNotifier {
     return terminationTasks.first;
   }
 
-  void confirmTermination(String taskId) {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1) {
-      final task = _tasks.removeAt(index);
-      task.status = TaskStatus.terminationCompleted;
-      _tasks.add(task);
-      saveTasks();
-      notifyListeners();
-    }
+  Future<void> confirmTermination(String taskId) async {
+    await updateTaskStatus(taskId, TaskStatus.terminationCompleted);
   }
 
-  void denyTermination(String taskId, String reason) {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1) {
-      final task = _tasks.removeAt(index);
-      task.status = TaskStatus.terminationDenied;
-      task.denialReason = reason;
-      _tasks.add(task);
-      saveTasks();
-      notifyListeners();
+  Future<void> denyTermination(String taskId, String reason) async {
+    try {
+      await _firestore.collection('tasks').doc(taskId).update({
+        'status': TaskStatus.terminationDenied.index,
+        'denialReason': reason,
+      });
+    } catch (e) {
+      debugPrint("Lỗi khi từ chối kết thúc hợp đồng: $e");
     }
   }
 }
