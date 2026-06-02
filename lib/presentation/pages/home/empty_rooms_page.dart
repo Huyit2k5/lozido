@@ -59,9 +59,9 @@
 //               child: TabBar(
 //                 controller: _tabController,
 //                 isScrollable: true,
-//                 indicatorColor: const Color(0xFF00A651),
+//                 indicatorColor: const Color(0xFFED6422),
 //                 indicatorWeight: 3,
-//                 labelColor: const Color(0xFF00A651),
+//                 labelColor: const Color(0xFFED6422),
 //                 unselectedLabelColor: Colors.black87,
 //                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
 //                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
@@ -140,7 +140,7 @@
 //       stream: query.snapshots(),
 //       builder: (context, snapshot) {
 //         if (snapshot.connectionState == ConnectionState.waiting) {
-//           return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
+//           return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
 //         }
 //         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
 //           return Center(
@@ -206,7 +206,7 @@
 //                         Container(
 //                           padding: const EdgeInsets.all(6),
 //                           decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(8)),
-//                           child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 22),
+//                           child: const Icon(Icons.storefront_rounded, color: Colors.deepOrange, size: 22),
 //                         ),
 //                         const SizedBox(width: 12),
 //                         Text(roomName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -284,7 +284,7 @@
 //               children: [
 //                 Container(
 //                   padding: const EdgeInsets.all(2),
-//                   decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(4)),
+//                   decoration: BoxDecoration(color: Colors.deepOrange, borderRadius: BorderRadius.circular(4)),
 //                   child: const Icon(Icons.attach_money, color: Colors.white, size: 12),
 //                 ),
 //                 const SizedBox(width: 6),
@@ -327,7 +327,7 @@
 //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
 //       decoration: BoxDecoration(
 //         color: Colors.white,
-//         border: Border.all(color: Colors.green.shade400),
+//         border: Border.all(color: Colors.deepOrange.shade400),
 //         borderRadius: BorderRadius.circular(20),
 //       ),
 //       child: Row(
@@ -335,7 +335,7 @@
 //         children: [
 //           Container(width: 8, height: 8, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
 //           const SizedBox(width: 6),
-//           Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green.shade700)),
+//           Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.deepOrange.shade700)),
 //         ],
 //       ),
 //     );
@@ -380,7 +380,7 @@
 
 //   Widget _buildModalItem(IconData icon, String title, VoidCallback onTap) {
 //     return ListTile(
-//       leading: Icon(icon, color: const Color(0xFF00A651)),
+//       leading: Icon(icon, color: const Color(0xFFED6422)),
 //       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
 //       onTap: onTap,
 //     );

@@ -237,10 +237,10 @@ class _TenantListPageState extends State<TenantListPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00A651).withValues(alpha: 0.1),
+                  color: const Color(0xFFED6422).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.person_add, color: Color(0xFF00A651), size: 20),
+                child: const Icon(Icons.person_add, color: Color(0xFFED6422), size: 20),
               ),
               const SizedBox(width: 10),
               const Text('Thêm khách thuê', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -323,7 +323,7 @@ class _TenantListPageState extends State<TenantListPage> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00A651),
+                backgroundColor: const Color(0xFFED6422),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -355,7 +355,7 @@ class _TenantListPageState extends State<TenantListPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF00A651)),
+          borderSide: const BorderSide(color: Color(0xFFED6422)),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
@@ -382,7 +382,7 @@ class _TenantListPageState extends State<TenantListPage> {
         centerTitle: false,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)))
           : _tenants.isEmpty
               ? Center(
                   child: Column(
@@ -449,7 +449,7 @@ class _TenantListPageState extends State<TenantListPage> {
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A651),
+                    backgroundColor: const Color(0xFFED6422),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -563,7 +563,7 @@ class _TenantListPageState extends State<TenantListPage> {
                 if (isRepresentative) ...[
                   Row(
                     children: [
-                      const Icon(Icons.check_box, size: 16, color: Color(0xFF00A651)),
+                      const Icon(Icons.check_box, size: 16, color: Color(0xFFED6422)),
                       const SizedBox(width: 4),
                       const Text(
                         'Đại diện hợp đồng',
@@ -589,7 +589,7 @@ class _TenantListPageState extends State<TenantListPage> {
               child: Text(
                 phone.isNotEmpty ? '#SĐT: $phone' : '#SĐT: Chưa cập nhật',
                 style: const TextStyle(
-                  color: Color(0xFF00A651),
+                  color: Color(0xFFED6422),
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -608,7 +608,7 @@ class _TenantListPageState extends State<TenantListPage> {
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF00A651)),
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFED6422)),
       ),
     );
   }

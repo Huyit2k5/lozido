@@ -140,7 +140,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: Colors.deepOrange),
           );
           Navigator.pop(context);
         }
@@ -224,32 +224,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       padding: const EdgeInsets.only(top: 20),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.home_work_rounded,
-                color: Color(0xFF28A745),
-                size: 50,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "LOZIDO",
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
+          Image.asset(
+            'assets/images/logo-big-no-bg.png',
+            height: 140,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 10),
           const Text(
-            "Quản lý NHÀ CHO THUÊ",
+            "Ứng dụng quản lý nhà trọ thông minh",
             style: TextStyle(
-              color: Color(0xFF28A745),
-              fontWeight: FontWeight.w600,
+              color: Color(0xFFFFA448),
+              fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
           ),
@@ -402,7 +386,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isFocused ? const Color(0xFF28A745) : Colors.grey.shade300,
+                    color: isFocused ? const Color(0xFFED6422) : Colors.grey.shade300,
                     width: isFocused ? 2 : 1,
                   ),
                 ),
@@ -468,12 +452,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             padding: const EdgeInsets.only(top: 10),
             child: Row(
               children: const [
-                Icon(Icons.check_circle, color: Color(0xFF28A745), size: 16),
+                Icon(Icons.check_circle, color: Color(0xFFED6422), size: 16),
                 SizedBox(width: 8),
                 Text(
                   "Mật khẩu khớp",
                   style: TextStyle(
-                    color: Color(0xFF28A745),
+                    color: Color(0xFFED6422),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -512,7 +496,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF28A745), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFFED6422), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       ),
@@ -543,7 +527,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF28A745), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFFED6422), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
         suffixIcon: IconButton(
@@ -564,7 +548,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF28A745),
+          backgroundColor: const Color(0xFFED6422),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),

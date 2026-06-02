@@ -41,7 +41,7 @@ class TenantInvoiceDetailPage extends StatelessWidget {
     Color statusColor;
     switch (status) {
       case 'Đã thu xong':
-        statusColor = Colors.green;
+        statusColor = Colors.deepOrange;
         break;
       case 'Đang nợ tiền':
         statusColor = Colors.red;
@@ -237,7 +237,7 @@ class TenantInvoiceDetailPage extends StatelessWidget {
                         const Text("Số lần trả", style: TextStyle(color: Colors.black54, fontSize: 13)),
                         const SizedBox(height: 4),
                         Text("${payments.length} lần, ${_formatCurrency(paidAmount)} đ", 
-                            style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 16)),
+                            style: const TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     ),
                     Column(
@@ -257,7 +257,7 @@ class TenantInvoiceDetailPage extends StatelessWidget {
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A651), // Green
+                      backgroundColor: const Color(0xFFED6422), // Green
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       elevation: 0,
                     ),

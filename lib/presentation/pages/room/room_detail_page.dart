@@ -176,9 +176,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF00A651),
+          labelColor: const Color(0xFFED6422),
           unselectedLabelColor: Colors.black54,
-          indicatorColor: const Color(0xFF00A651),
+          indicatorColor: const Color(0xFFED6422),
           tabs: const [
             Tab(text: 'Thông tin'),
             Tab(text: 'Hóa đơn'),
@@ -253,7 +253,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
                       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
                       child: Row(
                         children: [
-                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle)),
                           const SizedBox(width: 6),
                           const Text("Chờ kỳ thu tới", style: TextStyle(fontSize: 12)),
                         ],
@@ -512,7 +512,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF00A651),
+              color: const Color(0xFFED6422),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.white, size: 20),

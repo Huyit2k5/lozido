@@ -106,7 +106,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Đã xóa dịch vụ'),
-                    backgroundColor: Color(0xFF00A651),
+                    backgroundColor: Color(0xFFED6422),
                   ),
                 );
               }
@@ -141,7 +141,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
       ),
       body: _buildServiceList(),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF00A651),
+        backgroundColor: const Color(0xFFED6422),
         onPressed: () {
           Navigator.push(
             context,
@@ -169,7 +169,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
       builder: (context, serviceSnapshot) {
         if (serviceSnapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF00A651)),
+            child: CircularProgressIndicator(color: Color(0xFFED6422)),
           );
         }
 
@@ -193,7 +193,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                   style: TextStyle(color: Colors.black54, fontSize: 15),
                 ),
                 SizedBox(height: 8),
-                CircularProgressIndicator(color: Color(0xFF00A651)),
+                CircularProgressIndicator(color: Color(0xFFED6422)),
               ],
             ),
           );
@@ -301,7 +301,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
                           width: 8,
                           height: 8,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF00A651),
+                            color: Color(0xFFED6422),
                             shape: BoxShape.circle,
                           ),
                         ),

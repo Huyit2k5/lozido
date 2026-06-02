@@ -188,7 +188,7 @@ class _InvoiceImageExportPageState extends State<InvoiceImageExportPage> {
                         style: TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A651),
+                      backgroundColor: const Color(0xFFED6422),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -226,7 +226,7 @@ class _InvoiceImageExportPageState extends State<InvoiceImageExportPage> {
     final List<dynamic> services = d['services'] ?? [];
     final List<dynamic> adjustments = d['adjustments'] ?? [];
 
-    Color statusColor = status == 'Đã thu xong' ? Colors.green : (status == 'Đang nợ tiền' ? Colors.red : Colors.orange);
+    Color statusColor = status == 'Đã thu xong' ? Colors.deepOrange : (status == 'Đang nợ tiền' ? Colors.red : Colors.orange);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -369,7 +369,7 @@ class _InvoiceImageExportPageState extends State<InvoiceImageExportPage> {
                       ? "Đã trả ${_formatCurrency(paidAmount)} đ"
                       : "Chưa trả lần nào",
                   style: TextStyle(
-                      color: paidAmount > 0 ? Colors.green : Colors.red,
+                      color: paidAmount > 0 ? Colors.deepOrange : Colors.red,
                       fontSize: 13)),
             ],
           ),

@@ -257,7 +257,7 @@ class _AddHousePageState extends State<AddHousePage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thêm mới thành công!'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Thêm mới thành công!'), backgroundColor: Colors.deepOrange),
       );
       Navigator.pop(context); // Trở về trang trước
     } catch (e) {
@@ -1488,7 +1488,7 @@ class _AddHousePageState extends State<AddHousePage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00A651),
+                          backgroundColor: const Color(0xFFED6422),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           elevation: 0,
                         ),

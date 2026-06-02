@@ -93,7 +93,7 @@ class TenantContractPage extends StatelessWidget {
                         Container(
                            width: 8, height: 8,
                            decoration: BoxDecoration(
-                             color: isActive ? Colors.green : Colors.red,
+                             color: isActive ? Colors.deepOrange : Colors.red,
                              shape: BoxShape.circle
                            ),
                         ),
@@ -113,7 +113,7 @@ class TenantContractPage extends StatelessWidget {
                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                        children: [
                          _buildActionButton(Icons.print, 'In / Tải PDF', Colors.black87, null),
-                         _buildActionButton(Icons.assignment, 'Xem văn bản', const Color(0xFF00A651), null),
+                         _buildActionButton(Icons.assignment, 'Xem văn bản', const Color(0xFFED6422), null),
                          _buildActionButton(Icons.share, 'Chia sẻ', Colors.blue, null),
                        ],
                      ),
@@ -146,7 +146,7 @@ class TenantContractPage extends StatelessWidget {
                          _buildDivider(),
                          _buildInfoRow('Ngày kết thúc hợp đồng', end != null ? DateFormat('dd/MM/yyyy').format(end) : 'Không thời hạn', subtitle: 'Ngày sẽ chấm dứt hợp đồng'),
                          _buildDivider(),
-                         _buildInfoRow('Thời gian ở', 'Mới vào ở', subtitle: null, valueColor: const Color(0xFF00A651)),
+                         _buildInfoRow('Thời gian ở', 'Mới vào ở', subtitle: null, valueColor: const Color(0xFFED6422)),
                        ],
                      ),
                    ),

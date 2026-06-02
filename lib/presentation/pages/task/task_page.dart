@@ -65,6 +65,8 @@ class _TaskPageState extends State<TaskPage>
             color: Colors.white,
             child: TabBar(
               controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               indicatorColor: Colors.transparent,
               dividerColor: Colors.transparent,
               tabs: List.generate(_tabs.length, (i) {
@@ -147,41 +149,20 @@ class _TaskPageState extends State<TaskPage>
           KeepAliveWrapper(child: _buildTaskList('Hệ thống')),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'scroll',
-            mini: true,
-            backgroundColor: const Color(0xFF4CAF50),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => AddTaskPage()),
-              );
-            },
-            child: const Icon(
-              Icons.keyboard_double_arrow_down,
-              color: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'add',
+        backgroundColor: const Color(0xFF4CAF50),
+        onPressed: () {
+          final scopes = ['Nhà cho thuê', 'Việc cá nhân', 'Hệ thống'];
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  AddTaskPage(initialScope: scopes[_tabController.index]),
             ),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton(
-            heroTag: 'add',
-            backgroundColor: const Color(0xFF4CAF50),
-            onPressed: () {
-              final scopes = ['Nhà cho thuê', 'Việc cá nhân', 'Hệ thống'];
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AddTaskPage(initialScope: scopes[_tabController.index]),
-                ),
-              );
-            },
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-        ],
+          );
+        },
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -235,24 +216,29 @@ class _TaskPageState extends State<TaskPage>
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              data['title'] ?? '',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['title']?.toString() ?? '',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Text(
-                              data['description'] ?? '',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                              Text(
+                                data['description']?.toString() ?? '',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -261,13 +247,13 @@ class _TaskPageState extends State<TaskPage>
                     _buildInfoRow(
                       Icons.label_outline,
                       'Loại công việc',
-                      data['scope'] ?? '',
+                      data['scope']?.toString() ?? '',
                       valueColor: const Color(0xFFFF6600),
                     ),
                     _buildInfoRow(
                       Icons.person_outline,
                       'Người thực hiện',
-                      data['assignee'] ?? '',
+                      data['assignee']?.toString() ?? '',
                     ),
                     _buildInfoRow(
                       Icons.calendar_today_outlined,
@@ -292,7 +278,7 @@ class _TaskPageState extends State<TaskPage>
                     _buildInfoRow(
                       Icons.coffee_outlined,
                       'Trạng thái',
-                      data['status'] ?? 'Yêu cầu mới',
+                      data['status']?.toString() ?? 'Yêu cầu mới',
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -303,14 +289,14 @@ class _TaskPageState extends State<TaskPage>
                             icon: const Icon(
                               Icons.open_in_new,
                               size: 16,
-                              color: Color(0xFF00A651),
+                              color: Color(0xFFED6422),
                             ),
                             label: const Text(
                               'Bắt đầu làm',
-                              style: TextStyle(color: Color(0xFF00A651)),
+                              style: TextStyle(color: Color(0xFFED6422)),
                             ),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF00A651)),
+                              side: const BorderSide(color: Color(0xFFED6422)),
                             ),
                           ),
                         ),
@@ -393,13 +379,17 @@ class _TaskPageState extends State<TaskPage>
           Icon(icon, size: 16, color: Colors.grey),
           const SizedBox(width: 8),
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: valueColor ?? Colors.black,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: valueColor ?? Colors.black,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -413,7 +403,7 @@ class _TaskPageState extends State<TaskPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
-            'assets/images/empty_task.png',
+            'assets/images/empty_box.png',
             width: 200,
             errorBuilder: (_, __, ___) => const Icon(
               Icons.assignment_outlined,

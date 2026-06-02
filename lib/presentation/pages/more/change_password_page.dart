@@ -54,7 +54,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Đổi mật khẩu thành công!"),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.deepOrange,
         ),
       );
       Navigator.pop(context);
@@ -183,27 +183,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget _buildLogoHeader() {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.home_work_rounded, color: Color(0xFF28A745), size: 40),
-            const SizedBox(width: 8),
-            const Text(
-              "LOZIDO",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
+        Image.asset(
+          'assets/images/logo-big-no-bg.png',
+          height: 140,
         ),
+        const SizedBox(height: 10),
         const Text(
-          "Quản lý NHÀ CHO THUÊ",
+          "Ứng dụng quản lý nhà trọ thông minh",
           style: TextStyle(
-            color: Color(0xFF28A745),
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
+            color: Color(0xFFFFA448),
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
         ),
       ],
@@ -286,7 +276,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget _buildHintRow(String text) {
     return Row(
       children: [
-        const Icon(Icons.check, color: Color(0xFF28A745), size: 16),
+        const Icon(Icons.check, color: Color(0xFFED6422), size: 16),
         const SizedBox(width: 8),
         Text(
           text,
@@ -302,7 +292,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _changePassword,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF00A651),
+          backgroundColor: const Color(0xFFED6422),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),

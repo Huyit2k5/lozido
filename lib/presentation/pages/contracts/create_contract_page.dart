@@ -268,7 +268,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.green),
+              leading: const Icon(Icons.photo_library, color: Colors.deepOrange),
               title: const Text("Chọn ảnh từ thư viện"),
               onTap: () {
                 Navigator.pop(context);
@@ -333,7 +333,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.green),
+              leading: const Icon(Icons.photo_library, color: Colors.deepOrange),
               title: const Text("Chọn ảnh 2 mặt CCCD từ thư viện"),
               onTap: () {
                 Navigator.pop(context);
@@ -612,7 +612,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           _showExtraInfo = true; // Bật hiển thị form nếu có data
         });
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
       }
 
     } catch (e) {
@@ -648,7 +648,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           _imageUrls.add(downloadUrl);
         });
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tải ảnh lên thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tải ảnh lên thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
       }
     } catch (e) {
       if (mounted) {
@@ -700,7 +700,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         });
         
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất thông tin thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất thông tin thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
       }
     } catch (e) {
       if (mounted) {
@@ -918,7 +918,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('Kết nối ngay', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651))),
+                  child: const Text('Kết nối ngay', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFED6422))),
                 ),
               ],
             ),
@@ -1055,7 +1055,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           ),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00A651),
+              backgroundColor: const Color(0xFFED6422),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -1078,7 +1078,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF00A651),
+            color: const Color(0xFFED6422),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
@@ -1125,7 +1125,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF00A651))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFED6422))),
             suffixIcon: suffix,
             isDense: true,
           ),
@@ -1215,7 +1215,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFF1F8E9),
-              border: Border.all(color: const Color(0xFF00A651).withOpacity(0.5)),
+              border: Border.all(color: const Color(0xFFED6422).withOpacity(0.5)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1223,7 +1223,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                 Checkbox(
                   value: _useApp,
                   onChanged: (v) => setState(() => _useApp = v ?? false),
-                  activeColor: const Color(0xFF00A651),
+                  activeColor: const Color(0xFFED6422),
                 ),
                 const Expanded(
                   child: Column(
@@ -1341,7 +1341,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                   width: 80,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8))),
-                  child: const Text("tháng", style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold)),
+                  child: const Text("tháng", style: TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.bold)),
                 )),
               ),
               const SizedBox(width: 12),
@@ -1387,7 +1387,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         borderRadius: BorderRadius.circular(4),
       ),
       alignment: Alignment.center,
-      child: const Text("đ", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+      child: const Text("đ", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -1446,10 +1446,10 @@ class _CreateContractPageState extends State<CreateContractPage> {
                   runSpacing: 8,
                   children: provider.assets.map((a) {
                     return Chip(
-                      backgroundColor: Colors.green.shade50,
-                      side: BorderSide(color: Colors.green.shade200),
+                      backgroundColor: Colors.deepOrange.shade50,
+                      side: BorderSide(color: Colors.deepOrange.shade200),
                       label: Text(a.assetName, style: const TextStyle(color: Colors.black87)),
-                      avatar: const Icon(Icons.check_circle, color: Color(0xFF00A651), size: 16),
+                      avatar: const Icon(Icons.check_circle, color: Color(0xFFED6422), size: 16),
                     );
                   }).toList(),
                 );
@@ -1507,7 +1507,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           Center(
             child: Column(
               children: [
-                Icon(Icons.file_upload_outlined, size: 48, color: Colors.green.shade300),
+                Icon(Icons.file_upload_outlined, size: 48, color: Colors.deepOrange.shade300),
                 const SizedBox(height: 8),
                 Text("Tôi đã thêm được ${_imageUrls.length} hình ảnh", style: const TextStyle(color: Colors.black54, fontSize: 13)),
               ],

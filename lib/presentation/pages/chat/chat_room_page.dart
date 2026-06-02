@@ -115,7 +115,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         return const Text(
                           'Hỗ trợ trực tuyến',
                           style: TextStyle(
-                            color: Colors.green,
+                            color: Colors.deepOrange,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),

@@ -76,7 +76,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF00A651), // header background color
+              primary: Color(0xFFED6422), // header background color
               onPrimary: Colors.white, // header text color
               onSurface: Colors.black, // body text color
             ),
@@ -108,7 +108,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF00A651)),
+          child: CircularProgressIndicator(color: Color(0xFFED6422)),
         ),
       );
 
@@ -156,7 +156,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã kết thúc hợp đồng thành công!'),
-            backgroundColor: Color(0xFF00A651),
+            backgroundColor: Color(0xFFED6422),
           ),
         );
         Navigator.pop(context); // return to previous page
@@ -271,7 +271,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFFED6422))),
       );
     }
 
@@ -327,7 +327,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF9FDF5),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green.shade100),
+                            border: Border.all(color: Colors.deepOrange.shade100),
                           ),
                           child: Row(
                             children: [
@@ -335,7 +335,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                                 child: Text(
                                   displayId,
                                   style: const TextStyle(
-                                    color: Color(0xFF00A651), 
+                                    color: Color(0xFFED6422), 
                                     fontWeight: FontWeight.w500,
                                     fontSize: 14,
                                   ),
@@ -421,7 +421,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00A651),
+                                color: const Color(0xFFED6422),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text("#", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -502,7 +502,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00A651),
+                                color: const Color(0xFFED6422),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text("#", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -598,7 +598,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     alignment: Alignment.center,
-                                    child: const Text("Tạo hóa đơn tháng cuối", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651))),
+                                    child: const Text("Tạo hóa đơn tháng cuối", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFED6422))),
                                   ),
                                 ),
                               ),
@@ -627,7 +627,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
-                              child: const Text("Đã kiểm tra tài sản", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651))),
+                              child: const Text("Đã kiểm tra tài sản", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFED6422))),
                             ),
                           ),
                         ),
@@ -676,7 +676,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00A651),
+                        color: const Color(0xFFED6422),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
@@ -746,7 +746,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                 ),
                 child: Icon(
                   isDone ? Icons.check : Icons.close,
-                  color: isDone ? const Color(0xFF00A651) : Colors.deepOrange,
+                  color: isDone ? const Color(0xFFED6422) : Colors.deepOrange,
                   size: 24,
                 ),
               ),

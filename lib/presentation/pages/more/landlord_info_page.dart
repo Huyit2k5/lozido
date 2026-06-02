@@ -81,7 +81,7 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Lưu thông tin thành công!'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('Lưu thông tin thành công!'), backgroundColor: Colors.deepOrange),
           );
           Navigator.pop(context);
         }
@@ -289,7 +289,7 @@ class _LandlordInfoPageState extends State<LandlordInfoPage> {
                               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00A651),
+                              backgroundColor: const Color(0xFFED6422),
                               elevation: 0,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),

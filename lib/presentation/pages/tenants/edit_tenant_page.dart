@@ -121,7 +121,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF00A651),
+              primary: Color(0xFFED6422),
               onPrimary: Colors.white,
               surface: Colors.white,
             ),
@@ -257,10 +257,10 @@ class _EditTenantPageState extends State<EditTenantPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00A651).withValues(alpha: 0.1),
+                  color: const Color(0xFFED6422).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.directions_car, color: Color(0xFF00A651), size: 20),
+                child: const Icon(Icons.directions_car, color: Color(0xFFED6422), size: 20),
               ),
               const SizedBox(width: 10),
               const Text('Thêm phương tiện', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -293,7 +293,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00A651),
+                backgroundColor: const Color(0xFFED6422),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -324,7 +324,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF00A651)),
+          borderSide: const BorderSide(color: Color(0xFFED6422)),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
@@ -351,10 +351,10 @@ class _EditTenantPageState extends State<EditTenantPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00A651).withValues(alpha: 0.1),
+                        color: const Color(0xFFED6422).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.tag, color: Color(0xFF00A651), size: 20),
+                      child: const Icon(Icons.tag, color: Color(0xFFED6422), size: 20),
                     ),
                     const SizedBox(width: 10),
                     const Text('Mẫu quan hệ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -365,7 +365,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
               ...options.map((opt) => ListTile(
                     title: Text(opt, style: const TextStyle(fontSize: 15)),
                     trailing: _relationshipCtrl.text == opt
-                        ? const Icon(Icons.check_circle, color: Color(0xFF00A651), size: 20)
+                        ? const Icon(Icons.check_circle, color: Color(0xFFED6422), size: 20)
                         : null,
                     onTap: () {
                       setState(() => _relationshipCtrl.text = opt);
@@ -480,7 +480,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: const Color(0xFF00A651),
+                color: const Color(0xFFED6422),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
               ),
@@ -529,7 +529,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0xFFF1F8E9),
-              border: Border.all(color: const Color(0xFF00A651).withValues(alpha: 0.5)),
+              border: Border.all(color: const Color(0xFFED6422).withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -537,7 +537,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
                 Checkbox(
                   value: _useApp,
                   onChanged: (v) => setState(() => _useApp = v ?? false),
-                  activeColor: const Color(0xFF00A651),
+                  activeColor: const Color(0xFFED6422),
                 ),
                 const Expanded(
                   child: Column(
@@ -741,7 +741,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.green),
+              leading: const Icon(Icons.photo_library, color: Colors.deepOrange),
               title: const Text("Chọn ảnh 2 mặt CCCD từ thư viện"),
               onTap: () {
                 Navigator.pop(context);
@@ -1020,7 +1020,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
           _showAdditionalInfo = true; // Bật hiển thị form nếu có data
         });
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
       }
 
     } catch (e) {
@@ -1160,17 +1160,17 @@ class _EditTenantPageState extends State<EditTenantPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF00A651))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFED6422))),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: _showRelationshipPicker,
-                    icon: const Icon(Icons.tag, size: 16, color: Color(0xFF00A651)),
-                    label: const Text('Mẫu quan hệ', style: TextStyle(color: Color(0xFF00A651), fontSize: 13, fontWeight: FontWeight.w500)),
+                    icon: const Icon(Icons.tag, size: 16, color: Color(0xFFED6422)),
+                    label: const Text('Mẫu quan hệ', style: TextStyle(color: Color(0xFFED6422), fontSize: 13, fontWeight: FontWeight.w500)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF00A651)),
+                      side: const BorderSide(color: Color(0xFFED6422)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     ),
@@ -1215,7 +1215,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
               children: [
                 TextSpan(
                   text: 'trên phiên bản máy tính',
-                  style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.w500),
+                  style: TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -1290,7 +1290,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF00A651))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFED6422))),
             suffixIcon: suffixIcon,
             isDense: true,
           ),
@@ -1324,7 +1324,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: controller.text.isNotEmpty ? Colors.black87 : const Color(0xFF00A651),
+                      color: controller.text.isNotEmpty ? Colors.black87 : const Color(0xFFED6422),
                     ),
                   ),
                 ],
@@ -1343,10 +1343,10 @@ class _EditTenantPageState extends State<EditTenantPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF00A651).withValues(alpha: 0.1),
+            color: const Color(0xFFED6422).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: const Color(0xFF00A651), size: 20),
+          child: Icon(icon, color: const Color(0xFFED6422), size: 20),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -1388,7 +1388,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: const Color(0xFF00A651),
+            activeThumbColor: const Color(0xFFED6422),
           ),
         ],
       ),
@@ -1436,7 +1436,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00A651),
+                  backgroundColor: const Color(0xFFED6422),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 14),

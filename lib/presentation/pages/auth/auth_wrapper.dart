@@ -21,7 +21,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(color: Color(0xFF00A651)),
+              child: CircularProgressIndicator(color: Color(0xFFED6422)),
             ),
           );
         }
@@ -47,7 +47,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             if (userSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(
-                  child: CircularProgressIndicator(color: Color(0xFF00A651)),
+                  child: CircularProgressIndicator(color: Color(0xFFED6422)),
                 ),
               );
             }
@@ -163,7 +163,7 @@ class _ErrorScreen extends StatelessWidget {
                 onPressed: () async {
                    await FirebaseAuth.instance.signOut();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00A651)),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFED6422)),
                 child: const Text('Đăng nhập lại'),
               ),
             ],

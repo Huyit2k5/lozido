@@ -72,7 +72,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     Color statusColor;
     switch (status) {
       case 'Đã thu xong':
-        statusColor = Colors.green;
+        statusColor = Colors.deepOrange;
         break;
       case 'Đang nợ tiền':
         statusColor = Colors.red;
@@ -304,7 +304,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                                 ? "Đã trả ${_formatCurrency(paidAmount)} đ"
                                 : "Chưa trả lần nào, 1 phiếu có thể thu nhiều lần.",
                             style: TextStyle(
-                                color: paidAmount > 0 ? Colors.green : Colors.deepOrange,
+                                color: paidAmount > 0 ? Colors.deepOrange : Colors.deepOrange,
                                 fontSize: 12)),
                       ],
                     ),
@@ -316,7 +316,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFAFAFA),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: remaining == 0 ? Colors.green : Colors.orange),
+                      border: Border.all(color: remaining == 0 ? Colors.deepOrange : Colors.orange),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -369,7 +369,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                           fontWeight: FontWeight.bold,
                           fontSize: 16)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A651),
+                    backgroundColor: const Color(0xFFED6422),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),

@@ -133,7 +133,7 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật giá thuê thành công!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Cập nhật giá thuê thành công!'), backgroundColor: Colors.deepOrange),
         );
         setState(() {
            // Reset checkboxes after save
@@ -179,7 +179,7 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.green))
+          ? const Center(child: CircularProgressIndicator(color: Colors.deepOrange))
           : Column(
               children: [
                 // Banner thông báo tới khách thuê
@@ -367,7 +367,7 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
           child: ElevatedButton(
             onPressed: _isSaving ? null : _saveChanges,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00A651), // Màu xanh lá
+              backgroundColor: const Color(0xFFED6422), // Màu xanh lá
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),

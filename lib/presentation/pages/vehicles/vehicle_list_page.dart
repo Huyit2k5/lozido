@@ -145,16 +145,16 @@ class _VehicleListPageState extends State<VehicleListPage> {
                 ),
               );
             },
-            icon: const Icon(Icons.add, size: 18, color: Color(0xFF00A651)),
+            icon: const Icon(Icons.add, size: 18, color: Color(0xFFED6422)),
             label: const Text(
               'Thêm',
               style: TextStyle(
-                color: Color(0xFF00A651),
+                color: Color(0xFFED6422),
                 fontWeight: FontWeight.bold,
               ),
             ),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFF00A651)),
+              side: const BorderSide(color: Color(0xFFED6422)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -177,7 +177,7 @@ class _VehicleListPageState extends State<VehicleListPage> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF00A651)),
+            child: CircularProgressIndicator(color: Color(0xFFED6422)),
           );
         }
 
@@ -382,10 +382,10 @@ class _VehicleListPageState extends State<VehicleListPage> {
                 ),
               );
             },
-            icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFF00A651)),
+            icon: const Icon(Icons.edit_outlined, size: 14, color: Color(0xFFED6422)),
             label: const Text(
               'Sửa',
-              style: TextStyle(color: Color(0xFF00A651), fontSize: 13),
+              style: TextStyle(color: Color(0xFFED6422), fontSize: 13),
             ),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.grey.shade300),

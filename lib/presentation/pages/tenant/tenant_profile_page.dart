@@ -134,7 +134,7 @@ class TenantProfilePage extends StatelessWidget {
         children: [
           _buildListTile(
             icon: Icons.receipt_long,
-            iconColor: Colors.green.shade400,
+            iconColor: Colors.deepOrange.shade400,
             title: 'Thiết lập thuê phòng',
             subtitle: 'Kết nối chủ nhà, thông báo tìm trọ, căn hộ...',
             showDivider: true,
@@ -361,7 +361,7 @@ class TenantProfilePage extends StatelessWidget {
           const SizedBox(height: 16),
           _buildSupportButton(
             icon: Icons.phone,
-            iconColor: Colors.green,
+            iconColor: Colors.deepOrange,
             label: 'Gọi điện trực tiếp (sẵn sàng)',
           ),
           const SizedBox(height: 12),

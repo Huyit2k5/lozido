@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(
-                child: CircularProgressIndicator(color: Color(0xFF00A651)),
+                child: CircularProgressIndicator(color: Color(0xFFED6422)),
               ),
             );
           }
@@ -124,7 +124,7 @@ class _HomePageState extends State<HomePage> {
             });
             return const Scaffold(
               body: Center(
-                child: CircularProgressIndicator(color: Color(0xFF00A651)),
+                child: CircularProgressIndicator(color: Color(0xFFED6422)),
               ),
             );
           }
@@ -221,7 +221,7 @@ class _HomePageState extends State<HomePage> {
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF00A651),
+                color: const Color(0xFFED6422),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -298,7 +298,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         child: const Icon(
                           Icons.qr_code_scanner_rounded,
-                          color: Color(0xFF00A651),
+                          color: Color(0xFFED6422),
                           size: 20,
                         ),
                       ),
@@ -542,7 +542,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               _buildGridItem(
                 icon: Icons.handshake_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Cọc giữ chỗ",
                 onTap: () {
                   Navigator.push(
@@ -570,7 +570,7 @@ class _HomePageState extends State<HomePage> {
                   
                   return _buildGridItem(
                     icon: Icons.post_add_rounded,
-                    color: Colors.green,
+                    color: Colors.deepOrange,
                     title: "Lập hợp đồng\nmới",
                     badge: emptyRoomsCount > 0 ? emptyRoomsCount.toString() : null,
                     onTap: () {
@@ -590,12 +590,12 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.find_replace_rounded,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Thanh lý\n(Trả phòng)",
               ),
               _buildGridItem(
                 icon: Icons.receipt_long_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Lập hóa đơn",
                 onTap: () {
                   Navigator.push(
@@ -611,12 +611,12 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.calculate_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Chốt & Lập\nhóa đơn",
               ),
               _buildGridItem(
                 icon: Icons.request_quote_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Hóa đơn\ncần thu tiền",
                 onTap: () {
                   Navigator.push(
@@ -669,7 +669,7 @@ class _HomePageState extends State<HomePage> {
                       0;
                   return _buildGridItem(
                     icon: Icons.fact_check_outlined,
-                    color: Colors.green,
+                    color: Colors.deepOrange,
                     title: "Quản lý\nphòng",
                     badge: "$rentedRooms/$totalRooms",
                     onTap: () {
@@ -686,7 +686,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.receipt_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Quản lý\nhóa đơn",
                 onTap: () {
                   Navigator.push(
@@ -702,7 +702,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.edit_document,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Quản lý\ndịch vụ",
                 onTap: () {
                   Navigator.push(
@@ -718,7 +718,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.analytics_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Quản lý\nhợp đồng",
                 onTap: () {
                   Navigator.push(
@@ -734,7 +734,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.support_agent_rounded,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Quản lý\nkhách thuê",
                 onTap: () {
                   Navigator.push(
@@ -750,7 +750,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.inventory_2_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Quản lý\ntài sản",
                 onTap: () {
                   Navigator.push(
@@ -766,7 +766,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.local_parking_rounded,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Danh sách\nxe",
                 onTap: () {
                   Navigator.push(
@@ -782,7 +782,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.handshake_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Cài đặt APP\nkhách thuê",
                 onTap: () {
                   Navigator.push(
@@ -798,7 +798,7 @@ class _HomePageState extends State<HomePage> {
               ),
               _buildGridItem(
                 icon: Icons.settings_applications_outlined,
-                color: Colors.green,
+                color: Colors.deepOrange,
                 title: "Cài đặt\nhóa đơn",
               ),
               _buildGridItem(
@@ -834,7 +834,7 @@ class _HomePageState extends State<HomePage> {
               _buildBannerItem(
                 icon: Icons.account_balance_wallet_outlined,
                 iconBg: Colors.grey.shade100,
-                iconColor: const Color(0xFF00A651),
+                iconColor: const Color(0xFFED6422),
                 title: "Khoản thu / chi & Tổng kết",
                 subtitle: "Tổng kết việc kinh doanh & Quản lý các khoản thu (tiền vào), chi (tiền ra) trong hệ thống của bạn",
                 onTap: () {
@@ -853,7 +853,7 @@ class _HomePageState extends State<HomePage> {
               _buildBannerItem(
                 icon: Icons.analytics_outlined,
                 iconBg: Colors.grey.shade100,
-                iconColor: const Color(0xFF00A651),
+                iconColor: const Color(0xFFED6422),
                 title: "Tổng kết dịch vụ khách sử dụng",
                 subtitle: "Thống kê dịch vụ điện nước, wifi, rác... khách sử dụng",
                 onTap: () {
@@ -936,7 +936,7 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         propertyName,
                         style: const TextStyle(
-                          color: Color(0xFF00A651),
+                          color: Color(0xFFED6422),
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -1028,7 +1028,7 @@ class _HomePageState extends State<HomePage> {
                           percent: totalRooms > 0
                               ? "${((rentedRooms / totalRooms) * 100).toInt()}%"
                               : "0%",
-                          percentColor: Colors.green.shade600,
+                          percentColor: Colors.deepOrange.shade600,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1168,7 +1168,7 @@ class _HomePageState extends State<HomePage> {
                             return _buildOverviewStatCard(
                               icon: Icons.attach_money_rounded,
                               iconColor: Colors.white,
-                              iconBgColor: Colors.green.shade500,
+                              iconBgColor: Colors.deepOrange.shade500,
                               title: "Số phòng đang nợ",
                               count: debtRooms,
                               percent: pct,
@@ -1196,7 +1196,7 @@ class _HomePageState extends State<HomePage> {
                               title: "Số phòng đang cọc",
                               count: depositRooms,
                               percent: pct,
-                              percentColor: Colors.green.shade600,
+                              percentColor: Colors.deepOrange.shade600,
                             );
                           },
                         ),
@@ -1759,7 +1759,7 @@ class _HomePageState extends State<HomePage> {
             height: 18,
             margin: const EdgeInsets.only(top: 2),
             decoration: BoxDecoration(
-              color: const Color(0xFF00A651),
+              color: const Color(0xFFED6422),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1988,7 +1988,7 @@ class _HomePageState extends State<HomePage> {
                                     color: const Color(0xFFF1F8E9),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.home_work_rounded, color: Color(0xFF00A651)),
+                                  child: const Icon(Icons.home_work_rounded, color: Color(0xFFED6422)),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -2015,7 +2015,7 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(Icons.check_circle, color: Color(0xFF00A651), size: 28),
+                                  const Icon(Icons.check_circle, color: Color(0xFFED6422), size: 28),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -2058,7 +2058,7 @@ class _HomePageState extends State<HomePage> {
                                         ],
                                       ),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF00A651),
+                                        backgroundColor: const Color(0xFFED6422),
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2503,19 +2503,19 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(
                     Icons.arrow_downward_rounded,
                     size: 18,
-                    color: Color(0xFF00A651),
+                    color: Color(0xFFED6422),
                   ),
 
                   label: const Text(
                     "Tải excel xuống",
                     style: TextStyle(
-                      color: Color(0xFF00A651),
+                      color: Color(0xFFED6422),
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF00A651)),
+                    side: const BorderSide(color: Color(0xFFED6422)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -2543,7 +2543,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A651),
+                    backgroundColor: const Color(0xFFED6422),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -2676,7 +2676,7 @@ class _HomePageState extends State<HomePage> {
               width: 4,
               height: 16,
               decoration: BoxDecoration(
-                color: const Color(0xFF00A651), // Điểm nhấn marker màu xanh lá
+                color: const Color(0xFFED6422), // Điểm nhấn marker màu xanh lá
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

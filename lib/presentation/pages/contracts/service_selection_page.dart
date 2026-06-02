@@ -193,7 +193,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cập nhật dịch vụ thành công'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('Cập nhật dịch vụ thành công'), backgroundColor: Colors.deepOrange),
           );
           Navigator.pop(context);
         }
@@ -225,7 +225,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)))
           : _services.isEmpty
               ? const Center(
                   child: Column(
@@ -289,7 +289,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                     ),
                                     Checkbox(
                                       value: svc.isSelected,
-                                      activeColor: const Color(0xFF00A651),
+                                      activeColor: const Color(0xFFED6422),
                                       onChanged: (val) {
                                         setState(() {
                                           svc.isSelected = val ?? false;
@@ -337,7 +337,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                           decoration: BoxDecoration(
-                                            color: Colors.green.shade50,
+                                            color: Colors.deepOrange.shade50,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Stack(
@@ -414,7 +414,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                             child: ElevatedButton(
                               onPressed: _applyServices,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00A651),
+                                backgroundColor: const Color(0xFFED6422),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(vertical: 14),

@@ -64,7 +64,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                   ElevatedButton(
                     onPressed: _logout,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A651),
+                      backgroundColor: const Color(0xFFED6422),
                     ),
                     child: const Text('Đăng xuất'),
                   ),
@@ -89,7 +89,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                   ElevatedButton(
                     onPressed: _logout,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A651),
+                      backgroundColor: const Color(0xFFED6422),
                     ),
                     child: const Text('Đăng xuất'),
                   ),
@@ -150,7 +150,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
               bottomNavigationBar: BottomNavigationBar(
                 currentIndex: _currentIndex,
                 onTap: (index) => setState(() => _currentIndex = index),
-                selectedItemColor: const Color(0xFF00A651),
+                selectedItemColor: const Color(0xFFED6422),
                 items: const [
                   BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
                   BottomNavigationBarItem(icon: Icon(Icons.mail), label: 'Hộp thư'),
@@ -189,7 +189,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                     Container(
                       width: 4,
                       height: 20,
-                      color: const Color(0xFF00A651),
+                      color: const Color(0xFFED6422),
                     ),
                     const SizedBox(width: 8),
                     const Text(
@@ -215,7 +215,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                             Container(
                               width: 4,
                               height: 20,
-                              color: const Color(0xFF00A651),
+                              color: const Color(0xFFED6422),
                             ),
                             const SizedBox(width: 8),
                             const Text(
@@ -251,7 +251,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                                 Container(
                                   width: 4,
                                   height: 20,
-                                  color: const Color(0xFF00A651),
+                                  color: const Color(0xFFED6422),
                                 ),
                                 const SizedBox(width: 8),
                                 const Text(
@@ -299,7 +299,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
     String houseName,
   ) {
     return SliverAppBar(
-      backgroundColor: const Color(0xFF00A651),
+      backgroundColor: const Color(0xFFED6422),
       expandedHeight: 80.0,
       floating: false,
       pinned: true,
@@ -495,7 +495,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                           value: progress,
                           strokeWidth: 8,
                           backgroundColor: Colors.grey.shade200,
-                          color: const Color(0xFF00A651),
+                          color: const Color(0xFFED6422),
                         ),
                         Center(
                           child: Column(
@@ -506,7 +506,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF00A651),
+                                  color: Color(0xFFED6422),
                                 ),
                               ),
                               const Text(
@@ -533,7 +533,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF00A651),
+                            color: Color(0xFFED6422),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1002,10 +1002,10 @@ class _TenantMainPageState extends State<TenantMainPage> {
                 Expanded(
                   child: TextButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.checklist, color: Color(0xFF00A651)),
+                    icon: const Icon(Icons.checklist, color: Color(0xFFED6422)),
                     label: const Text(
                       'D.sách chốt',
-                      style: TextStyle(color: Color(0xFF00A651)),
+                      style: TextStyle(color: Color(0xFFED6422)),
                     ),
                     style: TextButton.styleFrom(
                       backgroundColor: const Color(0xFFE8F5E9),
@@ -1027,7 +1027,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
     IconData icon,
     String title,
     String price, {
-    Color priceColor = const Color(0xFF00A651),
+    Color priceColor = const Color(0xFFED6422),
   }) {
     return Row(
       children: [
@@ -1099,7 +1099,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
           decoration: BoxDecoration(
             color: const Color(0xFFF1F8E9),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.green.shade200),
+            border: Border.all(color: Colors.deepOrange.shade200),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1183,7 +1183,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                   color: const Color(0xFFE8F5E9),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.attach_money, color: Color(0xFF00A651)),
+                child: const Icon(Icons.attach_money, color: Color(0xFFED6422)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1266,7 +1266,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
               color: const Color(0xFFE8F5E9),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.person_add_alt_1, color: Color(0xFF00A651)),
+            child: const Icon(Icons.person_add_alt_1, color: Color(0xFFED6422)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1322,7 +1322,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
           children: [
             Text(
               'Ghi nhận ${memberDocs.length} thành viên',
-              style: const TextStyle(color: Color(0xFF00A651)),
+              style: const TextStyle(color: Color(0xFFED6422)),
             ),
             const SizedBox(height: 12),
             ...memberDocs.map((data) {

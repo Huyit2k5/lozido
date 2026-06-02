@@ -250,7 +250,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                             style: TextStyle(
                               fontSize: 14, 
                               fontWeight: _isWarehouseTab ? FontWeight.bold : FontWeight.normal,
-                              color: _isWarehouseTab ? const Color(0xFF00A651) : Colors.black54,
+                              color: _isWarehouseTab ? const Color(0xFFED6422) : Colors.black54,
                             ),
                           ),
                         ),
@@ -273,7 +273,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                             style: TextStyle(
                               fontSize: 14, 
                               fontWeight: !_isWarehouseTab ? FontWeight.bold : FontWeight.normal,
-                              color: !_isWarehouseTab ? const Color(0xFF00A651) : Colors.black54,
+                              color: !_isWarehouseTab ? const Color(0xFFED6422) : Colors.black54,
                             ),
                           ),
                         ),
@@ -326,7 +326,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                 flex: 2,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A651),
+                    backgroundColor: const Color(0xFFED6422),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     elevation: 0,
@@ -422,7 +422,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           const SizedBox(height: 24),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00A651),
+              backgroundColor: const Color(0xFFED6422),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -453,7 +453,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade200),
+            border: Border.all(color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade200),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -462,10 +462,10 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.green.shade50 : Colors.grey.shade100,
+                    color: isSelected ? Colors.deepOrange.shade50 : Colors.grey.shade100,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(_getIconData(asset['iconTag']), color: isSelected ? const Color(0xFF00A651) : Colors.black87, size: 24),
+                  child: Icon(_getIconData(asset['iconTag']), color: isSelected ? const Color(0xFFED6422) : Colors.black87, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -509,7 +509,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
                         Text('$currentSelectedQty', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                       IconButton(
-                        icon: Icon(Icons.add_circle, color: currentSelectedQty < (asset['availableGoodQuantity'] as int) ? const Color(0xFF00A651) : Colors.grey),
+                        icon: Icon(Icons.add_circle, color: currentSelectedQty < (asset['availableGoodQuantity'] as int) ? const Color(0xFFED6422) : Colors.grey),
                         onPressed: currentSelectedQty < (asset['availableGoodQuantity'] as int) 
                             ? () {
                                 setState(() {
@@ -549,7 +549,7 @@ class _ManageAssetsPageState extends State<ManageAssetsPage> {
 
     Color color;
     switch (displayStatus) {
-      case 'Hoạt động tốt': color = const Color(0xFF00A651); break;
+      case 'Hoạt động tốt': color = const Color(0xFFED6422); break;
       case 'Hư hỏng nhẹ': color = Colors.orange; break;
       case 'Không hoạt động': color = Colors.grey; break;
       case 'Đang sửa chữa': color = Colors.blue; break;
@@ -625,8 +625,8 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
               ),
               TextButton.icon(
                 onPressed: widget.onSwitchToWarehouse,
-                icon: const Icon(Icons.search, size: 18, color: Color(0xFF00A651)),
-                label: const Text("Chọn từ kho tổng", style: TextStyle(color: Color(0xFF00A651), fontSize: 13, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.search, size: 18, color: Color(0xFFED6422)),
+                label: const Text("Chọn từ kho tổng", style: TextStyle(color: Color(0xFFED6422), fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -651,15 +651,15 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
-                    border: Border.all(color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade300),
+                    border: Border.all(color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_getIconData(e), color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade600, size: 24),
+                      Icon(_getIconData(e), color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade600, size: 24),
                       const SizedBox(height: 4),
-                      Text(e, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isSelected ? const Color(0xFF00A651) : Colors.black87)),
+                      Text(e, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isSelected ? const Color(0xFFED6422) : Colors.black87)),
                     ],
                   ),
                 ),
@@ -684,14 +684,14 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
           ),
           const SizedBox(height: 16),
           const SizedBox(height: 16),
-          const Text("Trạng thái: Hoạt động tốt", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651), fontSize: 13)),
+          const Text("Trạng thái: Hoạt động tốt", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFED6422), fontSize: 13)),
           const Text("Tài sản cấp vào phòng phải ở trạng thái hoạt động tốt.", style: TextStyle(fontSize: 12, color: Colors.black54, fontStyle: FontStyle.italic)),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00A651),
+                backgroundColor: const Color(0xFFED6422),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
@@ -748,7 +748,7 @@ class _ManualAssetFormState extends State<_ManualAssetForm> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF00A651))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFED6422))),
             isDense: true,
           ),
         ),

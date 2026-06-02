@@ -429,7 +429,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A651),
+                    backgroundColor: const Color(0xFFED6422),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -515,7 +515,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF00A651)),
+              borderSide: const BorderSide(color: Color(0xFFED6422)),
             ),
           ),
         ),

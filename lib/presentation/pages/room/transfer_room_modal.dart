@@ -89,7 +89,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
               const TextSpan(text: 'Bạn chắc chắn muốn di chuyển '),
               TextSpan(text: widget.oldRoomData['roomName'] ?? 'Phòng cũ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
               const TextSpan(text: ' tới '),
-              TextSpan(text: newRoomData['roomName'] ?? 'Phòng mới', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              TextSpan(text: newRoomData['roomName'] ?? 'Phòng mới', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange)),
               const TextSpan(text: '.\n\nCác dữ liệu như hợp đồng, hóa đơn, dịch vụ sẽ được chuyển theo!'),
             ],
           ),
@@ -102,7 +102,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00A651),
+              backgroundColor: const Color(0xFFED6422),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('CHUYỂN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -121,7 +121,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFFED6422))),
     );
 
     try {
@@ -215,7 +215,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
         Navigator.pop(context); // Close loading
         Navigator.pop(context); // Close modal
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chuyển phòng thành công!'), backgroundColor: Color(0xFF00A651)),
+          const SnackBar(content: Text('Chuyển phòng thành công!'), backgroundColor: Color(0xFFED6422)),
         );
       }
     } catch (e) {
@@ -285,7 +285,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
                         top: 0,
                         child: Container(
                           padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Color(0xFF00A651), shape: BoxShape.circle),
+                          decoration: const BoxDecoration(color: Color(0xFFED6422), shape: BoxShape.circle),
                           child: const Text("3", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
                         ),
                       )
@@ -297,11 +297,11 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
                     controller: _tabController,
                     isScrollable: true,
                     indicator: BoxDecoration(
-                      color: const Color(0xFF00A651).withOpacity(0.1),
+                      color: const Color(0xFFED6422).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     indicatorSize: TabBarIndicatorSize.label,
-                    labelColor: const Color(0xFF00A651),
+                    labelColor: const Color(0xFFED6422),
                     unselectedLabelColor: Colors.black54,
                     labelStyle: const TextStyle(fontWeight: FontWeight.bold),
                     tabs: _floorNames.map((name) => Tab(text: name)).toList(),
@@ -322,7 +322,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
                 }
 
                 final allDocs = snapshot.data?.docs ?? [];
@@ -404,7 +404,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.storefront, color: Colors.green, size: 24),
+                      child: const Icon(Icons.storefront, color: Colors.deepOrange, size: 24),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -491,7 +491,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
       children: [
         Row(
           children: [
-            Icon(icon, size: 14, color: Colors.green),
+            Icon(icon, size: 14, color: Colors.deepOrange),
             const SizedBox(width: 4),
             Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
           ],

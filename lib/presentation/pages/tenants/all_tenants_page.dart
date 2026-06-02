@@ -262,7 +262,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                           },
                           child: const Text(
                             'Đặt lại',
-                            style: TextStyle(color: Color(0xFF00A651)),
+                            style: TextStyle(color: Color(0xFFED6422)),
                           ),
                         ),
                       ],
@@ -360,7 +360,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                           _applyFilters();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00A651),
+                          backgroundColor: const Color(0xFFED6422),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -509,7 +509,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00A651)),
+              child: CircularProgressIndicator(color: Color(0xFFED6422)),
             )
           : Column(
               children: [
@@ -537,7 +537,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                   child: _filteredGroups.isEmpty
                       ? _buildEmptyState()
                       : RefreshIndicator(
-                          color: const Color(0xFF00A651),
+                          color: const Color(0xFFED6422),
                           onRefresh: _loadAllTenants,
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -701,7 +701,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
               color: const Color(0xFFE8F5E9),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.door_front_door_outlined, color: Color(0xFF00A651), size: 20),
+            child: const Icon(Icons.door_front_door_outlined, color: Color(0xFFED6422), size: 20),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -836,13 +836,13 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                 Row(
                   children: [
                     if (tenant.useApp) ...[
-                      const Icon(Icons.check_circle, size: 14, color: Color(0xFF00A651)),
+                      const Icon(Icons.check_circle, size: 14, color: Color(0xFFED6422)),
                       const SizedBox(width: 4),
                       const Text(
                         'Khách sử dụng APP',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF00A651),
+                          color: Color(0xFFED6422),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -869,7 +869,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                           ? 'Đã đăng ký tạm trú'
                           : 'Chưa đăng ký tạm trú',
                       tenant.hasRegisteredResidence
-                          ? const Color(0xFF00A651)
+                          ? const Color(0xFFED6422)
                           : Colors.red,
                     ),
                     const SizedBox(width: 12),
@@ -878,7 +878,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                           ? 'Đã đầy đủ giấy tờ'
                           : 'Chưa đầy đủ giấy tờ',
                       tenant.hasCompleteDocs
-                          ? const Color(0xFF00A651)
+                          ? const Color(0xFFED6422)
                           : Colors.red,
                     ),
                   ],
@@ -897,7 +897,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
                   width: 40,
                   height: 40,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00A651),
+                    color: Color(0xFFED6422),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.phone, color: Colors.white, size: 20),
@@ -960,7 +960,7 @@ class _AllTenantsPageState extends State<AllTenantsPage> {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF00A651),
+          color: Color(0xFFED6422),
         ),
       ),
     );
