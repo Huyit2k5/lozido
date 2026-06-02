@@ -67,7 +67,7 @@ class ContractDetailPage extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.check_circle,
-                  color: Color(0xFFED6422),
+                  color: Color(0xFF00A651),
                   size: 40,
                 ),
               ),
@@ -98,13 +98,13 @@ class ContractDetailPage extends StatelessWidget {
                     children: [
                       Icon(
                         useApp ? Icons.check_circle_outline : Icons.info_outline,
-                        color: useApp ? Colors.deepOrange : Colors.deepOrange,
+                        color: useApp ? Colors.green : Colors.green,
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         useApp ? 'Đã cài APP' : 'Khách chưa cài APP',
-                        style: TextStyle(color: useApp ? Colors.deepOrange : Colors.deepOrange, fontSize: 14),
+                        style: TextStyle(color: useApp ? Colors.green : Colors.green, fontSize: 14),
                       ),
                     ],
                   )
@@ -123,13 +123,13 @@ class ContractDetailPage extends StatelessWidget {
                     children: [
                       Icon(
                         isSigned ? Icons.check : Icons.close,
-                        color: isSigned ? Colors.deepOrange : Colors.deepOrange,
+                        color: isSigned ? Colors.green : Colors.green,
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         isSigned ? 'Đã ký hợp đồng' : 'Chưa ký hợp đồng',
-                        style: TextStyle(color: isSigned ? Colors.deepOrange : Colors.deepOrange, fontSize: 14),
+                        style: TextStyle(color: isSigned ? Colors.green : Colors.green, fontSize: 14),
                       ),
                     ],
                   )
@@ -159,9 +159,9 @@ class ContractDetailPage extends StatelessWidget {
                     children: [
                       Text(_formatCurrency(depositAmount), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       if (remainDeposit > 0)
-                        Text('(Chưa thu đủ cọc)', style: TextStyle(color: Colors.deepOrange.shade400, fontSize: 13))
+                        Text('(Chưa thu đủ cọc)', style: TextStyle(color: Colors.green.shade400, fontSize: 13))
                       else if (depositAmount > 0)
-                        Text('(Đã thu đủ cọc)', style: TextStyle(color: Colors.deepOrange.shade600, fontSize: 13))
+                        Text('(Đã thu đủ cọc)', style: TextStyle(color: Colors.green.shade600, fontSize: 13))
                       else
                         Text('(Không có cọc)', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                     ],
@@ -174,7 +174,7 @@ class ContractDetailPage extends StatelessWidget {
             _buildInfoRow(
               'Ngày lập hóa đơn',
               billingDate.isEmpty ? 'Chưa cấu hình' : billingDate,
-              valueColor: Colors.deepOrange,
+              valueColor: Colors.green,
               isBoldValue: true,
             ),
             _buildDivider(),

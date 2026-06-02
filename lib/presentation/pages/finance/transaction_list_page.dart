@@ -159,7 +159,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddOptions,
-        backgroundColor: const Color(0xFFED6422),
+        backgroundColor: const Color(0xFF00A651),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -193,7 +193,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Colors.deepOrange,
+                        color: Colors.green,
                         shape: BoxShape.circle,
                       ),
                       child: const Text(
@@ -263,8 +263,8 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.deepOrange.shade50, shape: BoxShape.circle),
-                      child: const Icon(Icons.filter_list, color: Colors.deepOrange, size: 20),
+                      decoration: BoxDecoration(color: Colors.green.shade50, shape: BoxShape.circle),
+                      child: const Icon(Icons.filter_list, color: Colors.green, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Column(
@@ -423,7 +423,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                         },
                         icon: const Icon(Icons.filter_list, size: 18, color: Colors.white),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFED6422),
+                          backgroundColor: const Color(0xFF00A651),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
@@ -734,7 +734,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                           height: 46,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.deepOrange, width: 1),
+                            border: Border.all(color: Colors.green, width: 1),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -814,10 +814,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.deepOrange.shade50,
+                    color: Colors.green.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.add_circle_outline, color: Colors.deepOrange),
+                  child: const Icon(Icons.add_circle_outline, color: Colors.green),
                 ),
                 title: const Text("Thêm phiếu thu", style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: const Text("Thêm khoản thu mới", style: TextStyle(fontSize: 12)),
@@ -1046,7 +1046,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFED6422),
+                          backgroundColor: const Color(0xFF00A651),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
@@ -1163,7 +1163,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
               Text(
                 "${isIncome ? '+' : '-'}${formatCurrency(amount)} đ",
                 style: TextStyle(
-                  color: isIncome ? Colors.deepOrange : Colors.red,
+                  color: isIncome ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
@@ -1229,9 +1229,9 @@ class _TransactionListPageState extends State<TransactionListPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildSummaryItem("Khoản thu", Icons.attach_money, Colors.deepOrange, totalIncome, isPositive: true),
-                _buildSummaryItem("Khoản chi", Icons.arrow_right_alt, Colors.deepOrange, totalExpense, isPositive: false),
-                _buildSummaryItem("Tổng kết", Icons.account_balance_wallet, Colors.deepOrange, totalIncome - totalExpense, isTotal: true),
+                _buildSummaryItem("Khoản thu", Icons.attach_money, Colors.green, totalIncome, isPositive: true),
+                _buildSummaryItem("Khoản chi", Icons.arrow_right_alt, Colors.green, totalExpense, isPositive: false),
+                _buildSummaryItem("Tổng kết", Icons.account_balance_wallet, Colors.green, totalIncome - totalExpense, isTotal: true),
               ],
             ),
           ),
@@ -1245,14 +1245,14 @@ class _TransactionListPageState extends State<TransactionListPage> {
     String prefix = '';
     
     if (isTotal) {
-      amountColor = amount >= 0 ? Colors.deepOrange : Colors.red;
+      amountColor = amount >= 0 ? Colors.green : Colors.red;
       prefix = '';
     } else {
       if (isPositive) {
         amountColor = Colors.black87;
         prefix = '+ ';
       } else {
-        amountColor = Colors.deepOrange;
+        amountColor = Colors.green;
         prefix = '- ';
       }
     }

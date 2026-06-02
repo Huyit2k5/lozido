@@ -91,7 +91,7 @@ class RequirementItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(Icons.check, color: Colors.deepOrange, size: 16),
+        const Icon(Icons.check, color: Colors.green, size: 16),
         const SizedBox(width: 8),
         Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ],
@@ -110,7 +110,7 @@ class SupportOption extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(icon, color: Colors.deepOrange),
+        Icon(icon, color: Colors.green),
         Text(text, style: const TextStyle(fontSize: 13)),
       ],
     );

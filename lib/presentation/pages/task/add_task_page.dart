@@ -65,7 +65,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFED6422),
+              color: const Color(0xFF00A651),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Center(
@@ -398,14 +398,14 @@ class _AddTaskPageState extends State<AddTaskPage> {
                             children: [
                               Icon(
                                 Icons.tag,
-                                color: Color(0xFFED6422),
+                                color: Color(0xFF00A651),
                                 size: 14,
                               ),
                               SizedBox(width: 4),
                               Text(
                                 'Mẫu việc',
                                 style: TextStyle(
-                                  color: Color(0xFFED6422),
+                                  color: Color(0xFF00A651),
                                   fontSize: 12,
                                   decoration: TextDecoration.underline,
                                 ),
@@ -470,7 +470,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   const Icon(
                     Icons.cloud_upload_outlined,
                     size: 60,
-                    color: Color(0xFFED6422),
+                    color: Color(0xFF00A651),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -557,7 +557,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFED6422),
+              backgroundColor: const Color(0xFF00A651),
               minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),

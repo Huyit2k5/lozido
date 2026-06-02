@@ -72,7 +72,7 @@ class TaskModel {
       case TaskStatus.confirmed:
         return const Color(0xFF00A651);
       case TaskStatus.ignored:
-        return Colors.deepOrange;
+        return Colors.green;
       case TaskStatus.pendingTermination:
         return Colors.orange;
       case TaskStatus.terminationCompleted:

@@ -289,14 +289,14 @@ class _TaskPageState extends State<TaskPage>
                             icon: const Icon(
                               Icons.open_in_new,
                               size: 16,
-                              color: Color(0xFFED6422),
+                              color: Color(0xFF00A651),
                             ),
                             label: const Text(
                               'Bắt đầu làm',
-                              style: TextStyle(color: Color(0xFFED6422)),
+                              style: TextStyle(color: Color(0xFF00A651)),
                             ),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFED6422)),
+                              side: const BorderSide(color: Color(0xFF00A651)),
                             ),
                           ),
                         ),

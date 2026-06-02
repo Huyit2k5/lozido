@@ -193,7 +193,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cập nhật dịch vụ thành công'), backgroundColor: Colors.deepOrange),
+            const SnackBar(content: Text('Cập nhật dịch vụ thành công'), backgroundColor: Colors.green),
           );
           Navigator.pop(context);
         }
@@ -225,7 +225,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)))
           : _services.isEmpty
               ? const Center(
                   child: Column(
@@ -280,7 +280,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                                 ? (svc.isMetered ? 'Tính theo đồng hồ, chỉ số chênh lệch' : 'Đang sử dụng')
                                                 : 'Chưa được sử dụng',
                                             style: TextStyle(
-                                              color: svc.isSelected ? Colors.black54 : Colors.deepOrange.shade300,
+                                              color: svc.isSelected ? Colors.black54 : Colors.green.shade300,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -289,7 +289,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                     ),
                                     Checkbox(
                                       value: svc.isSelected,
-                                      activeColor: const Color(0xFFED6422),
+                                      activeColor: const Color(0xFF00A651),
                                       onChanged: (val) {
                                         setState(() {
                                           svc.isSelected = val ?? false;
@@ -337,7 +337,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                           decoration: BoxDecoration(
-                                            color: Colors.deepOrange.shade50,
+                                            color: Colors.green.shade50,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Stack(
@@ -365,7 +365,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                   const SizedBox(height: 6),
                                   const Text(
                                     '* Chỉ số cũ - số mới chỉ xuất hiện khi lập hóa đơn.',
-                                    style: TextStyle(color: Colors.deepOrange, fontSize: 12),
+                                    style: TextStyle(color: Colors.green, fontSize: 12),
                                   ),
                                 ],
 
@@ -414,7 +414,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                             child: ElevatedButton(
                               onPressed: _applyServices,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFED6422),
+                                backgroundColor: const Color(0xFF00A651),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 padding: const EdgeInsets.symmetric(vertical: 14),

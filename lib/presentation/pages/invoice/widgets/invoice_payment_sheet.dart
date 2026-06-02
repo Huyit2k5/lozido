@@ -197,7 +197,7 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
               inputFormatters: [CurrencyInputFormatter()],
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 20),
+                  color: Colors.green, fontWeight: FontWeight.bold, fontSize: 20),
               decoration: InputDecoration(
                 suffixText: "đ",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -341,7 +341,7 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
                         style: const TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFED6422),
+                      backgroundColor: const Color(0xFF00A651),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 14),

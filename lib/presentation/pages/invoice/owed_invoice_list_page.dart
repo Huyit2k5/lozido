@@ -353,7 +353,7 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                             const SizedBox(width: 4),
                             const Text("Khách chưa cài APP",
                                 style: TextStyle(
-                                    color: Colors.deepOrange,
+                                    color: Colors.green,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500)),
                           ],
@@ -408,7 +408,7 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                                       : Icons.info_outline,
                                   size: 14,
                                   color:
-                                      isSent ? Colors.deepOrange : Colors.orange,
+                                      isSent ? Colors.green : Colors.orange,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -416,7 +416,7 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                                   style: TextStyle(
                                       fontSize: 12,
                                       color: isSent
-                                          ? Colors.deepOrange
+                                          ? Colors.green
                                           : Colors.orange,
                                       fontWeight: FontWeight.w500),
                                 ),
@@ -556,18 +556,18 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.deepOrange.shade50,
+                      color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       children: [
                         const Text("Đã trả",
                             style:
-                                TextStyle(fontSize: 11, color: Colors.deepOrange)),
+                                TextStyle(fontSize: 11, color: Colors.green)),
                         const SizedBox(height: 4),
                         Text("${formatCurrency(paidAmount)} đ",
                             style: const TextStyle(
-                                color: Colors.deepOrange,
+                                color: Colors.green,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14)),
                       ],

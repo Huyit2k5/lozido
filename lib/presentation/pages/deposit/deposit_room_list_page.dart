@@ -59,7 +59,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
           }
 
           if (snapshot.hasError) {
@@ -156,21 +156,21 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFED6422).withOpacity(0.1) : Colors.white,
+              color: isSelected ? const Color(0xFF00A651).withOpacity(0.1) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade300),
+              border: Border.all(color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade300),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 16, color: isSelected ? const Color(0xFFED6422) : Colors.black87),
+                  Icon(icon, size: 16, color: isSelected ? const Color(0xFF00A651) : Colors.black87),
                   const SizedBox(width: 4),
                 ],
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? const Color(0xFFED6422) : Colors.black87,
+                    color: isSelected ? const Color(0xFF00A651) : Colors.black87,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
@@ -183,7 +183,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: const BoxDecoration(
-                color: Colors.deepOrange,
+                color: Colors.green,
                 shape: BoxShape.circle,
               ),
               child: Text(
@@ -231,7 +231,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
               Container(
                 width: 4,
                 decoration: const BoxDecoration(
-                  color: Colors.deepOrange,
+                  color: Colors.green,
                   borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
                 ),
               ),
@@ -250,7 +250,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                               color: Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.storefront_rounded, color: Colors.deepOrange, size: 24),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 24),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -279,9 +279,9 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                _buildStatusTag(status, isReserved ? Colors.deepOrange : Colors.deepOrange),
+                                _buildStatusTag(status, isReserved ? Colors.green : Colors.green),
                                 const SizedBox(height: 4),
-                                _buildStatusTag("Chờ kỳ thu tới", Colors.deepOrange),
+                                _buildStatusTag("Chờ kỳ thu tới", Colors.green),
                               ],
                             )
                           ],
@@ -300,7 +300,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                                   Container(
                                     padding: const EdgeInsets.all(2),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFED6422),
+                                      color: const Color(0xFF00A651),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: const Icon(Icons.attach_money, color: Colors.white, size: 10),
@@ -322,7 +322,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                                     Container(
                                       padding: const EdgeInsets.all(2),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFED6422),
+                                        color: const Color(0xFF00A651),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Icon(Icons.attach_money, color: Colors.white, size: 10),
@@ -336,7 +336,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                                 // We will format it if we have it in roomData. Otherwise 0.
                                 Text(
                                   "${_formatCurrency((roomData['depositAmount'] as num?)?.toDouble() ?? 0)} đ", 
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.deepOrange)
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.green)
                                 ),
                               ],
                             )

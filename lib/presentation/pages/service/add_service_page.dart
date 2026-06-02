@@ -130,7 +130,7 @@ class _AddServicePageState extends State<AddServicePage> {
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
-                                          color: isSelected ? const Color(0xFFED6422) : Colors.black87,
+                                          color: isSelected ? const Color(0xFF00A651) : Colors.black87,
                                         ),
                                       ),
                                       if (desc.isNotEmpty) ...
@@ -152,7 +152,7 @@ class _AddServicePageState extends State<AddServicePage> {
                                     width: 28,
                                     height: 28,
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFFED6422),
+                                      color: Color(0xFF00A651),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(Icons.check, color: Colors.white, size: 18),
@@ -297,7 +297,7 @@ class _AddServicePageState extends State<AddServicePage> {
                       color: Color(0xFFE8F5E9),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_circle, color: Color(0xFFED6422), size: 40),
+                    child: const Icon(Icons.check_circle, color: Color(0xFF00A651), size: 40),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -318,7 +318,7 @@ class _AddServicePageState extends State<AddServicePage> {
                         Navigator.pop(ctx); // close dialog
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFED6422),
+                        backgroundColor: const Color(0xFF00A651),
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -383,7 +383,7 @@ class _AddServicePageState extends State<AddServicePage> {
         centerTitle: false,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)))
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,7 +414,7 @@ class _AddServicePageState extends State<AddServicePage> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFED6422)),
+                              borderSide: const BorderSide(color: Color(0xFF00A651)),
                             ),
                           ),
                           onChanged: (_) {
@@ -438,13 +438,13 @@ class _AddServicePageState extends State<AddServicePage> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFFED6422)),
+                                border: Border.all(color: const Color(0xFF00A651)),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 s,
                                 style: const TextStyle(
-                                  color: Color(0xFFED6422),
+                                  color: Color(0xFF00A651),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -497,7 +497,7 @@ class _AddServicePageState extends State<AddServicePage> {
                             ),
                             Switch(
                               value: _isMetered,
-                              activeThumbColor: const Color(0xFFED6422),
+                              activeThumbColor: const Color(0xFF00A651),
                               onChanged: (val) => setState(() => _isMetered = val),
                             ),
                           ],
@@ -505,7 +505,7 @@ class _AddServicePageState extends State<AddServicePage> {
                         const SizedBox(height: 8),
                         const Text(
                           '* Ví dụ: Dịch vụ điện, nước có sự chênh lệch số cũ và số mới',
-                          style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -638,7 +638,7 @@ class _AddServicePageState extends State<AddServicePage> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFED6422)),
+                              borderSide: const BorderSide(color: Color(0xFF00A651)),
                             ),
                           ),
                           onChanged: (_) {
@@ -677,7 +677,7 @@ class _AddServicePageState extends State<AddServicePage> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submitService,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFED6422),
+                backgroundColor: const Color(0xFF00A651),
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -738,7 +738,7 @@ class _AddServicePageState extends State<AddServicePage> {
                     children: [
                       Checkbox(
                         value: _selectAllRooms,
-                        activeColor: const Color(0xFFED6422),
+                        activeColor: const Color(0xFF00A651),
                         onChanged: (val) => _toggleSelectAll(val, roomDocs),
                       ),
                       const Text(
@@ -755,7 +755,7 @@ class _AddServicePageState extends State<AddServicePage> {
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(color: Color(0xFFED6422)),
+                    child: CircularProgressIndicator(color: Color(0xFF00A651)),
                   ),
                 )
               else if (roomDocs.isEmpty)
@@ -804,7 +804,7 @@ class _AddServicePageState extends State<AddServicePage> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade300,
+                            color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade300,
                           ),
                           borderRadius: BorderRadius.circular(8),
                           color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
@@ -816,7 +816,7 @@ class _AddServicePageState extends State<AddServicePage> {
                               height: 20,
                               child: Checkbox(
                                 value: isSelected,
-                                activeColor: const Color(0xFFED6422),
+                                activeColor: const Color(0xFF00A651),
                                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 onChanged: (val) {
                                   setState(() {
@@ -851,7 +851,7 @@ class _AddServicePageState extends State<AddServicePage> {
                                   Text(
                                     isSelected ? 'Đang áp dụng' : 'Không áp dụng',
                                     style: TextStyle(
-                                      color: isSelected ? const Color(0xFFED6422) : Colors.deepOrange,
+                                      color: isSelected ? const Color(0xFF00A651) : Colors.green,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
                                     ),

@@ -453,7 +453,7 @@ class _AssetListPageState extends State<AssetListPage> {
                             child: isGlobalView 
                                 ? Row(
                                     children: [
-                                      Text('Kho: $availableQty', style: const TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.bold)),
+                                      Text('Kho: $availableQty', style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold)),
                                       const SizedBox(width: 8),
                                       const Text('|'),
                                       const SizedBox(width: 8),
@@ -502,7 +502,7 @@ class _AssetListPageState extends State<AssetListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFED6422),
+        backgroundColor: const Color(0xFF00A651),
         onPressed: () async {
           if (_selectedRoomId != null) {
             // Room Selected: Navigate to Smart Selection Page
@@ -548,7 +548,7 @@ class _AssetListPageState extends State<AssetListPage> {
     Color color;
     switch (displayStatus) {
       case 'Hoạt động tốt':
-        color = const Color(0xFFED6422);
+        color = const Color(0xFF00A651);
         break;
       case 'Hư hỏng nhẹ':
         color = Colors.orange;
@@ -705,15 +705,15 @@ class _AddAssetFormState extends State<_AddAssetForm> {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
                       color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
-                      border: Border.all(color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade300),
+                      border: Border.all(color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_getIconData(e), color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade600, size: 24),
+                        Icon(_getIconData(e), color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade600, size: 24),
                         const SizedBox(height: 4),
-                        Text(e, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isSelected ? const Color(0xFFED6422) : Colors.black87)),
+                        Text(e, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isSelected ? const Color(0xFF00A651) : Colors.black87)),
                       ],
                     ),
                   ),
@@ -770,7 +770,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFED6422),
+                  backgroundColor: const Color(0xFF00A651),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
@@ -895,7 +895,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFED6422))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF00A651))),
             isDense: true,
           ),
         ),

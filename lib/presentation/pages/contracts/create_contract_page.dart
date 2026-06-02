@@ -268,7 +268,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.deepOrange),
+              leading: const Icon(Icons.photo_library, color: Colors.green),
               title: const Text("Chọn ảnh từ thư viện"),
               onTap: () {
                 Navigator.pop(context);
@@ -333,7 +333,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.deepOrange),
+              leading: const Icon(Icons.photo_library, color: Colors.green),
               title: const Text("Chọn ảnh 2 mặt CCCD từ thư viện"),
               onTap: () {
                 Navigator.pop(context);
@@ -612,7 +612,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           _showExtraInfo = true; // Bật hiển thị form nếu có data
         });
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất OCR thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
       }
 
     } catch (e) {
@@ -648,7 +648,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           _imageUrls.add(downloadUrl);
         });
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tải ảnh lên thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tải ảnh lên thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
       }
     } catch (e) {
       if (mounted) {
@@ -700,7 +700,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         });
         
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất thông tin thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.deepOrange));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Trích xuất thông tin thành công!", style: TextStyle(color: Colors.white)), backgroundColor: Colors.green));
       }
     } catch (e) {
       if (mounted) {
@@ -918,7 +918,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('Kết nối ngay', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFED6422))),
+                  child: const Text('Kết nối ngay', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A651))),
                 ),
               ],
             ),
@@ -1055,7 +1055,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           ),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFED6422),
+              backgroundColor: const Color(0xFF00A651),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -1078,7 +1078,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFED6422),
+            color: const Color(0xFF00A651),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
@@ -1125,7 +1125,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFED6422))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF00A651))),
             suffixIcon: suffix,
             isDense: true,
           ),
@@ -1209,13 +1209,13 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text("* Nhập SĐT ZALO hệ thống sẽ TỰ ĐỘNG gửi hóa đơn hàng tháng cho khách", style: TextStyle(color: Colors.deepOrange, fontSize: 11, fontStyle: FontStyle.italic)),
+          const Text("* Nhập SĐT ZALO hệ thống sẽ TỰ ĐỘNG gửi hóa đơn hàng tháng cho khách", style: TextStyle(color: Colors.green, fontSize: 11, fontStyle: FontStyle.italic)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFF1F8E9),
-              border: Border.all(color: const Color(0xFFED6422).withOpacity(0.5)),
+              border: Border.all(color: const Color(0xFF00A651).withOpacity(0.5)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1223,7 +1223,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                 Checkbox(
                   value: _useApp,
                   onChanged: (v) => setState(() => _useApp = v ?? false),
-                  activeColor: const Color(0xFFED6422),
+                  activeColor: const Color(0xFF00A651),
                 ),
                 const Expanded(
                   child: Column(
@@ -1295,7 +1295,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ),
             const SizedBox(height: 16),
             _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: IconButton(
-              icon: const Icon(Icons.qr_code_scanner, color: Colors.deepOrange, size: 24),
+              icon: const Icon(Icons.qr_code_scanner, color: Colors.green, size: 24),
               onPressed: _showCCCDScanOptions,
               tooltip: 'Quét thẻ CCCD bằng OCR',
             )),
@@ -1332,7 +1332,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ],
           ),
           const SizedBox(height: 10),
-          const Text("* CHÚ Ý: Sau khi làm hợp đồng bạn phải lập \"Hóa đơn tháng đầu tiên\" để thu tiền thuê và tiền cọc", style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w500)),
+          const Text("* CHÚ Ý: Sau khi làm hợp đồng bạn phải lập \"Hóa đơn tháng đầu tiên\" để thu tiền thuê và tiền cọc", style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -1341,7 +1341,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                   width: 80,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8))),
-                  child: const Text("tháng", style: TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.bold)),
+                  child: const Text("tháng", style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold)),
                 )),
               ),
               const SizedBox(width: 12),
@@ -1387,7 +1387,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
         borderRadius: BorderRadius.circular(4),
       ),
       alignment: Alignment.center,
-      child: const Text("đ", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+      child: const Text("đ", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -1429,7 +1429,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildAssetIcon(Icons.chair, Colors.deepOrange.shade100, Colors.deepOrange),
+                        _buildAssetIcon(Icons.chair, Colors.green.shade100, Colors.green),
                         const SizedBox(width: 8),
                         _buildAssetIcon(Icons.delete, Colors.blue.shade100, Colors.blue),
                         const SizedBox(width: 8),
@@ -1446,10 +1446,10 @@ class _CreateContractPageState extends State<CreateContractPage> {
                   runSpacing: 8,
                   children: provider.assets.map((a) {
                     return Chip(
-                      backgroundColor: Colors.deepOrange.shade50,
-                      side: BorderSide(color: Colors.deepOrange.shade200),
+                      backgroundColor: Colors.green.shade50,
+                      side: BorderSide(color: Colors.green.shade200),
                       label: Text(a.assetName, style: const TextStyle(color: Colors.black87)),
-                      avatar: const Icon(Icons.check_circle, color: Color(0xFFED6422), size: 16),
+                      avatar: const Icon(Icons.check_circle, color: Color(0xFF00A651), size: 16),
                     );
                   }).toList(),
                 );
@@ -1507,7 +1507,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
           Center(
             child: Column(
               children: [
-                Icon(Icons.file_upload_outlined, size: 48, color: Colors.deepOrange.shade300),
+                Icon(Icons.file_upload_outlined, size: 48, color: Colors.green.shade300),
                 const SizedBox(height: 8),
                 Text("Tôi đã thêm được ${_imageUrls.length} hình ảnh", style: const TextStyle(color: Colors.black54, fontSize: 13)),
               ],

@@ -78,7 +78,7 @@ class _TenantAppSettingsPageState extends State<TenantAppSettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Lưu thay đổi thành công!'),
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Colors.green,
         ),
       );
       Navigator.pop(context);
@@ -263,7 +263,7 @@ class _TenantAppSettingsPageState extends State<TenantAppSettingsPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveSettings,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFED6422),
+                    backgroundColor: const Color(0xFF00A651),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -328,7 +328,7 @@ class _TenantAppSettingsPageState extends State<TenantAppSettingsPage> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFFED6422),
+              activeColor: const Color(0xFF00A651),
             ),
           ],
         ),

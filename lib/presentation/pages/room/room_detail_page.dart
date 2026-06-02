@@ -176,9 +176,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFFED6422),
+          labelColor: const Color(0xFF00A651),
           unselectedLabelColor: Colors.black54,
-          indicatorColor: const Color(0xFFED6422),
+          indicatorColor: const Color(0xFF00A651),
           tabs: const [
             Tab(text: 'Thông tin'),
             Tab(text: 'Hóa đơn'),
@@ -241,7 +241,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
                       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
                       child: Row(
                         children: [
-                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle)),
+                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                           const SizedBox(width: 6),
                           Text(_roomData['status'] ?? 'Đang trống', style: const TextStyle(fontSize: 12)),
                         ],
@@ -253,7 +253,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
                       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(16)),
                       child: Row(
                         children: [
-                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle)),
+                          Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                           const SizedBox(width: 6),
                           const Text("Chờ kỳ thu tới", style: TextStyle(fontSize: 12)),
                         ],
@@ -268,7 +268,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
                   const SizedBox(height: 12),
                   const Text(
                     "⚠️ Khách thuê chưa kết nối Zalo nhận thông báo tự động.",
-                    style: TextStyle(color: Colors.deepOrange, fontSize: 13, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: Colors.green, fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -384,7 +384,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
                 _buildInfoCard('Giá thuê', '${_formatCurrency((_roomData['price'] as num?)?.toDouble() ?? 0)} đ'),
                 _buildInfoCard('Diện tích', '${(_roomData['area'] as num?)?.toDouble() ?? 0} m2'),
                 _buildInfoCard('Giới tính ưu tiên', _roomData['priority'] ?? 'Tất cả'),
-                _buildInfoCard('Ngày lập hóa đơn', 'Ngày ${_roomData['billingCycleDay'] ?? 1}', valueColor: Colors.deepOrange),
+                _buildInfoCard('Ngày lập hóa đơn', 'Ngày ${_roomData['billingCycleDay'] ?? 1}', valueColor: Colors.green),
               ],
             ),
           ),
@@ -512,7 +512,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFED6422),
+              color: const Color(0xFF00A651),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.white, size: 20),

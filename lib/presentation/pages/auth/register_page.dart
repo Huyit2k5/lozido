@@ -102,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đăng ký thành công!'),
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: Colors.green,
           ),
         );
         
@@ -160,17 +160,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 30),
                 child: Column(
                   children: [
-                    Image.asset(
-                      'assets/images/logo-big-no-bg.png',
-                      height: 140,
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.home_work_rounded,
+                          color: Colors.green,
+                          size: 40,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          "IRental",
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
                     const Text(
                       "Ứng dụng quản lý nhà trọ thông minh",
                       style: TextStyle(
-                        color: Color(0xFFFFA448),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        color: Colors.green,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -268,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             margin: const EdgeInsets.only(top: 15),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.deepOrange.withOpacity(0.05),
+              color: Colors.green.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -293,7 +306,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextSpan(
                       text: "Điều khoản dịch vụ",
                       style: TextStyle(
-                        color: Colors.deepOrange,
+                        color: Colors.green,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -301,7 +314,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextSpan(
                       text: "Chính sách bảo mật",
                       style: TextStyle(
-                        color: Colors.deepOrange,
+                        color: Colors.green,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -319,7 +332,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _sendOtp,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFED6422),
+                backgroundColor: const Color(0xFF00A651),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -346,7 +359,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               onPressed: () => Navigator.pop(context),
               child: const Text(
                 "Bạn đã có tài khoản, Đăng nhập?",
-                style: TextStyle(color: Colors.deepOrange),
+                style: TextStyle(color: Colors.green),
               ),
             ),
           ),
@@ -425,7 +438,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _verifyAndCompleteRegistration,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFED6422),
+              backgroundColor: const Color(0xFF00A651),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -523,7 +536,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isFocused ? const Color(0xFFED6422) : Colors.grey.shade300,
+                    color: isFocused ? const Color(0xFF00A651) : Colors.grey.shade300,
                     width: isFocused ? 2 : 1,
                   ),
                 ),
@@ -607,7 +620,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildRequirement(String text) {
     return Row(
       children: [
-        const Icon(Icons.check, color: Colors.deepOrange, size: 16),
+        const Icon(Icons.check, color: Colors.green, size: 16),
         const SizedBox(width: 8),
         Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ],
@@ -618,7 +631,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(icon, color: Colors.deepOrange),
+        Icon(icon, color: Colors.green),
         Text(text, style: const TextStyle(fontSize: 13)),
       ],
     );

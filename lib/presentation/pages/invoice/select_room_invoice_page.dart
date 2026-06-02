@@ -271,7 +271,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
-                              color: Color(0xFFED6422),
+                              color: Color(0xFF00A651),
                               shape: BoxShape.circle,
                             ),
                             child: const Text("2", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
@@ -299,7 +299,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting || _isLoadingCache) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
                 }
 
                 if (snapshot.hasError) {
@@ -398,7 +398,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
         decoration: BoxDecoration(
           color: const Color(0xFFF4F9F2),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: existingInvoice ? Colors.red.shade200 : Colors.deepOrange.shade100, width: 2),
+          border: Border.all(color: existingInvoice ? Colors.red.shade200 : Colors.green.shade100, width: 2),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4)),
           ],
@@ -426,7 +426,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300)),
-                            child: const Icon(Icons.storefront_rounded, color: Colors.deepOrange, size: 26),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 26),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -492,7 +492,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                 Icons.phone_android_outlined, 
                                 "Sử dụng APP", 
                                 useApp ? "Đang sử dụng app" : "Chưa sử dụng app",
-                                valueColor: useApp ? Colors.deepOrange : Colors.deepOrange,
+                                valueColor: useApp ? Colors.green : Colors.green,
                                 valueIcon: useApp ? Icons.check_circle_outline : Icons.info_outline
                              ),
                              const Divider(height: 1, color: Color(0xFFF1F1F1)),
@@ -500,7 +500,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                 Icons.drive_file_rename_outline, 
                                 "Hợp đồng online", 
                                 isSigned ? "Đã ký" : "Khách chưa ký",
-                                valueColor: isSigned ? Colors.deepOrange : Colors.deepOrange,
+                                valueColor: isSigned ? Colors.green : Colors.green,
                                 valueIcon: isSigned ? Icons.check : Icons.close
                              ),
                              const Divider(height: 1, color: Color(0xFFF1F1F1)),
@@ -515,9 +515,9 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                     Column(
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        _buildTag("Đang ở", Colors.deepOrange),
+                                        _buildTag("Đang ở", Colors.green),
                                         const SizedBox(height: 6),
-                                        _buildTag("Chưa thu tiền", Colors.deepOrange),
+                                        _buildTag("Chưa thu tiền", Colors.green),
                                       ],
                                     ),
                                   ],
@@ -541,7 +541,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(color: const Color(0xFFED6422), borderRadius: BorderRadius.circular(2)),
+                                    decoration: BoxDecoration(color: const Color(0xFF00A651), borderRadius: BorderRadius.circular(2)),
                                     child: const Icon(Icons.attach_money, color: Colors.white, size: 10),
                                   ),
                                   const SizedBox(width: 4),
@@ -557,7 +557,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.person, color: Colors.deepOrange, size: 14),
+                                  const Icon(Icons.person, color: Colors.green, size: 14),
                                   const SizedBox(width: 4),
                                   const Text("Khách ghi nhận", style: TextStyle(color: Colors.black54, fontSize: 13)),
                                 ],

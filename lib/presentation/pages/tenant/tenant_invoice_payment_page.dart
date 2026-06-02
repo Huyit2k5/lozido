@@ -116,7 +116,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
                           children: [
                             const Text("Đã thanh toán", style: TextStyle(color: Colors.black54, fontSize: 13)),
                             const SizedBox(height: 8),
-                            Text("${_formatCurrency(paidAmount)} đ", style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 18)),
+                            Text("${_formatCurrency(paidAmount)} đ", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 18)),
                           ],
                         ),
                       ),
@@ -203,7 +203,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
                     title: "Thanh toán Tiền mặt",
                     subtitle: "Đưa tiền trực tiếp cho chủ nhà lúc thu",
                     icon: Icons.money,
-                    color: Colors.deepOrange,
+                    color: Colors.green,
                     onTap: () {
                        _handleCashPayment(context);
                     }
@@ -271,7 +271,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFFED6422))),
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
     );
 
     try {
@@ -308,7 +308,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã gửi thông tin chuyển khoản. Vui lòng chờ xác nhận!'),
-            backgroundColor: Color(0xFFED6422),
+            backgroundColor: Color(0xFF00A651),
           ),
         );
         Navigator.pop(context);
@@ -328,7 +328,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFFED6422))),
+      builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
     );
 
     try {
@@ -362,7 +362,7 @@ class TenantInvoicePaymentPage extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã gửi yêu cầu thanh toán tiền mặt. Vui lòng chờ chủ nhà xác nhận!'),
-            backgroundColor: Color(0xFFED6422),
+            backgroundColor: Color(0xFF00A651),
           ),
         );
         Navigator.pop(context);

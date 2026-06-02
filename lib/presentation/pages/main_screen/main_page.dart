@@ -48,7 +48,7 @@ class _MainPageState extends State<MainPage> {
           },
           backgroundColor: Colors.white,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFFED6422), // Xanh chủ đạo Lozido
+          selectedItemColor: const Color(0xFF00A651), // Xanh chủ đạo Lozido
           unselectedItemColor: Colors.grey.shade500,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
@@ -63,7 +63,7 @@ class _MainPageState extends State<MainPage> {
                     color: _selectedIndex == 0 ? const Color(0xFFE0F2F1) : Colors.transparent,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.home_rounded, color: _selectedIndex == 0 ? const Color(0xFFED6422) : Colors.grey.shade500),
+                  child: Icon(Icons.home_rounded, color: _selectedIndex == 0 ? const Color(0xFF00A651) : Colors.grey.shade500),
                 ),
               ),
               label: 'Trang chủ',
@@ -71,28 +71,28 @@ class _MainPageState extends State<MainPage> {
             BottomNavigationBarItem(
               icon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.chat_bubble_outline_rounded, color: _selectedIndex == 1 ? const Color(0xFFED6422) : Colors.grey.shade500),
+                child: Icon(Icons.chat_bubble_outline_rounded, color: _selectedIndex == 1 ? const Color(0xFF00A651) : Colors.grey.shade500),
               ),
               label: 'Hộp thư',
             ),
             BottomNavigationBarItem(
               icon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.assignment_outlined, color: _selectedIndex == 2 ? const Color(0xFFED6422) : Colors.grey.shade500),
+                child: Icon(Icons.assignment_outlined, color: _selectedIndex == 2 ? const Color(0xFF00A651) : Colors.grey.shade500),
               ),
               label: 'Công việc',
             ),
             BottomNavigationBarItem(
               icon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.folder_shared_outlined, color: _selectedIndex == 3 ? const Color(0xFFED6422) : Colors.grey.shade500),
+                child: Icon(Icons.folder_shared_outlined, color: _selectedIndex == 3 ? const Color(0xFF00A651) : Colors.grey.shade500),
               ),
               label: 'Tìm khách',
             ),
             BottomNavigationBarItem(
               icon: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Icon(Icons.grid_view_rounded, color: _selectedIndex == 4 ? const Color(0xFFED6422) : Colors.grey.shade500),
+                child: Icon(Icons.grid_view_rounded, color: _selectedIndex == 4 ? const Color(0xFF00A651) : Colors.grey.shade500),
               ),
               label: 'Thêm +',
             ),

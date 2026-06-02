@@ -119,7 +119,7 @@ class _RoomListPageState extends State<RoomListPage> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
-                          color: Color(0xFFED6422),
+                          color: Color(0xFF00A651),
                           shape: BoxShape.circle,
                         ),
                         child: const Text("3", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
@@ -144,12 +144,12 @@ class _RoomListPageState extends State<RoomListPage> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide(color: isSelected ? const Color(0xFFED6422) : Colors.transparent, width: 3)),
+                                border: Border(bottom: BorderSide(color: isSelected ? const Color(0xFF00A651) : Colors.transparent, width: 3)),
                               ),
                               child: Text(
                                 name,
                                 style: TextStyle(
-                                  color: isSelected ? const Color(0xFFED6422) : Colors.black87,
+                                  color: isSelected ? const Color(0xFF00A651) : Colors.black87,
                                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                   fontSize: 15
                                 ),
@@ -170,7 +170,7 @@ class _RoomListPageState extends State<RoomListPage> {
         stream: FirebaseFirestore.instance.collection('houses').doc(widget.houseId).collection('rooms').orderBy('createdAt', descending: false).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
           }
 
           if (snapshot.hasError) {
@@ -232,7 +232,7 @@ class _RoomListPageState extends State<RoomListPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFED6422),
+        backgroundColor: const Color(0xFF00A651),
         onPressed: _addRoom,
         child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
@@ -312,7 +312,7 @@ class _RoomListPageState extends State<RoomListPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(isRented ? Icons.info_outline : Icons.warning_amber_rounded, color: isRented ? const Color(0xFF689F38) : Colors.deepOrange, size: 22),
+                      Icon(isRented ? Icons.info_outline : Icons.warning_amber_rounded, color: isRented ? const Color(0xFF689F38) : Colors.green, size: 22),
                       const SizedBox(width: 8),
                       Expanded(
                         child: RichText(
@@ -501,7 +501,7 @@ class _RoomListPageState extends State<RoomListPage> {
     final name = roomData['roomName'] ?? 'Phòng';
     final priceInfo = _formatCurrency((roomData['price'] as num?)?.toDouble() ?? 0);
     final bool isReserved = status == 'Đang cọc giữ chỗ';
-    final Color statusColor = isReserved ? Colors.deepOrange : Colors.deepOrange;
+    final Color statusColor = isReserved ? Colors.green : Colors.green;
 
     return InkWell(
       onTap: () => _showRoomActionModal(roomId, roomData),
@@ -539,7 +539,7 @@ class _RoomListPageState extends State<RoomListPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.storefront_rounded, color: Colors.deepOrange, size: 24),
+                          child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 24),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -579,9 +579,9 @@ class _RoomListPageState extends State<RoomListPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildStatusTagLine(status, isReserved ? Colors.deepOrange : Colors.deepOrange),
+                            _buildStatusTagLine(status, isReserved ? Colors.green : Colors.green),
                             const SizedBox(width: 16),
-                            _buildStatusTagLine("Chờ kỳ thu tới", Colors.deepOrange),
+                            _buildStatusTagLine("Chờ kỳ thu tới", Colors.green),
                           ],
                         ),
                       ],
@@ -600,7 +600,7 @@ class _RoomListPageState extends State<RoomListPage> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(color: const Color(0xFFED6422), borderRadius: BorderRadius.circular(4)),
+                                decoration: BoxDecoration(color: const Color(0xFF00A651), borderRadius: BorderRadius.circular(4)),
                                 child: const Icon(Icons.attach_money, color: Colors.white, size: 10),
                               ),
                               const SizedBox(width: 4),
@@ -645,7 +645,7 @@ class _RoomListPageState extends State<RoomListPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
-        border: Border.all(color: const Color(0xFFED6422).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFF00A651).withOpacity(0.3)),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -653,7 +653,7 @@ class _RoomListPageState extends State<RoomListPage> {
         children: [
           Container(width: 8, height: 8, decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle)),
           const SizedBox(width: 6),
-          Text(text, style: const TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(text, style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
     );
@@ -705,7 +705,7 @@ class _RoomListPageState extends State<RoomListPage> {
               Container(
                 width: 4,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFED6422), // Green strip
+                  color: Color(0xFF00A651), // Green strip
                   borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
                 ),
               ),
@@ -721,7 +721,7 @@ class _RoomListPageState extends State<RoomListPage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.storefront_rounded, color: Colors.deepOrange, size: 24),
+                            child: const Icon(Icons.storefront_rounded, color: Colors.green, size: 24),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -771,8 +771,8 @@ class _RoomListPageState extends State<RoomListPage> {
                                   const Text("Sử dụng APP", style: TextStyle(fontSize: 13, color: Colors.black87)),
                                   const Spacer(),
                                   useApp 
-                                    ? Row(children: const [Icon(Icons.check_circle_outline, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Đang sử dụng app", style: TextStyle(color: Colors.deepOrange, fontSize: 13))])
-                                    : Row(children: const [Icon(Icons.info_outline, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Chưa sử dụng app", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
+                                    ? Row(children: const [Icon(Icons.check_circle_outline, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đang sử dụng app", style: TextStyle(color: Colors.green, fontSize: 13))])
+                                    : Row(children: const [Icon(Icons.info_outline, size: 14, color: Colors.green), SizedBox(width: 4), Text("Chưa sử dụng app", style: TextStyle(color: Colors.green, fontSize: 13))]),
                                 ],
                               ),
                             ),
@@ -786,8 +786,8 @@ class _RoomListPageState extends State<RoomListPage> {
                                   const Text("Hợp đồng online", style: TextStyle(fontSize: 13, color: Colors.black87)),
                                   const Spacer(),
                                   isSigned 
-                                    ? Row(children: const [Icon(Icons.check, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Đã ký", style: TextStyle(color: Colors.deepOrange, fontSize: 13))])
-                                    : Row(children: const [Icon(Icons.close, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Khách chưa ký", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
+                                    ? Row(children: const [Icon(Icons.check, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đã ký", style: TextStyle(color: Colors.green, fontSize: 13))])
+                                    : Row(children: const [Icon(Icons.close, size: 14, color: Colors.green), SizedBox(width: 4), Text("Khách chưa ký", style: TextStyle(color: Colors.green, fontSize: 13))]),
                                 ],
                               ),
                             ),
@@ -804,9 +804,9 @@ class _RoomListPageState extends State<RoomListPage> {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      _buildStatusTagLine("Đang ở", Colors.deepOrange),
+                                      _buildStatusTagLine("Đang ở", Colors.green),
                                       const SizedBox(height: 6),
-                                      _buildStatusTagLine("Chờ kỳ thu tới", Colors.deepOrange),
+                                      _buildStatusTagLine("Chờ kỳ thu tới", Colors.green),
                                     ],
                                   ),
                                 ],
@@ -820,9 +820,9 @@ class _RoomListPageState extends State<RoomListPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildFooterStat(Icons.attach_money, "Giá thuê", "$rentPrice đ", Colors.deepOrange, Colors.black87),
-                          _buildFooterStat(Icons.attach_money, "Cọc đã thu", "$depositAmount đ", Colors.deepOrange, Colors.black87),
-                          _buildFooterStat(Icons.person, "Khách ghi nhận", "1/$totalMembers người", Colors.deepOrange, Colors.black87, crossAxisAlignment: CrossAxisAlignment.end),
+                          _buildFooterStat(Icons.attach_money, "Giá thuê", "$rentPrice đ", Colors.green, Colors.black87),
+                          _buildFooterStat(Icons.attach_money, "Cọc đã thu", "$depositAmount đ", Colors.green, Colors.black87),
+                          _buildFooterStat(Icons.person, "Khách ghi nhận", "1/$totalMembers người", Colors.green, Colors.black87, crossAxisAlignment: CrossAxisAlignment.end),
                         ],
                       ),
                     ],

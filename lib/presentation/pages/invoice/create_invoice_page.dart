@@ -307,7 +307,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Phân tích và thêm thành công!'), backgroundColor: Colors.deepOrange),
+          const SnackBar(content: Text('Phân tích và thêm thành công!'), backgroundColor: Colors.green),
         );
         _voiceTextController.clear();
         _recognizedText = "";
@@ -384,7 +384,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFED6422)),
+            colorScheme: const ColorScheme.light(primary: Color(0xFF00A651)),
           ),
           child: child!,
         );
@@ -410,7 +410,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFED6422)),
+            colorScheme: const ColorScheme.light(primary: Color(0xFF00A651)),
           ),
           child: child!,
         );
@@ -568,7 +568,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFED6422),
+                    color: Color(0xFF00A651),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, color: Colors.white, size: 40),
@@ -577,7 +577,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                 Text(
                   "Hóa đơn T.${widget.billingMonthDate.month}/${widget.billingMonthDate.year} đã được thêm thành công!",
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFFED6422), fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(color: Color(0xFF00A651), fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 RichText(
@@ -597,9 +597,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: const [
-                        Icon(Icons.info_outline, color: Colors.deepOrange, size: 20),
+                        Icon(Icons.info_outline, color: Colors.green, size: 20),
                         SizedBox(width: 8),
-                        Expanded(child: Text("Giá trị hóa đơn đã được lưu nhưng không thông báo qua Zalo/App.", style: TextStyle(color: Colors.deepOrange, fontSize: 13))),
+                        Expanded(child: Text("Giá trị hóa đơn đã được lưu nhưng không thông báo qua Zalo/App.", style: TextStyle(color: Colors.green, fontSize: 13))),
                       ],
                     ),
                   ),
@@ -755,7 +755,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                               children: [
                                                 Checkbox(
                                                   value: svc.isUsed,
-                                                  activeColor: const Color(0xFFED6422),
+                                                  activeColor: const Color(0xFF00A651),
                                                   onChanged: (val) {
                                                     setModalState(() {
                                                       svc.isUsed = val ?? false;
@@ -809,7 +809,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                                 controller: svc.newIndexController,
                                                 keyboardType: TextInputType.number,
                                                 textAlign: TextAlign.center,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
                                                 decoration: InputDecoration(
                                                   isDense: true,
                                                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -876,7 +876,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       child: ElevatedButton(
                         onPressed: () => Navigator.pop(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFED6422),
+                          backgroundColor: const Color(0xFF00A651),
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -918,7 +918,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("Lập hóa đơn", style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold)),
-            Text("Tháng [ T.${widget.billingMonthDate.month}/${widget.billingMonthDate.year} ]", style: const TextStyle(color: Color(0xFFED6422), fontSize: 13, fontWeight: FontWeight.w500)),
+            Text("Tháng [ T.${widget.billingMonthDate.month}/${widget.billingMonthDate.year} ]", style: const TextStyle(color: Color(0xFF00A651), fontSize: 13, fontWeight: FontWeight.w500)),
           ],
         ),
         titleSpacing: 0,
@@ -937,7 +937,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.deepOrange, width: 1.5),
+                      border: Border.all(color: Colors.green, width: 1.5),
                     ),
                     child: Column(
                       children: [
@@ -1091,7 +1091,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(_getRentDurationText(), style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Text(_getRentDurationText(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
                                     const SizedBox(height: 4),
                                     Text("x ${_formatCurrency(_rentPrice)} đ / tháng", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   ],
@@ -1137,9 +1137,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: const [
-                                    Icon(Icons.tag, size: 14, color: Colors.deepOrange),
+                                    Icon(Icons.tag, size: 14, color: Colors.green),
                                     SizedBox(width: 4),
-                                    Text("Chọn mẫu", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                    Text("Chọn mẫu", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
@@ -1165,7 +1165,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                   children: [
                                     const Text("Số tiền cọc cần thu", style: TextStyle(color: Colors.black54, fontSize: 13)),
                                     const SizedBox(height: 4),
-                                    Text("${_formatCurrency(_totalDeposit)} đ", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                                    Text("${_formatCurrency(_totalDeposit)} đ", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                                   ],
                                 ),
                                 Column(
@@ -1192,7 +1192,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       color: Colors.white,
                       child: Column(
                         children: [
-                          _buildSectionHeader(Icons.tag, "Dịch vụ tính tiền", "Chốt mức khách sử dụng để tính tiền", iconBgColor: const Color(0xFFED6422)),
+                          _buildSectionHeader(Icons.tag, "Dịch vụ tính tiền", "Chốt mức khách sử dụng để tính tiền", iconBgColor: const Color(0xFF00A651)),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Container(
@@ -1252,13 +1252,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                                       const SizedBox(height: 4),
                                                       Container(
                                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                        decoration: BoxDecoration(color: Colors.deepOrange.shade50, borderRadius: BorderRadius.circular(12)),
+                                                        decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(12)),
                                                         child: Row(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: [
-                                                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle)),
+                                                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                                                             const SizedBox(width: 4),
-                                                            Text("Dùng: ${svc.newIndex - svc.oldIndex} ${svc.unit}", style: const TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                                            Text("Dùng: ${svc.newIndex - svc.oldIndex} ${svc.unit}", style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
                                                           ],
                                                         ),
                                                       ),
@@ -1267,13 +1267,13 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                                       const SizedBox(height: 4),
                                                       Container(
                                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                        decoration: BoxDecoration(color: Colors.deepOrange.shade50, borderRadius: BorderRadius.circular(12)),
+                                                        decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(12)),
                                                         child: Row(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: [
-                                                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.deepOrange, shape: BoxShape.circle)),
+                                                            Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                                                             const SizedBox(width: 4),
-                                                            Text("SL: ${svc.quantity}", style: const TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                                            Text("SL: ${svc.quantity}", style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
                                                           ],
                                                         ),
                                                       ),
@@ -1320,7 +1320,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF4FAEE),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.deepOrange.shade200),
+                                border: Border.all(color: Colors.green.shade200),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1334,9 +1334,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                         text: const TextSpan(
                                           style: TextStyle(color: Colors.black87, fontSize: 13),
                                           children: [
-                                            TextSpan(text: "1 ", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                            TextSpan(text: "1 ", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                             TextSpan(text: "tháng, "),
-                                            TextSpan(text: "0 ", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                            TextSpan(text: "0 ", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                             TextSpan(text: "ngày"),
                                           ],
                                         ),
@@ -1504,7 +1504,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       height: 24,
                       child: Checkbox(
                         value: _sendZaloApp,
-                        activeColor: const Color(0xFFED6422),
+                        activeColor: const Color(0xFF00A651),
                         onChanged: (val) {
                           setState(() {
                             _sendZaloApp = val ?? false;
@@ -1526,7 +1526,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         const Text("Tổng cộng", style: TextStyle(color: Colors.black54, fontSize: 12)),
-                        Text("${_formatCurrency(_grandTotal)} đ", style: const TextStyle(color: Color(0xFFED6422), fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text("${_formatCurrency(_grandTotal)} đ", style: const TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold, fontSize: 18)),
                       ],
                     ),
                   ],
@@ -1540,7 +1540,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     icon: _isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.post_add, color: Colors.white),
                     label: Text(_isSaving ? "Đang xử lý..." : "Lập hóa đơn", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFED6422),
+                      backgroundColor: const Color(0xFF00A651),
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
@@ -1554,7 +1554,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
     );
   }
 
-  Widget _buildSectionHeader(IconData icon, String title, String subtitle, {Color iconBgColor = const Color(0xFFED6422)}) {
+  Widget _buildSectionHeader(IconData icon, String title, String subtitle, {Color iconBgColor = const Color(0xFF00A651)}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(

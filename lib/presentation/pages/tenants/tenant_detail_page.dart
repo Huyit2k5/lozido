@@ -131,7 +131,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFED6422)),
+              child: CircularProgressIndicator(color: Color(0xFF00A651)),
             )
           : SingleChildScrollView(
               child: Column(
@@ -282,7 +282,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                   icon: Icons.person_search_outlined,
                   label: 'Loại người thuê',
                   value: tenantType,
-                  valueColor: const Color(0xFFED6422),
+                  valueColor: const Color(0xFF00A651),
                 ),
               ),
               const SizedBox(width: 12),
@@ -292,7 +292,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                   label: 'Người đại diện hợp đ...',
                   value: isRepresentative ? 'Là đại diện' : 'Không',
                   valueColor: isRepresentative
-                      ? const Color(0xFFED6422)
+                      ? const Color(0xFF00A651)
                       : Colors.black54,
                 ),
               ),
@@ -412,7 +412,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFED6422).withValues(alpha: 0.3)),
+        border: Border.all(color: const Color(0xFF00A651).withValues(alpha: 0.3)),
       ),
       child: imageUrl != null && imageUrl.isNotEmpty
           ? ClipRRect(
@@ -433,14 +433,14 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.image_outlined, size: 32, color: Colors.deepOrange.shade300),
+          Icon(Icons.image_outlined, size: 32, color: Colors.green.shade300),
           const SizedBox(height: 6),
           Text(
             'Chưa có hình\nCCCD/Passport',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.deepOrange.shade400,
+              color: Colors.green.shade400,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -465,10 +465,10 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFED6422).withValues(alpha: 0.1),
+                  color: const Color(0xFF00A651).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.tag, color: Color(0xFFED6422), size: 20),
+                child: const Icon(Icons.tag, color: Color(0xFF00A651), size: 20),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -554,10 +554,10 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFED6422).withValues(alpha: 0.1),
+                  color: const Color(0xFF00A651).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.tag, color: Color(0xFFED6422), size: 20),
+                child: const Icon(Icons.tag, color: Color(0xFF00A651), size: 20),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -592,7 +592,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                   icon: Icons.calendar_today_outlined,
                   label: 'Ngày ghi nhận tạm trú',
                   value: residenceDate,
-                  valueColor: const Color(0xFFED6422),
+                  valueColor: const Color(0xFF00A651),
                 ),
               ),
               const SizedBox(width: 12),
@@ -601,7 +601,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                   icon: Icons.calendar_today_outlined,
                   label: 'Ngày hết hạn tạm trú',
                   value: residenceExpiry,
-                  valueColor: const Color(0xFFED6422),
+                  valueColor: const Color(0xFF00A651),
                 ),
               ),
             ],
@@ -728,7 +728,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
             : const Color(0xFFFFF3E0),
         border: Border.all(
           color: isPositive
-              ? const Color(0xFFED6422).withValues(alpha: 0.3)
+              ? const Color(0xFF00A651).withValues(alpha: 0.3)
               : Colors.orange.withValues(alpha: 0.3),
         ),
         borderRadius: BorderRadius.circular(10),
@@ -739,7 +739,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
           Icon(
             icon,
             size: 18,
-            color: isPositive ? const Color(0xFFED6422) : Colors.deepOrange,
+            color: isPositive ? const Color(0xFF00A651) : Colors.green,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -751,8 +751,8 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                   style: TextStyle(
                     fontSize: 12,
                     color: isPositive
-                        ? const Color(0xFFED6422)
-                        : Colors.deepOrange,
+                        ? const Color(0xFF00A651)
+                        : Colors.green,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -762,8 +762,8 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: isPositive
-                        ? const Color(0xFFED6422)
-                        : Colors.deepOrange,
+                        ? const Color(0xFF00A651)
+                        : Colors.green,
                   ),
                 ),
               ],
@@ -869,7 +869,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFED6422),
+                  backgroundColor: const Color(0xFF00A651),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

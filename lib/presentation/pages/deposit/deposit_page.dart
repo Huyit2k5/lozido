@@ -167,10 +167,10 @@ class _DepositPageState extends State<DepositPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.deepOrange.shade50,
+                    color: Colors.green.shade50,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_outline, color: Colors.deepOrange, size: 60),
+                  child: const Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -324,7 +324,7 @@ class _DepositPageState extends State<DepositPage> {
         ),
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)))
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)))
         : Form(
           key: _formKey,
           child: Column(
@@ -389,9 +389,9 @@ class _DepositPageState extends State<DepositPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.deepOrange.shade50.withOpacity(0.5),
+                          color: Colors.green.shade50.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.deepOrange.shade200),
+                          border: Border.all(color: Colors.green.shade200),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -467,7 +467,7 @@ class _DepositPageState extends State<DepositPage> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFED6422),
+            color: const Color(0xFF00A651),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.white, size: 20),
@@ -554,7 +554,7 @@ class _DepositPageState extends State<DepositPage> {
           Expanded(
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepOrange,
+                backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -569,7 +569,7 @@ class _DepositPageState extends State<DepositPage> {
           Expanded(
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFED6422),
+                backgroundColor: const Color(0xFF00A651),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -600,7 +600,7 @@ class _DepositPageState extends State<DepositPage> {
             flex: 2,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFED6422),
+                backgroundColor: const Color(0xFF00A651),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

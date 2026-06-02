@@ -49,7 +49,7 @@ class _AppDialogWidget extends StatelessWidget {
 
     switch (type) {
       case AppDialogType.success:
-        primaryColor = const Color(0xFFED6422);
+        primaryColor = const Color(0xFF00A651);
         icon = Icons.check_circle_outline;
         break;
       case AppDialogType.error:

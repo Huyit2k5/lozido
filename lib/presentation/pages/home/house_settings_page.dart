@@ -42,7 +42,7 @@ class HouseSettingsPage extends StatelessWidget {
                     Container(
                       width: 4,
                       decoration: BoxDecoration(
-                        color: Colors.deepOrange,
+                        color: Colors.green,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -170,7 +170,7 @@ class HouseSettingsPage extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.deepOrange,
+                            color: Colors.green,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(

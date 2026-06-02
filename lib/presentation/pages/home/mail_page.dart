@@ -142,7 +142,7 @@ class _MailPageState extends State<MailPage> {
 
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Đã tạo nhóm chat cho $roomName!'), backgroundColor: Colors.deepOrange),
+                      SnackBar(content: Text('Đã tạo nhóm chat cho $roomName!'), backgroundColor: Colors.green),
                     );
                   },
                 );
@@ -379,14 +379,14 @@ class _MailPageState extends State<MailPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isBot ? Colors.deepOrange.withOpacity(0.1) : const Color(0xFFFF5722),
-                      border: isBot ? Border.all(color: Colors.deepOrange) : null,
+                      color: isBot ? Colors.green.withOpacity(0.1) : const Color(0xFFFF5722),
+                      border: isBot ? Border.all(color: Colors.green) : null,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       isBot ? "Chatbot CSKH" : "Nhà trọ",
                       style: TextStyle(
-                        color: isBot ? Colors.deepOrange : Colors.white, 
+                        color: isBot ? Colors.green : Colors.white, 
                         fontSize: 10, 
                         fontWeight: FontWeight.bold
                       ),

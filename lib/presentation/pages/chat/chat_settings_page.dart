@@ -320,23 +320,23 @@ class _ChatSettingsPageState extends State<ChatSettingsPage> {
         subtitle,
         style: TextStyle(
           fontSize: 12,
-          color: value ? Colors.deepOrange : Colors.grey,
+          color: value ? Colors.green : Colors.grey,
         ),
       ),
       value: value,
-      activeColor: Colors.deepOrange,
+      activeColor: Colors.green,
       secondary: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: value
-              ? Colors.deepOrange.withOpacity(0.1)
+              ? Colors.green.withOpacity(0.1)
               : Colors.grey.withOpacity(0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
           value ? Icons.notifications_active : Icons.notifications_off,
-          color: value ? Colors.deepOrange : Colors.grey,
+          color: value ? Colors.green : Colors.grey,
           size: 22,
         ),
       ),

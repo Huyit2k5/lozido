@@ -260,10 +260,10 @@ class _ContractListPageState extends State<ContractListPage> {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFED6422) : Colors.white,
+          color: isSelected ? const Color(0xFF00A651) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFFED6422) : Colors.grey.shade300,
+            color: isSelected ? const Color(0xFF00A651) : Colors.grey.shade300,
           ),
         ),
         child: Text(
@@ -401,7 +401,7 @@ class _ContractListPageState extends State<ContractListPage> {
       stream: query.snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
         }
 
         if (snapshot.hasError) {
@@ -474,13 +474,13 @@ class _ContractListPageState extends State<ContractListPage> {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.deepOrange.shade50,
-                  border: Border.all(color: Colors.deepOrange.shade300),
+                  color: Colors.green.shade50,
+                  border: Border.all(color: Colors.green.shade300),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.deepOrange),
+                    const Icon(Icons.info_outline, color: Colors.green),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text('Trạng thái "$status"', style: const TextStyle(color: Colors.black87, fontSize: 14)),
@@ -595,7 +595,7 @@ class _ContractListPageState extends State<ContractListPage> {
     final createdAtStr = createdAtMs != null ? DateFormat('dd/MM/yyyy').format(createdAtMs) : '';
 
     final isEnded = status == 'Đã kết thúc';
-    final statusColor = isEnded ? Colors.red : const Color(0xFFED6422);
+    final statusColor = isEnded ? Colors.red : const Color(0xFF00A651);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -671,13 +671,13 @@ class _ContractListPageState extends State<ContractListPage> {
             // Warnings
             Row(
               children: [
-                const Icon(Icons.info_outline, size: 14, color: Colors.deepOrange),
+                const Icon(Icons.info_outline, size: 14, color: Colors.green),
                 const SizedBox(width: 4),
-                const Text('Chưa sử dụng app', style: TextStyle(color: Colors.deepOrange, fontSize: 12)),
+                const Text('Chưa sử dụng app', style: TextStyle(color: Colors.green, fontSize: 12)),
                 const SizedBox(width: 16),
-                const Icon(Icons.close, size: 14, color: Colors.deepOrange),
+                const Icon(Icons.close, size: 14, color: Colors.green),
                 const SizedBox(width: 4),
-                const Text('Chưa ký hợp đồng', style: TextStyle(color: Colors.deepOrange, fontSize: 12)),
+                const Text('Chưa ký hợp đồng', style: TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
             const SizedBox(height: 16),
@@ -694,7 +694,7 @@ class _ContractListPageState extends State<ContractListPage> {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.request_quote, size: 14, color: Color(0xFFED6422)),
+                            Icon(Icons.request_quote, size: 14, color: Color(0xFF00A651)),
                             SizedBox(width: 4),
                             Text('Giá thuê', style: TextStyle(fontSize: 12, color: Colors.black87)),
                           ],

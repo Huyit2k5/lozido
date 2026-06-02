@@ -77,17 +77,17 @@ class _ContractPdfPreviewPageState extends State<ContractPdfPreviewPage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Xem văn bản hợp đồng'),
-          backgroundColor: const Color(0xFFED6422),
+          backgroundColor: const Color(0xFF00A651),
           foregroundColor: Colors.white,
         ),
-        body: const Center(child: CircularProgressIndicator(color: Color(0xFFED6422))),
+        body: const Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Xem văn bản hợp đồng'),
-        backgroundColor: const Color(0xFFED6422),
+        backgroundColor: const Color(0xFF00A651),
         foregroundColor: Colors.white,
       ),
       body: PdfPreview(

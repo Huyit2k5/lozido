@@ -137,11 +137,11 @@ class _AddRoomPageState extends State<AddRoomPage> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: _selectedFloor == index ? const Color(0xFFED6422) : Colors.black87,
+                            color: _selectedFloor == index ? const Color(0xFF00A651) : Colors.black87,
                           ),
                         ),
                         trailing: _selectedFloor == index
-                            ? const Icon(Icons.check_circle, color: Color(0xFFED6422))
+                            ? const Icon(Icons.check_circle, color: Color(0xFF00A651))
                             : null,
                         onTap: () {
                           setState(() {
@@ -197,7 +197,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
               ..._priorityOptions.map((priority) => ListTile(
                     title: Text(priority),
                     trailing: _selectedPriority == priority
-                        ? const Icon(Icons.check, color: Color(0xFFED6422))
+                        ? const Icon(Icons.check, color: Color(0xFF00A651))
                         : null,
                     onTap: () {
                       setState(() {
@@ -307,7 +307,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
         centerTitle: false,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)))
           : Form(
               key: _formKey,
               child: ListView(
@@ -397,7 +397,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: Colors.deepOrange.shade50,
+                                        color: Colors.green.shade50,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Text('m2', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
@@ -443,7 +443,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: Colors.deepOrange.shade50,
+                                        color: Colors.green.shade50,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Text('đ/tháng', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
@@ -677,7 +677,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFED6422),
+                  backgroundColor: const Color(0xFF00A651),
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -715,7 +715,7 @@ class _AddRoomPageState extends State<AddRoomPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFED6422),
+              color: const Color(0xFF00A651),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.white, size: 20),

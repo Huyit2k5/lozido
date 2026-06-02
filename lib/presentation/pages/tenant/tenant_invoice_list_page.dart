@@ -181,7 +181,7 @@ class _TenantInvoiceListPageState extends State<TenantInvoiceListPage> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-           return const Center(child: CircularProgressIndicator(color: Color(0xFFED6422)));
+           return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
         }
 
         if (snapshot.hasError) {
@@ -259,7 +259,7 @@ class _TenantInvoiceListPageState extends State<TenantInvoiceListPage> {
     Color statusColor;
     switch (status) {
       case 'Đã thu xong':
-        statusColor = Colors.deepOrange;
+        statusColor = Colors.green;
         break;
       case 'Đang nợ tiền':
         statusColor = Colors.red;

@@ -170,12 +170,12 @@ class _MorePageState extends State<MorePage> {
                               const SizedBox(height: 6),
                               Row(
                                 children: const [
-                                  Icon(Icons.circle, color: Color(0xFFED6422), size: 10),
+                                  Icon(Icons.circle, color: Color(0xFF00A651), size: 10),
                                   SizedBox(width: 4),
                                   Text(
                                     "Đã xác minh",
                                     style: TextStyle(
-                                      color: Color(0xFFED6422),
+                                      color: Color(0xFF00A651),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -213,7 +213,7 @@ class _MorePageState extends State<MorePage> {
                               Text(
                                 formattedId,
                                 style: const TextStyle(
-                                  color: Color(0xFFED6422),
+                                  color: Color(0xFF00A651),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                 ),
@@ -393,7 +393,7 @@ class _MorePageState extends State<MorePage> {
             icon: Icons.edit_outlined,
             title: "Cài đặt chữ ký số",
             subtitle: "Dùng để thiết lập chữ ký hợp đồng, tạm trú cho khách thuê.",
-            badge: _buildBadge("Mới", const Color(0xFFED6422)),
+            badge: _buildBadge("Mới", const Color(0xFF00A651)),
           ),
           _buildDivider(),
           _buildSettingItem(

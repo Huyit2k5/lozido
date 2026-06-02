@@ -182,9 +182,9 @@ class ProfilePage extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.check_circle, color: Color(0xFFED6422), size: 14),
+                        Icon(Icons.check_circle, color: Color(0xFF00A651), size: 14),
                         SizedBox(width: 4),
-                        Text("Đã xác minh", style: TextStyle(color: Color(0xFFED6422), fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text("Đã xác minh", style: TextStyle(color: Color(0xFF00A651), fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),

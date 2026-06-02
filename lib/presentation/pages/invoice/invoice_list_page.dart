@@ -276,7 +276,7 @@ class _InvoiceListPageState extends State<InvoiceListPage> {
     Color statusColor;
     switch (status) {
       case 'Đã thu xong':
-        statusColor = Colors.deepOrange;
+        statusColor = Colors.green;
         break;
       case 'Đang nợ tiền':
         statusColor = Colors.red;
@@ -527,17 +527,17 @@ class _InvoiceListPageState extends State<InvoiceListPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.deepOrange.shade50,
+                        color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(
                         children: [
                           const Text("Đã trả",
-                              style: TextStyle(fontSize: 11, color: Colors.deepOrange)),
+                              style: TextStyle(fontSize: 11, color: Colors.green)),
                           const SizedBox(height: 4),
                           Text("${_formatCurrency(paidAmount)} đ",
                               style: const TextStyle(
-                                  color: Colors.deepOrange,
+                                  color: Colors.green,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14)),
                         ],
