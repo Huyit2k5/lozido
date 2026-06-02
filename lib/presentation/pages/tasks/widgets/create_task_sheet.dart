@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lozido_app/presentation/provider/task_provider.dart';
 import 'package:lozido_app/models/task_model.dart';
 
 class CreateTaskSheet extends StatefulWidget {
   final TaskModel? taskToEdit;
+  final bool isLandlord;
 
-  const CreateTaskSheet({super.key, this.taskToEdit});
+  const CreateTaskSheet({super.key, this.taskToEdit, this.isLandlord = true});
 
   @override
   State<CreateTaskSheet> createState() => _CreateTaskSheetState();
@@ -23,7 +25,8 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
   late DateTime _selectedDate;
   String? _selectedHouse;
 
-  final List<String> _houses = ["Nhà 1", "Nhà 2", "Nhà 3", "Nhà 4", "Nhà 5"];
+  List<Map<String, dynamic>> _firebaseHouses = [];
+  bool _isLoadingHouses = true;
 
   @override
   void initState() {
@@ -35,6 +38,78 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
     _descriptionController = TextEditingController(text: task?.description ?? '');
     _selectedDate = task?.deadline ?? DateTime.now().add(const Duration(days: 7));
     _selectedHouse = task?.houseName;
+    _fetchHouses();
+  }
+
+  Future<void> _fetchHouses() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _isLoadingHouses = false;
+      });
+      return;
+    }
+    try {
+      if (widget.isLandlord) {
+        final snapshot = await FirebaseFirestore.instance
+            .collection('houses')
+            .where('userId', isEqualTo: user.uid)
+            .get();
+        final houses = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'name': data['houseName'] ?? data['propertyName'] ?? 'Chưa đặt tên',
+          };
+        }).toList();
+        if (mounted) {
+          setState(() {
+            _firebaseHouses = houses;
+            _isLoadingHouses = false;
+          });
+        }
+      } else {
+        // Tenant
+        final tenantSnapshot = await FirebaseFirestore.instance
+            .collection('tenants')
+            .where('uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+        if (tenantSnapshot.docs.isNotEmpty) {
+          final tenantData = tenantSnapshot.docs.first.data();
+          final String? houseId = tenantData['houseId'];
+          if (houseId != null && houseId.isNotEmpty) {
+            final houseDoc = await FirebaseFirestore.instance
+                .collection('houses')
+                .doc(houseId)
+                .get();
+            final houseData = houseDoc.data();
+            final houseName = houseData?['houseName'] ?? houseData?['propertyName'] ?? houseData?['name'] ?? 'Nhà trọ';
+            final houses = [
+              {'id': houseId, 'name': houseName}
+            ];
+            if (mounted) {
+              setState(() {
+                _firebaseHouses = houses;
+                _selectedHouse = houseName;
+                _isLoadingHouses = false;
+              });
+            }
+          } else {
+            if (mounted) setState(() => _isLoadingHouses = false);
+          }
+        } else {
+          if (mounted) setState(() => _isLoadingHouses = false);
+        }
+      }
+    } catch (e) {
+      debugPrint("Lỗi tải danh sách nhà trọ: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingHouses = false;
+        });
+      }
+    }
   }
 
   @override
@@ -62,26 +137,43 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
               const SizedBox(height: 20),
               
               // Dropdown chọn Nhà
-              DropdownButtonFormField<String>(
-                value: _selectedHouse,
-                decoration: const InputDecoration(
-                  labelText: "Chọn Nhà",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.home_outlined),
-                ),
-                items: _houses.map((String house) {
-                  return DropdownMenuItem<String>(
-                    value: house,
-                    child: Text(house),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedHouse = value;
-                  });
-                },
-                hint: const Text("Chọn căn nhà"),
-              ),
+              (() {
+                final houseNames = _firebaseHouses.map((h) => h['name'] as String).toList();
+                if (_selectedHouse != null && !houseNames.contains(_selectedHouse)) {
+                  houseNames.add(_selectedHouse!);
+                }
+                return _isLoadingHouses
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A651)),
+                          ),
+                        ),
+                      )
+                    : DropdownButtonFormField<String>(
+                        value: _selectedHouse,
+                        decoration: const InputDecoration(
+                          labelText: "Chọn Nhà",
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.home_outlined),
+                        ),
+                        items: houseNames.map((String house) {
+                          return DropdownMenuItem<String>(
+                            value: house,
+                            child: Text(house),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedHouse = value;
+                          });
+                        },
+                        hint: const Text("Chọn căn nhà"),
+                      );
+              })(),
               const SizedBox(height: 16),
 
               TextFormField(

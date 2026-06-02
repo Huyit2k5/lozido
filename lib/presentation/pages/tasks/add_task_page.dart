@@ -4,11 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lozido_app/models/task_model.dart';
 import 'package:lozido_app/presentation/provider/task_provider.dart';
 
 class AddTaskPage extends StatefulWidget {
-  const AddTaskPage({super.key});
+  final bool isLandlord;
+  const AddTaskPage({super.key, this.isLandlord = true});
 
   @override
   State<AddTaskPage> createState() => _AddTaskPageState();
@@ -29,11 +31,145 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final List<String> _imagePaths = [];
   bool _isSaving = false;
 
-  final List<String> _houses = ["Nhà 1", "Nhà 2", "Nhà 3", "Nhà 4", "Nhà 5"];
-  final List<String> _scopes = ["Phòng 101", "Phòng 102", "Phòng 103"];
+  List<Map<String, dynamic>> _firebaseHouses = [];
+  List<Map<String, dynamic>> _firebaseRooms = [];
+  bool _isLoadingHouses = true;
+  bool _isLoadingRooms = false;
 
   final Color _primaryGreen = const Color(0xFF00A651);
   final Color _bgGrey = const Color(0xFFF2F5F8);
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHouses();
+  }
+
+  Future<void> _fetchHouses() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _isLoadingHouses = false;
+      });
+      return;
+    }
+    try {
+      if (widget.isLandlord) {
+        final snapshot = await FirebaseFirestore.instance
+            .collection('houses')
+            .where('userId', isEqualTo: user.uid)
+            .get();
+        final houses = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'name': data['houseName'] ?? data['propertyName'] ?? 'Chưa đặt tên',
+          };
+        }).toList();
+        if (mounted) {
+          setState(() {
+            _firebaseHouses = houses;
+            _isLoadingHouses = false;
+          });
+        }
+      } else {
+        // Tenant
+        final tenantSnapshot = await FirebaseFirestore.instance
+            .collection('tenants')
+            .where('uid', isEqualTo: user.uid)
+            .limit(1)
+            .get();
+        if (tenantSnapshot.docs.isNotEmpty) {
+          final tenantData = tenantSnapshot.docs.first.data();
+          final String? houseId = tenantData['houseId'];
+          final String? roomId = tenantData['roomId'];
+          if (houseId != null && houseId.isNotEmpty) {
+            final houseDoc = await FirebaseFirestore.instance
+                .collection('houses')
+                .doc(houseId)
+                .get();
+            final houseData = houseDoc.data();
+            final houseName = houseData?['houseName'] ?? houseData?['propertyName'] ?? houseData?['name'] ?? 'Nhà trọ';
+            final houses = [
+              {'id': houseId, 'name': houseName}
+            ];
+            
+            List<Map<String, dynamic>> rooms = [];
+            if (roomId != null && roomId.isNotEmpty) {
+              final roomDoc = await FirebaseFirestore.instance
+                  .collection('houses')
+                  .doc(houseId)
+                  .collection('rooms')
+                  .doc(roomId)
+                  .get();
+              final roomData = roomDoc.data();
+              final roomName = roomData?['roomName'] ?? roomData?['name'] ?? 'Phòng';
+              rooms = [
+                {'id': roomId, 'name': roomName}
+              ];
+            }
+            if (mounted) {
+              setState(() {
+                _firebaseHouses = houses;
+                _selectedHouse = houseName;
+                _firebaseRooms = rooms;
+                if (rooms.isNotEmpty) {
+                  _selectedScope = rooms.first['name'];
+                }
+                _isLoadingHouses = false;
+              });
+            }
+          } else {
+            if (mounted) setState(() => _isLoadingHouses = false);
+          }
+        } else {
+          if (mounted) setState(() => _isLoadingHouses = false);
+        }
+      }
+    } catch (e) {
+      debugPrint("Lỗi tải danh sách nhà trọ: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingHouses = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchRooms(String houseId) async {
+    setState(() {
+      _isLoadingRooms = true;
+      _firebaseRooms = [];
+      _selectedScope = null;
+    });
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('houses')
+          .doc(houseId)
+          .collection('rooms')
+          .get();
+      final rooms = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'name': data['roomName'] ?? data['name'] ?? 'Chưa đặt tên',
+        };
+      }).toList();
+      if (mounted) {
+        setState(() {
+          _firebaseRooms = rooms;
+          _isLoadingRooms = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Lỗi tải danh sách phòng trọ: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingRooms = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,8 +301,24 @@ class _AddTaskPageState extends State<AddTaskPage> {
                             child: _buildDropdownField(
                               label: "Nhà cho thuê",
                               value: _selectedHouse,
-                              items: _houses,
-                              onChanged: (val) => setState(() => _selectedHouse = val),
+                              items: _firebaseHouses.map((h) => h['name'] as String).toList(),
+                              isLoading: _isLoadingHouses,
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedHouse = val;
+                                  _selectedScope = null;
+                                  _firebaseRooms = [];
+                                });
+                                if (val != null) {
+                                  final selectedHouseObj = _firebaseHouses.firstWhere(
+                                    (h) => h['name'] == val,
+                                    orElse: () => <String, dynamic>{},
+                                  );
+                                  if (selectedHouseObj['id'] != null && selectedHouseObj['id'].toString().isNotEmpty) {
+                                    _fetchRooms(selectedHouseObj['id']!);
+                                  }
+                                }
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -174,7 +326,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
                             child: _buildDropdownField(
                               label: "Phòng/giường/căn hộ",
                               value: _selectedScope,
-                              items: _scopes,
+                              items: _firebaseRooms.map((r) => r['name'] as String).toList(),
+                              isLoading: _isLoadingRooms,
                               onChanged: (val) => setState(() => _selectedScope = val),
                             ),
                           ),
@@ -388,7 +541,18 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
   }
 
-  Widget _buildDropdownField({required String label, String? value, required List<String> items, required Function(String?) onChanged}) {
+  Widget _buildDropdownField({
+    required String label,
+    String? value,
+    required List<String> items,
+    required Function(String?) onChanged,
+    bool isLoading = false,
+  }) {
+    String? selectedValue = value;
+    if (selectedValue != null && !items.contains(selectedValue)) {
+      items = [selectedValue, ...items];
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
@@ -399,14 +563,28 @@ class _AddTaskPageState extends State<AddTaskPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-          DropdownButton<String>(
-            value: value,
-            isExpanded: true,
-            hint: const Text("Chọn giá trị", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            underline: const SizedBox(),
-            onChanged: onChanged,
-            items: items.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)))).toList(),
-          ),
+          isLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A651)),
+                  ),
+                )
+              : DropdownButton<String>(
+                  value: selectedValue,
+                  isExpanded: true,
+                  hint: const Text("Chọn giá trị", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  underline: const SizedBox(),
+                  onChanged: onChanged,
+                  items: items
+                      .map((s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(s, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          ))
+                      .toList(),
+                ),
         ],
       ),
     );

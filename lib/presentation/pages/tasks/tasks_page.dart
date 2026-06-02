@@ -57,7 +57,7 @@ class _TasksPageState extends State<TasksPage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddTaskPage()),
+            MaterialPageRoute(builder: (context) => AddTaskPage(isLandlord: widget.isLandlord)),
           );
         },
         backgroundColor: const Color(0xFF00A651),
