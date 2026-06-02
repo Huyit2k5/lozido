@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lozido_app/models/task_model.dart';
+import 'package:lozido_app/presentation/provider/task_provider.dart';
 
 class TenantContractPage extends StatelessWidget {
   final Map<String, dynamic> contractData;
   final String contractId;
+  final String? houseName;
+  final String? roomName;
+  final String? tenantName;
 
   const TenantContractPage({
     super.key,
     required this.contractData,
     required this.contractId,
+    this.houseName,
+    this.roomName,
+    this.tenantName,
   });
 
   String _formatCurrency(double amount) {
@@ -18,7 +28,21 @@ class TenantContractPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Parsing dates
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    // Đảm bảo dữ liệu được tải cho khách thuê
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskProvider>().loadTasks(
+        uid: currentUserId,
+        isLandlord: false,
+      );
+    });
+
+    final taskProvider = context.watch<TaskProvider>();
+    final terminationTask = taskProvider.getTerminationTask(contractId);
+    final isPending = terminationTask?.status == TaskStatus.pendingTermination;
+    final isCompleted = terminationTask?.status == TaskStatus.terminationCompleted;
+    final isDenied = terminationTask?.status == TaskStatus.terminationDenied;
+
     final now = DateTime.now();
     DateTime? start;
     if (contractData['startDate'] is String) {
@@ -49,7 +73,6 @@ class TenantContractPage extends StatelessWidget {
       createdAt = start;
     }
 
-    // Status logic
     bool isActive = true;
     if(end != null && now.isAfter(end)) {
         isActive = false;
@@ -92,21 +115,27 @@ class TenantContractPage extends StatelessWidget {
                      children: [
                         Container(
                            width: 8, height: 8,
-                           decoration: BoxDecoration(
-                             color: isActive ? Colors.deepOrange : Colors.red,
-                             shape: BoxShape.circle
-                           ),
+                            decoration: BoxDecoration(
+                              color: isDenied ? Colors.red : (isCompleted ? Colors.green : (isPending ? Colors.orange : (isActive ? Colors.green : Colors.red))),
+                              shape: BoxShape.circle
+                            ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                           isActive ? 'Trong thời hạn hợp đồng' : 'Đã hết hạn hợp đồng',
-                           style: const TextStyle(color: Colors.black54, fontSize: 13, fontWeight: FontWeight.w500),
+                        Flexible(
+                          child: Text(
+                             _getTerminationStatusText(isActive, isPending, isCompleted, isDenied, terminationTask),
+                             style: TextStyle(
+                               color: isDenied ? Colors.red : (isCompleted ? Colors.green : (isPending ? Colors.orange : Colors.black54)), 
+                               fontSize: 13, 
+                               fontWeight: (isPending || isCompleted || isDenied) ? FontWeight.bold : FontWeight.w500
+                             ),
+                             textAlign: TextAlign.center,
+                          ),
                         )
                      ],
                    ),
                    const SizedBox(height: 16),
                    
-                   // Action Buttons
                    Padding(
                      padding: const EdgeInsets.symmetric(horizontal: 16),
                      child: Row(
@@ -130,7 +159,7 @@ class TenantContractPage extends StatelessWidget {
                      ),
                      child: Column(
                        children: [
-                         _buildInfoRow('Người ký hợp đồng', contractData['phoneNumber'] ?? 'Chưa cập nhật', valueColor: Colors.blue, valueFontWeight: FontWeight.bold),
+                         _buildInfoRow('Người ký hợp đồng', tenantName ?? 'Chưa cập nhật', valueColor: Colors.blue, valueFontWeight: FontWeight.bold),
                          _buildDivider(),
                          _buildInfoRow('Tổng số thành viên', '${contractData['totalMembers'] ?? 1} \nngười', subtitle: 'Số thành viên đăng ký', richValue: true, valueBoldPart: '${contractData['totalMembers'] ?? 1} '),
                          _buildDivider(),
@@ -156,51 +185,144 @@ class TenantContractPage extends StatelessWidget {
             ),
           ),
           
-          // Bottom Actions
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Color(0xFFEEEEEE)))
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade200,
-                      foregroundColor: Colors.black87,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: isPending 
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "* Chủ nhà đang xem xét yêu cầu báo kết thúc hợp đồng của bạn",
+                      style: TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
-                    icon: const Icon(Icons.close, size: 18),
-                    label: const Text('Đóng', style: TextStyle(fontWeight: FontWeight.bold)),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE65100), // Orange
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Đóng', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ),
-                    icon: const Icon(Icons.calendar_today, size: 18, color: Colors.white),
-                    label: const Text('Báo kết thúc h.đồng', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    onPressed: () {},
-                  ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Đóng', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: (isCompleted || isDenied) ? Colors.grey : const Color(0xFFE65100),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                        icon: const Icon(Icons.calendar_today, size: 18, color: Colors.white),
+                        label: Text(
+                          isCompleted ? 'Hợp đồng đã kết thúc' : (isDenied ? 'Báo kết thúc lại' : 'Báo kết thúc h.đồng'), 
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                        ),
+                        onPressed: isCompleted ? null : () => _handleTerminationReport(context, shortId),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           )
         ],
       ),
     );
+  }
+
+  String _getTerminationStatusText(bool isActive, bool isPending, bool isCompleted, bool isDenied, TaskModel? task) {
+    if (isPending) return "Đang yêu cầu báo kết thúc hợp đồng";
+    if (isCompleted) return "Chủ nhà đã xác nhận kết thúc hợp đồng";
+    if (isDenied) return "Đã từ chối yêu cầu";
+    return isActive ? "Trong thời hạn hợp đồng" : "Đã hết hạn hợp đồng";
+  }
+
+  void _handleTerminationReport(BuildContext context, String shortId) async {
+    final taskProvider = context.read<TaskProvider>();
+    
+    if (taskProvider.hasPendingTermination(contractId)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Bạn đã gửi yêu cầu kết thúc hợp đồng này rồi. Vui lòng chờ xác nhận.")),
+      );
+      return;
+    }
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Xác nhận báo kết thúc hợp đồng"),
+        content: const Text("Yêu cầu kết thúc hợp đồng sẽ được gửi đến chủ nhà để xác nhận."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Hủy", style: TextStyle(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Gửi yêu cầu", style: TextStyle(color: Color(0xFF00A651), fontWeight: FontWeight.bold))),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF00A651))),
+      );
+      
+      await Future.delayed(const Duration(seconds: 1));
+      if (!context.mounted) return;
+      Navigator.pop(context);
+
+      taskProvider.createNewTask(
+        title: "Yêu cầu kết thúc hợp đồng #$shortId",
+        description: "Khách thuê đã gửi yêu cầu kết thúc hợp đồng. Vui lòng kiểm tra và xác nhận kết thúc hợp đồng.",
+        taskType: "Kết thúc hợp đồng",
+        performer: "Chủ nhà",
+        deadline: DateTime.now().add(const Duration(days: 7)),
+        createdAt: DateTime.now(),
+        status: TaskStatus.pendingTermination,
+        contractId: contractId,
+        sender: tenantName ?? 'Khách thuê',
+        contractValue: (contractData['rentPrice'] ?? 0).toDouble(),
+        deposit: (contractData['depositAmount'] ?? 0).toDouble(),
+        creatorId: FirebaseAuth.instance.currentUser?.uid,
+        houseName: houseName,
+        scope: roomName,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Đã gửi yêu cầu kết thúc hợp đồng thành công"), backgroundColor: Color(0xFF00A651)),
+      );
+    }
   }
 
   Widget _buildActionButton(IconData icon, String title, Color iconColor, VoidCallback? onTap) {

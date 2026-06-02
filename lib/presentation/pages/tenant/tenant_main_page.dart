@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lozido_app/presentation/pages/auth/auth_wrapper.dart';
 import 'package:intl/intl.dart';
 import '../home/mail_page.dart';
+import '../tasks/tasks_page.dart';
 import 'tenant_contract_page.dart';
 import 'tenant_invoice_list_page.dart';
 import 'tenant_profile_page.dart';
@@ -137,13 +138,14 @@ class _TenantMainPageState extends State<TenantMainPage> {
               body: IndexedStack(
                 index: _currentIndex,
                 children: [
-                   _buildHomeContent(houseId, roomId, roomName, houseName, closingDate, roomData, houseData),
+                   _buildHomeContent(houseId, roomId, roomName, houseName, closingDate, roomData, houseData, userData),
                    MailPage(
                      tenantRoomName: roomName,
                      landlordId: landlordId,
                      tenantUid: userData['uid'] ?? currentUser!.uid,
                      tenantName: userData['name'] ?? 'Thành viên',
                    ),
+                   const TasksPage(isLandlord: false),
                    TenantProfilePage(userData: userData),
                 ],
               ),
@@ -154,6 +156,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                 items: const [
                   BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
                   BottomNavigationBarItem(icon: Icon(Icons.mail), label: 'Hộp thư'),
+                  BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'Công việc'),
                   BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
                 ],
               ),
@@ -172,6 +175,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
     int closingDate,
     Map<String, dynamic> roomData,
     Map<String, dynamic> houseData,
+    Map<String, dynamic> userData,
   ) {
     return CustomScrollView(
       slivers: [
@@ -208,7 +212,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                   style: TextStyle(fontSize: 14, color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
-                _buildActionMenuGrid(houseId, roomId),
+                _buildActionMenuGrid(houseId, roomId, houseName, roomName, userData),
                         const SizedBox(height: 24),
                         Row(
                           children: [
@@ -718,7 +722,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
     );
   }
 
-  Widget _buildActionMenuGrid(String houseId, String roomId) {
+  Widget _buildActionMenuGrid(String houseId, String roomId, String houseName, String roomName, Map<String, dynamic> userData) {
     final actions = [
       {'icon': Icons.description_outlined, 'title': 'Hợp đồng\nthuê nhà'},
       {'icon': Icons.receipt_long_outlined, 'title': 'Tất cả\nhóa đơn'},
@@ -773,6 +777,9 @@ class _TenantMainPageState extends State<TenantMainPage> {
                         builder: (context) => TenantContractPage(
                           contractData: contractData,
                           contractId: contractId,
+                          houseName: houseName,
+                          roomName: roomName,
+                          tenantName: userData['name'],
                         ),
                       ),
                     );
