@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:lozido_app/presentation/pages/auth/auth_wrapper.dart';
+import 'package:lozido_app/presentation/provider/task_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,18 @@ void main() async {
     debugPrint("Lỗi đăng nhập: $e");
   }
 
-  runApp(const MaterialApp(home: MyApp(), debugShowCheckedModeBanner: false));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
+        // Thêm các provider khác ở đây khi chúng đã được định nghĩa
+      ],
+      child: const MaterialApp(
+        home: MyApp(),
+        debugShowCheckedModeBanner: false,
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -34,4 +47,3 @@ class MyApp extends StatelessWidget {
     return const AuthWrapper();
   }
 }
-
