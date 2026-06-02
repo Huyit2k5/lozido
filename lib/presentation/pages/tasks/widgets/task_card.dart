@@ -106,7 +106,7 @@ class TaskCard extends StatelessWidget {
                     isLocation: true,
                   ),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
-                  _buildInfoRow(Icons.sell_outlined, "Loại công việc", task.taskType, valueColor: isTerminationTask ? Colors.orange : Colors.deepOrange),
+                  _buildInfoRow(Icons.sell_outlined, "Loại công việc", task.taskType, valueColor: isTerminationTask ? Colors.orange : Colors.green),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
                   _buildInfoRow(Icons.person_outline, "Người thực hiện", task.performer, valueBold: true),
                   const Divider(height: 1, color: Color(0xFFEEEEEE)),
@@ -207,7 +207,7 @@ class TaskCard extends StatelessWidget {
                         icon: const Icon(Icons.close, color: Colors.white),
                         label: const Text("Bỏ qua", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepOrange,
+                          backgroundColor: Colors.green,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           elevation: 0,

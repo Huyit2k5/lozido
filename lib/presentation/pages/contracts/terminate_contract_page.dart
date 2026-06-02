@@ -527,7 +527,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.deepOrange,
+                                color: Colors.green,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -547,7 +547,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                           isDone: _isInvoiceDone,
                           title: "Lập hóa đơn tháng cuối",
                           subtitle: "Không bắt buộc phải làm!",
-                          subtitleColor: Colors.deepOrange,
+                          subtitleColor: Colors.green,
                           description: "Hệ thống phát hiện bạn chưa tạo hóa đơn tháng cuối. Vui lòng tạo và thu hóa đơn tháng cuối trước khi kết thúc hợp đồng",
                           actionWidget: Row(
                             children: [
@@ -613,7 +613,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                           isDone: _isAssetChecked,
                           title: "Kiểm tra tài sản",
                           subtitle: "Không bắt buộc phải làm!",
-                          subtitleColor: Colors.deepOrange,
+                          subtitleColor: Colors.green,
                           description: "Kiểm tra lại tài sản, thiết bị trong trước khi kết thúc hợp đồng",
                           actionWidget: InkWell(
                             onTap: () {
@@ -746,7 +746,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
                 ),
                 child: Icon(
                   isDone ? Icons.check : Icons.close,
-                  color: isDone ? const Color(0xFF00A651) : Colors.deepOrange,
+                  color: isDone ? const Color(0xFF00A651) : Colors.green,
                   size: 24,
                 ),
               ),

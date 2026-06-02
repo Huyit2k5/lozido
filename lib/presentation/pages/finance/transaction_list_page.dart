@@ -193,7 +193,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Colors.deepOrange,
+                        color: Colors.green,
                         shape: BoxShape.circle,
                       ),
                       child: const Text(
@@ -1230,7 +1230,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildSummaryItem("Khoản thu", Icons.attach_money, Colors.green, totalIncome, isPositive: true),
-                _buildSummaryItem("Khoản chi", Icons.arrow_right_alt, Colors.deepOrange, totalExpense, isPositive: false),
+                _buildSummaryItem("Khoản chi", Icons.arrow_right_alt, Colors.green, totalExpense, isPositive: false),
                 _buildSummaryItem("Tổng kết", Icons.account_balance_wallet, Colors.green, totalIncome - totalExpense, isTotal: true),
               ],
             ),
@@ -1252,7 +1252,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
         amountColor = Colors.black87;
         prefix = '+ ';
       } else {
-        amountColor = Colors.deepOrange;
+        amountColor = Colors.green;
         prefix = '- ';
       }
     }

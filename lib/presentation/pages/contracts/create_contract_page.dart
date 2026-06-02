@@ -1209,7 +1209,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text("* Nhập SĐT ZALO hệ thống sẽ TỰ ĐỘNG gửi hóa đơn hàng tháng cho khách", style: TextStyle(color: Colors.deepOrange, fontSize: 11, fontStyle: FontStyle.italic)),
+          const Text("* Nhập SĐT ZALO hệ thống sẽ TỰ ĐỘNG gửi hóa đơn hàng tháng cho khách", style: TextStyle(color: Colors.green, fontSize: 11, fontStyle: FontStyle.italic)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1295,7 +1295,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ),
             const SizedBox(height: 16),
             _buildTextField("Thẻ CCCD", _cccdCtrl, hint: "Nhập định danh khách", suffix: IconButton(
-              icon: const Icon(Icons.qr_code_scanner, color: Colors.deepOrange, size: 24),
+              icon: const Icon(Icons.qr_code_scanner, color: Colors.green, size: 24),
               onPressed: _showCCCDScanOptions,
               tooltip: 'Quét thẻ CCCD bằng OCR',
             )),
@@ -1332,7 +1332,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
             ],
           ),
           const SizedBox(height: 10),
-          const Text("* CHÚ Ý: Sau khi làm hợp đồng bạn phải lập \"Hóa đơn tháng đầu tiên\" để thu tiền thuê và tiền cọc", style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w500)),
+          const Text("* CHÚ Ý: Sau khi làm hợp đồng bạn phải lập \"Hóa đơn tháng đầu tiên\" để thu tiền thuê và tiền cọc", style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -1429,7 +1429,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildAssetIcon(Icons.chair, Colors.deepOrange.shade100, Colors.deepOrange),
+                        _buildAssetIcon(Icons.chair, Colors.green.shade100, Colors.green),
                         const SizedBox(width: 8),
                         _buildAssetIcon(Icons.delete, Colors.blue.shade100, Colors.blue),
                         const SizedBox(width: 8),

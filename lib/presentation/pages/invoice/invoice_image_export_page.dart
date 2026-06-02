@@ -380,7 +380,7 @@ class _InvoiceImageExportPageState extends State<InvoiceImageExportPage> {
           decoration: BoxDecoration(
             color: const Color(0xFFFFF0EC), // Light pastel orange/peach
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.deepOrange.shade100),
+            border: Border.all(color: Colors.green.shade100),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(width: 8),
               const Text(
-                "LOZIDO",
+                "IRental",
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -232,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 2),
           Text(
-            _isTenantMode ? "Tìm trọ - căn hộ" : "Quản lý NHÀ CHO THUÊ",
+            _isTenantMode ? "Tìm trọ - căn hộ" : "Ứng dụng quản lý nhà trọ thông minh",
             style: const TextStyle(
               color: Color(0xFF28A745),
               fontWeight: FontWeight.w600,
@@ -336,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Row(
             children: const [
-              Icon(Icons.check, color: Color(0xFF28A745), size: 16),
+              Icon(Icons.check, color: Color(0xFF00A651), size: 16),
               SizedBox(width: 8),
               Text("Mật khẩu phải lớn hơn 8 ký tự", style: TextStyle(color: Colors.black87, fontSize: 13)),
             ],
@@ -344,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 5),
           Row(
             children: const [
-              Icon(Icons.check, color: Color(0xFF28A745), size: 16),
+              Icon(Icons.check, color: Color(0xFF00A651), size: 16),
               SizedBox(width: 8),
               Text("Chú ý đến hoa thường", style: TextStyle(color: Colors.black87, fontSize: 13)),
             ],
@@ -360,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _login,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF28A745),
+          backgroundColor: const Color(0xFF00A651),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -517,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               child: Row(
                 children: const [
-                  Icon(Icons.phone, color: Color(0xFF28A745), size: 20),
+                  Icon(Icons.phone, color: Color(0xFF00A651), size: 20),
                   Expanded(
                     child: Text(
                       "Gọi điện trực tiếp (sẵn sàng)",
@@ -570,7 +570,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildFooterText() {
     return const Center(
       child: Text(
-        "Phiên bản: 3.0.6 - Copyright @ quanlytro.me",
+        "Phiên bản: 3.0.6 - Copyright © Dang Co., Ltd.",
         style: TextStyle(color: Colors.black54, fontSize: 11),
       ),
     );

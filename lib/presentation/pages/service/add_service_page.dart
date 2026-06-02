@@ -505,7 +505,7 @@ class _AddServicePageState extends State<AddServicePage> {
                         const SizedBox(height: 8),
                         const Text(
                           '* Ví dụ: Dịch vụ điện, nước có sự chênh lệch số cũ và số mới',
-                          style: TextStyle(color: Colors.deepOrange, fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -851,7 +851,7 @@ class _AddServicePageState extends State<AddServicePage> {
                                   Text(
                                     isSelected ? 'Đang áp dụng' : 'Không áp dụng',
                                     style: TextStyle(
-                                      color: isSelected ? const Color(0xFF00A651) : Colors.deepOrange,
+                                      color: isSelected ? const Color(0xFF00A651) : Colors.green,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
                                     ),

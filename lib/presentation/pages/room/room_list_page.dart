@@ -312,7 +312,7 @@ class _RoomListPageState extends State<RoomListPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(isRented ? Icons.info_outline : Icons.warning_amber_rounded, color: isRented ? const Color(0xFF689F38) : Colors.deepOrange, size: 22),
+                      Icon(isRented ? Icons.info_outline : Icons.warning_amber_rounded, color: isRented ? const Color(0xFF689F38) : Colors.green, size: 22),
                       const SizedBox(width: 8),
                       Expanded(
                         child: RichText(
@@ -501,7 +501,7 @@ class _RoomListPageState extends State<RoomListPage> {
     final name = roomData['roomName'] ?? 'Phòng';
     final priceInfo = _formatCurrency((roomData['price'] as num?)?.toDouble() ?? 0);
     final bool isReserved = status == 'Đang cọc giữ chỗ';
-    final Color statusColor = isReserved ? Colors.deepOrange : Colors.green;
+    final Color statusColor = isReserved ? Colors.green : Colors.green;
 
     return InkWell(
       onTap: () => _showRoomActionModal(roomId, roomData),
@@ -579,7 +579,7 @@ class _RoomListPageState extends State<RoomListPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildStatusTagLine(status, isReserved ? Colors.deepOrange : Colors.green),
+                            _buildStatusTagLine(status, isReserved ? Colors.green : Colors.green),
                             const SizedBox(width: 16),
                             _buildStatusTagLine("Chờ kỳ thu tới", Colors.green),
                           ],
@@ -772,7 +772,7 @@ class _RoomListPageState extends State<RoomListPage> {
                                   const Spacer(),
                                   useApp 
                                     ? Row(children: const [Icon(Icons.check_circle_outline, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đang sử dụng app", style: TextStyle(color: Colors.green, fontSize: 13))])
-                                    : Row(children: const [Icon(Icons.info_outline, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Chưa sử dụng app", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
+                                    : Row(children: const [Icon(Icons.info_outline, size: 14, color: Colors.green), SizedBox(width: 4), Text("Chưa sử dụng app", style: TextStyle(color: Colors.green, fontSize: 13))]),
                                 ],
                               ),
                             ),
@@ -787,7 +787,7 @@ class _RoomListPageState extends State<RoomListPage> {
                                   const Spacer(),
                                   isSigned 
                                     ? Row(children: const [Icon(Icons.check, size: 14, color: Colors.green), SizedBox(width: 4), Text("Đã ký", style: TextStyle(color: Colors.green, fontSize: 13))])
-                                    : Row(children: const [Icon(Icons.close, size: 14, color: Colors.deepOrange), SizedBox(width: 4), Text("Khách chưa ký", style: TextStyle(color: Colors.deepOrange, fontSize: 13))]),
+                                    : Row(children: const [Icon(Icons.close, size: 14, color: Colors.green), SizedBox(width: 4), Text("Khách chưa ký", style: TextStyle(color: Colors.green, fontSize: 13))]),
                                 ],
                               ),
                             ),

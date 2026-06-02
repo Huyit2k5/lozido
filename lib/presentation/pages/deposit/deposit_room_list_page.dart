@@ -183,7 +183,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: const BoxDecoration(
-                color: Colors.deepOrange,
+                color: Colors.green,
                 shape: BoxShape.circle,
               ),
               child: Text(
@@ -231,7 +231,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
               Container(
                 width: 4,
                 decoration: const BoxDecoration(
-                  color: Colors.deepOrange,
+                  color: Colors.green,
                   borderRadius: BorderRadius.horizontal(left: Radius.circular(8)),
                 ),
               ),
@@ -279,7 +279,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                _buildStatusTag(status, isReserved ? Colors.deepOrange : Colors.deepOrange),
+                                _buildStatusTag(status, isReserved ? Colors.green : Colors.green),
                                 const SizedBox(height: 4),
                                 _buildStatusTag("Chờ kỳ thu tới", Colors.green),
                               ],
@@ -336,7 +336,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
                                 // We will format it if we have it in roomData. Otherwise 0.
                                 Text(
                                   "${_formatCurrency((roomData['depositAmount'] as num?)?.toDouble() ?? 0)} đ", 
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.deepOrange)
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.green)
                                 ),
                               ],
                             )

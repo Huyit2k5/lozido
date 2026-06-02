@@ -189,7 +189,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             const Icon(Icons.home_work_rounded, color: Color(0xFF28A745), size: 40),
             const SizedBox(width: 8),
             const Text(
-              "LOZIDO",
+              "IRental",
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -199,7 +199,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ],
         ),
         const Text(
-          "Quản lý NHÀ CHO THUÊ",
+          "Ứng dụng quản lý nhà trọ thông minh",
           style: TextStyle(
             color: Color(0xFF28A745),
             fontWeight: FontWeight.w600,
@@ -286,7 +286,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget _buildHintRow(String text) {
     return Row(
       children: [
-        const Icon(Icons.check, color: Color(0xFF28A745), size: 16),
+        const Icon(Icons.check, color: Color(0xFF00A651), size: 16),
         const SizedBox(width: 8),
         Text(
           text,

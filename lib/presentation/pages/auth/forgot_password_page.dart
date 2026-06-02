@@ -234,7 +234,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
               const SizedBox(width: 8),
               const Text(
-                "LOZIDO",
+                "IRental",
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ),
           const SizedBox(height: 2),
           const Text(
-            "Quản lý NHÀ CHO THUÊ",
+            "Ứng dụng quản lý nhà trọ thông minh",
             style: TextStyle(
               color: Color(0xFF28A745),
               fontWeight: FontWeight.w600,
@@ -402,7 +402,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isFocused ? const Color(0xFF28A745) : Colors.grey.shade300,
+                    color: isFocused ? const Color(0xFF00A651) : Colors.grey.shade300,
                     width: isFocused ? 2 : 1,
                   ),
                 ),
@@ -468,12 +468,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             padding: const EdgeInsets.only(top: 10),
             child: Row(
               children: const [
-                Icon(Icons.check_circle, color: Color(0xFF28A745), size: 16),
+                Icon(Icons.check_circle, color: Color(0xFF00A651), size: 16),
                 SizedBox(width: 8),
                 Text(
                   "Mật khẩu khớp",
                   style: TextStyle(
-                    color: Color(0xFF28A745),
+                    color: Color(0xFF00A651),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -512,7 +512,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF28A745), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF00A651), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
       ),
@@ -543,7 +543,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF28A745), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF00A651), width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
         suffixIcon: IconButton(
@@ -564,7 +564,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF28A745),
+          backgroundColor: const Color(0xFF00A651),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -615,7 +615,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Widget _buildFooterText() {
     return const Center(
       child: Text(
-        "Phiên bản: 3.0.6 - Copyright @ quanlytro.me",
+        "Phiên bản: 3.0.6 - Copyright © Dang Co., Ltd.",
         style: TextStyle(color: Colors.black54, fontSize: 11),
       ),
     );

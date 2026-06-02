@@ -353,7 +353,7 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                             const SizedBox(width: 4),
                             const Text("Khách chưa cài APP",
                                 style: TextStyle(
-                                    color: Colors.deepOrange,
+                                    color: Colors.green,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500)),
                           ],

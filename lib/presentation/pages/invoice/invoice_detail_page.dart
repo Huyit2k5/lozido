@@ -147,7 +147,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                 _buildTopAction(
                   icon: Icons.cancel_outlined,
                   label: "Hủy h.đơn",
-                  color: isCancelled ? Colors.grey : Colors.deepOrange,
+                  color: isCancelled ? Colors.grey : Colors.green,
                   onTap: isCancelled ? null : _cancelInvoice,
                 ),
               ],
@@ -304,7 +304,7 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                                 ? "Đã trả ${_formatCurrency(paidAmount)} đ"
                                 : "Chưa trả lần nào, 1 phiếu có thể thu nhiều lần.",
                             style: TextStyle(
-                                color: paidAmount > 0 ? Colors.green : Colors.deepOrange,
+                                color: paidAmount > 0 ? Colors.green : Colors.green,
                                 fontSize: 12)),
                       ],
                     ),

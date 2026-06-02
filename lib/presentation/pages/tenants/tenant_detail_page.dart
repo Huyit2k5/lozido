@@ -739,7 +739,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
           Icon(
             icon,
             size: 18,
-            color: isPositive ? const Color(0xFF00A651) : Colors.deepOrange,
+            color: isPositive ? const Color(0xFF00A651) : Colors.green,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -752,7 +752,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                     fontSize: 12,
                     color: isPositive
                         ? const Color(0xFF00A651)
-                        : Colors.deepOrange,
+                        : Colors.green,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -763,7 +763,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
                     fontWeight: FontWeight.w600,
                     color: isPositive
                         ? const Color(0xFF00A651)
-                        : Colors.deepOrange,
+                        : Colors.green,
                   ),
                 ),
               ],

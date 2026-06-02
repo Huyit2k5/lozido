@@ -671,13 +671,13 @@ class _ContractListPageState extends State<ContractListPage> {
             // Warnings
             Row(
               children: [
-                const Icon(Icons.info_outline, size: 14, color: Colors.deepOrange),
+                const Icon(Icons.info_outline, size: 14, color: Colors.green),
                 const SizedBox(width: 4),
-                const Text('Chưa sử dụng app', style: TextStyle(color: Colors.deepOrange, fontSize: 12)),
+                const Text('Chưa sử dụng app', style: TextStyle(color: Colors.green, fontSize: 12)),
                 const SizedBox(width: 16),
-                const Icon(Icons.close, size: 14, color: Colors.deepOrange),
+                const Icon(Icons.close, size: 14, color: Colors.green),
                 const SizedBox(width: 4),
-                const Text('Chưa ký hợp đồng', style: TextStyle(color: Colors.deepOrange, fontSize: 12)),
+                const Text('Chưa ký hợp đồng', style: TextStyle(color: Colors.green, fontSize: 12)),
               ],
             ),
             const SizedBox(height: 16),

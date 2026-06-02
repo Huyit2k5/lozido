@@ -451,7 +451,7 @@ class _TransferRoomModalState extends State<TransferRoomModal> with SingleTicker
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildStatusTag("Đang trống", Colors.deepOrange),
+                          _buildStatusTag("Đang trống", Colors.green),
                           const SizedBox(width: 16),
                           _buildStatusTag("Chưa thể thu tiền", Colors.orange),
                         ],

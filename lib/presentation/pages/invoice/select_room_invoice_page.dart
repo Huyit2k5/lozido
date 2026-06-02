@@ -492,7 +492,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                 Icons.phone_android_outlined, 
                                 "Sử dụng APP", 
                                 useApp ? "Đang sử dụng app" : "Chưa sử dụng app",
-                                valueColor: useApp ? Colors.green : Colors.deepOrange,
+                                valueColor: useApp ? Colors.green : Colors.green,
                                 valueIcon: useApp ? Icons.check_circle_outline : Icons.info_outline
                              ),
                              const Divider(height: 1, color: Color(0xFFF1F1F1)),
@@ -500,7 +500,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                 Icons.drive_file_rename_outline, 
                                 "Hợp đồng online", 
                                 isSigned ? "Đã ký" : "Khách chưa ký",
-                                valueColor: isSigned ? Colors.green : Colors.deepOrange,
+                                valueColor: isSigned ? Colors.green : Colors.green,
                                 valueIcon: isSigned ? Icons.check : Icons.close
                              ),
                              const Divider(height: 1, color: Color(0xFFF1F1F1)),
@@ -517,7 +517,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
                                       children: [
                                         _buildTag("Đang ở", Colors.green),
                                         const SizedBox(height: 6),
-                                        _buildTag("Chưa thu tiền", Colors.deepOrange),
+                                        _buildTag("Chưa thu tiền", Colors.green),
                                       ],
                                     ),
                                   ],

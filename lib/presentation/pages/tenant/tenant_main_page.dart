@@ -612,7 +612,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: end == null
-                                  ? Colors.deepOrange
+                                  ? Colors.green
                                   : Colors.black87,
                             ),
                           ),
@@ -674,7 +674,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info, color: Colors.deepOrange),
+              const Icon(Icons.info, color: Colors.green),
               const SizedBox(width: 8),
               Expanded(
                 child: RichText(
@@ -898,7 +898,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                       Text(
                         '$closingDate ngày là hạn chót thanh toán phí',
                         style: const TextStyle(
-                          color: Colors.deepOrange,
+                          color: Colors.green,
                           fontSize: 12,
                         ),
                       ),
@@ -907,7 +907,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                 ),
                 const Icon(
                   Icons.warning_amber_rounded,
-                  color: Colors.deepOrange,
+                  color: Colors.green,
                 ),
               ],
             ),
@@ -958,7 +958,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                             Icons.anchor_outlined,
                             'Tiền cọc',
                             '${_formatCurrency(deposit)} đ',
-                            priceColor: Colors.deepOrange,
+                            priceColor: Colors.green,
                           ),
                         ),
                       ],
@@ -1113,12 +1113,12 @@ class _TenantMainPageState extends State<TenantMainPage> {
             children: [
               Row(
                 children: const [
-                  Icon(Icons.info_outline, size: 14, color: Colors.deepOrange),
+                  Icon(Icons.info_outline, size: 14, color: Colors.green),
                   SizedBox(width: 4),
                   Text(
                     'Chưa chốt',
                     style: TextStyle(
-                      color: Colors.deepOrange,
+                      color: Colors.green,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1439,13 +1439,13 @@ class _TenantMainPageState extends State<TenantMainPage> {
                               Icon(
                                 Icons.close,
                                 size: 12,
-                                color: Colors.deepOrange,
+                                color: Colors.green,
                               ),
                               SizedBox(width: 4),
                               Text(
                                 'Chưa xác nhận',
                                 style: TextStyle(
-                                  color: Colors.deepOrange,
+                                  color: Colors.green,
                                   fontSize: 12,
                                 ),
                               ),
@@ -1467,13 +1467,13 @@ class _TenantMainPageState extends State<TenantMainPage> {
                               Icon(
                                 Icons.close,
                                 size: 12,
-                                color: Colors.deepOrange,
+                                color: Colors.green,
                               ),
                               SizedBox(width: 4),
                               Text(
                                 'Chưa đăng ký tạm trú',
                                 style: TextStyle(
-                                  color: Colors.deepOrange,
+                                  color: Colors.green,
                                   fontSize: 12,
                                 ),
                               ),

@@ -280,7 +280,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                                 ? (svc.isMetered ? 'Tính theo đồng hồ, chỉ số chênh lệch' : 'Đang sử dụng')
                                                 : 'Chưa được sử dụng',
                                             style: TextStyle(
-                                              color: svc.isSelected ? Colors.black54 : Colors.deepOrange.shade300,
+                                              color: svc.isSelected ? Colors.black54 : Colors.green.shade300,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -365,7 +365,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                                   const SizedBox(height: 6),
                                   const Text(
                                     '* Chỉ số cũ - số mới chỉ xuất hiện khi lập hóa đơn.',
-                                    style: TextStyle(color: Colors.deepOrange, fontSize: 12),
+                                    style: TextStyle(color: Colors.green, fontSize: 12),
                                   ),
                                 ],
 

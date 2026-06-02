@@ -170,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         SizedBox(width: 10),
                         Text(
-                          "LOZIDO",
+                          "IRental",
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -180,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                     const Text(
-                      "Quản lý NHÀ CHO THUÊ",
+                      "Ứng dụng quản lý nhà trọ thông minh",
                       style: TextStyle(
                         color: Colors.green,
                         fontWeight: FontWeight.w500,

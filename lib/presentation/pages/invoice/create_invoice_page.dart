@@ -597,9 +597,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                     decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: const [
-                        Icon(Icons.info_outline, color: Colors.deepOrange, size: 20),
+                        Icon(Icons.info_outline, color: Colors.green, size: 20),
                         SizedBox(width: 8),
-                        Expanded(child: Text("Giá trị hóa đơn đã được lưu nhưng không thông báo qua Zalo/App.", style: TextStyle(color: Colors.deepOrange, fontSize: 13))),
+                        Expanded(child: Text("Giá trị hóa đơn đã được lưu nhưng không thông báo qua Zalo/App.", style: TextStyle(color: Colors.green, fontSize: 13))),
                       ],
                     ),
                   ),
@@ -809,7 +809,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                                 controller: svc.newIndexController,
                                                 keyboardType: TextInputType.number,
                                                 textAlign: TextAlign.center,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange),
+                                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
                                                 decoration: InputDecoration(
                                                   isDense: true,
                                                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -1091,7 +1091,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(_getRentDurationText(), style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold, fontSize: 13)),
+                                    Text(_getRentDurationText(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
                                     const SizedBox(height: 4),
                                     Text("x ${_formatCurrency(_rentPrice)} đ / tháng", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   ],
@@ -1165,7 +1165,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                   children: [
                                     const Text("Số tiền cọc cần thu", style: TextStyle(color: Colors.black54, fontSize: 13)),
                                     const SizedBox(height: 4),
-                                    Text("${_formatCurrency(_totalDeposit)} đ", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                                    Text("${_formatCurrency(_totalDeposit)} đ", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                                   ],
                                 ),
                                 Column(
@@ -1334,9 +1334,9 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
                                         text: const TextSpan(
                                           style: TextStyle(color: Colors.black87, fontSize: 13),
                                           children: [
-                                            TextSpan(text: "1 ", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                            TextSpan(text: "1 ", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                             TextSpan(text: "tháng, "),
-                                            TextSpan(text: "0 ", style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                                            TextSpan(text: "0 ", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                                             TextSpan(text: "ngày"),
                                           ],
                                         ),
