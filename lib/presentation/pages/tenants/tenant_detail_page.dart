@@ -538,7 +538,7 @@ class _TenantDetailPageState extends State<TenantDetailPage> {
     final residenceDate = _getField('residenceRegistrationDate');
     final residenceExpiry = _getField('residenceExpiryDate');
     final reportTemplate =
-        _getField('reportTemplate', fallback: 'CT01 (Mặc định LOZIDO)');
+        _getField('reportTemplate', fallback: 'CT01 (Mặc định IRental)');
     final relationship =
         _getField('relationship', fallback: 'Chủ hộ');
 

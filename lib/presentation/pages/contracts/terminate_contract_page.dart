@@ -5,8 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../invoice/create_invoice_page.dart';
-import '../../../../firebase_options.dart';
-import '../../../../services/chat_service.dart';
+import '../../../../data/repositories/chat_repository.dart';
 
 class TerminateContractPage extends StatefulWidget {
   final String houseId;
@@ -15,12 +14,12 @@ class TerminateContractPage extends StatefulWidget {
   final Map<String, dynamic> roomData;
 
   const TerminateContractPage({
-    Key? key,
+    super.key,
     required this.houseId,
     required this.roomId,
     required this.houseData,
     required this.roomData,
-  }) : super(key: key);
+  });
 
   @override
   State<TerminateContractPage> createState() => _TerminateContractPageState();
@@ -244,7 +243,7 @@ class _TerminateContractPageState extends State<TerminateContractPage> {
           .where('roomId', isEqualTo: widget.roomId)
           .get();
 
-      final chatService = ChatService();
+      final chatService = ChatRepository();
       for (final chatDoc in chatRoomsSnapshot.docs) {
         await chatService.deleteAllMessages(chatDoc.id);
         debugPrint('[Terminate] Đã xóa lịch sử chat của room: ${chatDoc.id}');

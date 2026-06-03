@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import 'package:provider/provider.dart';
+import '../../../../viewmodels/asset_viewmodel.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
+import '../../../../viewmodels/contract_viewmodel.dart';
 import './manage_assets_page.dart';
 
 class AssetListPage extends StatefulWidget {
@@ -43,38 +46,26 @@ class _AssetListPageState extends State<AssetListPage> {
     setState(() => _isLoading = true);
     try {
       // 1. Fetch Rooms for dropdown
-      final roomsQs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('rooms')
-          .get();
+      final roomsQs = await context.read<HouseViewModel>().getRooms(widget.houseId);
       _rooms = roomsQs.docs.map((d) {
-        final data = d.data();
+        final data = d.data() as Map<String, dynamic>;
         data['id'] = d.id;
         return data;
       }).toList();
 
       // 2. Fetch Assets (Global KHO)
-      final assetsQs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('assets')
-          .get();
+      final assetsQs = await context.read<AssetViewModel>().getAssets(widget.houseId);
       _globalAssets = assetsQs.docs.map((d) {
-        final data = d.data();
+        final data = d.data() as Map<String, dynamic>;
         data['id'] = d.id;
         return data;
       }).toList();
 
       // 3. Fetch Contracts to calculate usage
-      final contractsQs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('contracts')
-          .get();
+      final contractsQs = await context.read<ContractViewModel>().getContracts(widget.houseId);
           
       _activeContracts = contractsQs.docs.map((d) {
-        final data = d.data();
+        final data = d.data() as Map<String, dynamic>;
         data['id'] = d.id;
         return data;
       }).where((c) => c['status'] != 'Đã kết thúc').toList(); // Only active contracts use assets
@@ -96,11 +87,7 @@ class _AssetListPageState extends State<AssetListPage> {
         isRoomView: _selectedRoomId != null,
         onSave: (assetData) async {
           try {
-            await FirebaseFirestore.instance
-                .collection('houses')
-                .doc(widget.houseId)
-                .collection('assets')
-                .add({
+            await context.read<AssetViewModel>().addAsset(widget.houseId, {
               ...assetData,
               'createdAt': FieldValue.serverTimestamp(),
             });
@@ -161,12 +148,11 @@ class _AssetListPageState extends State<AssetListPage> {
     try {
       if (_selectedRoomId == null) {
         // Global Update
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('assets')
-            .doc(oldItem['id'])
-            .update(newData);
+        await context.read<AssetViewModel>().updateAsset(
+          widget.houseId, 
+          oldItem['id'], 
+          newData
+        );
       } else {
         // Room Update (Contract Update)
         final contract = _activeContracts.firstWhere((c) => c['roomId'] == _selectedRoomId);
@@ -178,12 +164,11 @@ class _AssetListPageState extends State<AssetListPage> {
             ...assets[index],
             ...newData,
           };
-          await FirebaseFirestore.instance
-              .collection('houses')
-              .doc(widget.houseId)
-              .collection('contracts')
-              .doc(contract['id'])
-              .update({'assets': assets});
+          await context.read<ContractViewModel>().updateContract(
+            widget.houseId, 
+            contract['id'], 
+            {'assets': assets}
+          );
         }
       }
       _fetchData();
@@ -228,24 +213,18 @@ class _AssetListPageState extends State<AssetListPage> {
           return;
         }
 
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('assets')
-            .doc(item['id'])
-            .delete();
+        await context.read<AssetViewModel>().deleteAsset(widget.houseId, item['id']);
       } else {
         // Room Delete (Remove from contract)
         final contract = _activeContracts.firstWhere((c) => c['roomId'] == _selectedRoomId);
         final List<dynamic> assets = List.from(contract['assets'] ?? []);
         assets.removeWhere((a) => a['assetName'] == item['assetName'] && a['quantity'] == item['quantity']);
         
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('contracts')
-            .doc(contract['id'])
-            .update({'assets': assets});
+        await context.read<ContractViewModel>().updateContract(
+          widget.houseId, 
+          contract['id'], 
+          {'assets': assets}
+        );
       }
       _fetchData();
     } catch (e) {
@@ -363,7 +342,7 @@ class _AssetListPageState extends State<AssetListPage> {
                           ..._rooms.map((r) => DropdownMenuItem<String?>(
                             value: r['id'],
                             child: Text(r['roomName'] ?? 'Phòng', style: const TextStyle(fontSize: 13)),
-                          )).toList(),
+                          )),
                         ],
                         onChanged: (v) => setState(() => _selectedRoomId = v),
                       ),
@@ -763,7 +742,7 @@ class _AddAssetFormState extends State<_AddAssetForm> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
             const SizedBox(height: 16),
             const SizedBox(height: 24),
             SizedBox(

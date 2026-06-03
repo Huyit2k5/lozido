@@ -6,7 +6,9 @@ import 'add_room_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'transfer_room_modal.dart';
 
-import '../../../services/chat_service.dart';
+import '../../../data/repositories/chat_repository.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 
 
 
@@ -75,7 +77,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
 
     if (act == true) {
       try {
-        final chatService = ChatService();
+        final chatService = ChatRepository();
         final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
         final roomName = _roomData['roomName'] ?? '';
         final chatRoomId = await chatService.findChatRoomByName(roomName, userId);
@@ -119,7 +121,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
     if (act == true) {
       try {
         // 1. Xoá chatRoom tương ứng (nếu có)
-        final chatService = ChatService();
+        final chatService = ChatRepository();
         final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
         final roomName = _roomData['roomName'] ?? '';
         final chatRoomId = await chatService.findChatRoomByName(roomName, userId);
@@ -193,12 +195,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('rooms')
-            .doc(widget.roomId)
-            .snapshots(),
+        stream: context.read<HouseViewModel>().getRoomDetailsStream(widget.houseId, widget.roomId),
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data!.exists) {
             _roomData = snapshot.data!.data() as Map<String, dynamic>;
@@ -527,7 +524,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> with SingleTickerProvid
               ],
             ),
           ),
-          if (action != null) action,
+          ?action,
         ],
       ),
     );

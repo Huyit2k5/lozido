@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,8 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
-import '../../../services/chat_service.dart';
-import '../../../services/gemini_service.dart';
+import '../../../data/repositories/chat_repository.dart';
+import '../../../data/datasources/gemini_service.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
@@ -79,7 +78,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
   final _waterPriceCtrl = TextEditingController();
 
   // Section 6
-  List<String> _imageUrls = []; // Dummy list for images
+  final List<String> _imageUrls = []; // Dummy list for images
 
   bool _isSubmitting = false;
 
@@ -504,8 +503,9 @@ class _CreateContractPageState extends State<CreateContractPage> {
              gender = 'Nữ';
            } else if (i + 1 < lines.length) {
              final nextLower = lines[i+1].toLowerCase();
-             if (nextLower.contains('nam')) gender = 'Nam';
-             else if (nextLower.contains('nữ')) gender = 'Nữ';
+             if (nextLower.contains('nam')) {
+               gender = 'Nam';
+             } else if (nextLower.contains('nữ')) gender = 'Nữ';
            }
         }
 
@@ -526,7 +526,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
              if (address!.isEmpty) {
                address = lines[nextIdx];
              } else {
-               address += ", " + lines[nextIdx];
+               address += ", ${lines[nextIdx]}";
              }
              nextIdx++;
            }
@@ -562,7 +562,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
            } else if (lowerLine.contains('cục trưởng cục cảnh sát')) {
                issuePlace = line;
                if (i + 1 < lines.length && (lines[i+1].toLowerCase().contains('quản lý hành chính') || lines[i+1].toLowerCase().contains('cư trú'))) {
-                   issuePlace = issuePlace! + ' ' + lines[i+1];
+                   issuePlace = '$issuePlace ${lines[i+1]}';
                }
            } else if (lowerLine.contains('quản lý hành chính về trật tự xã hội')) {
                issuePlace = "Cục Cảnh sát quản lý hành chính về trật tự xã hội";
@@ -857,7 +857,7 @@ class _CreateContractPageState extends State<CreateContractPage> {
       });
 
         final roomName = widget.roomData['roomName'] ?? 'Phòng mới';
-        await ChatService().createNewChatRoom(
+        await ChatRepository().createNewChatRoom(
           roomName, 
           userId: FirebaseAuth.instance.currentUser?.uid,
           houseId: widget.houseId,

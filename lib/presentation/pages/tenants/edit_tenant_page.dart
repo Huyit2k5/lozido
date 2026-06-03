@@ -52,7 +52,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
   late TextEditingController _residenceDateCtrl;
   late TextEditingController _residenceExpiryCtrl;
   late TextEditingController _relationshipCtrl;
-  String _reportTemplate = 'CT01 (Mặc định LOZIDO)';
+  String _reportTemplate = 'CT01 (Mặc định IRental)';
 
   // Toggle states
   bool _isContact = false;
@@ -87,7 +87,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
     _residenceDateCtrl = TextEditingController(text: d['residenceRegistrationDate']?.toString() ?? '');
     _residenceExpiryCtrl = TextEditingController(text: d['residenceExpiryDate']?.toString() ?? '');
     _relationshipCtrl = TextEditingController(text: d['relationship']?.toString() ?? '');
-    _reportTemplate = d['reportTemplate']?.toString() ?? 'CT01 (Mặc định LOZIDO)';
+    _reportTemplate = d['reportTemplate']?.toString() ?? 'CT01 (Mặc định IRental)';
 
     _isContact = d['isContact'] == true;
     _hasCompleteDocs = d['hasCompleteDocs'] == true;
@@ -912,8 +912,9 @@ class _EditTenantPageState extends State<EditTenantPage> {
              gender = 'Nữ';
            } else if (i + 1 < lines.length) {
              final nextLower = lines[i+1].toLowerCase();
-             if (nextLower.contains('nam')) gender = 'Nam';
-             else if (nextLower.contains('nữ')) gender = 'Nữ';
+             if (nextLower.contains('nam')) {
+               gender = 'Nam';
+             } else if (nextLower.contains('nữ')) gender = 'Nữ';
            }
         }
 
@@ -934,7 +935,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
              if (address!.isEmpty) {
                address = lines[nextIdx];
              } else {
-               address += ", " + lines[nextIdx];
+               address += ", ${lines[nextIdx]}";
              }
              nextIdx++;
            }
@@ -970,7 +971,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
            } else if (lowerLine.contains('cục trưởng cục cảnh sát')) {
                issuePlace = line;
                if (i + 1 < lines.length && (lines[i+1].toLowerCase().contains('quản lý hành chính') || lines[i+1].toLowerCase().contains('cư trú'))) {
-                   issuePlace = issuePlace! + ' ' + lines[i+1];
+                   issuePlace = '$issuePlace ${lines[i+1]}';
                }
            } else if (lowerLine.contains('quản lý hành chính về trật tự xã hội')) {
                issuePlace = "Cục Cảnh sát quản lý hành chính về trật tự xã hội";
@@ -1201,7 +1202,7 @@ class _EditTenantPageState extends State<EditTenantPage> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => setState(() => _reportTemplate = 'CT01 (Mặc định LOZIDO)'),
+                  onTap: () => setState(() => _reportTemplate = 'CT01 (Mặc định IRental)'),
                   child: Icon(Icons.cancel_outlined, color: Colors.grey.shade400, size: 20),
                 ),
               ],

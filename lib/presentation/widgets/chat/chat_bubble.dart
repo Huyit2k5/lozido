@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/chat_message.dart';
+import '../../../data/models/chat_message.dart';
 import 'package:intl/intl.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -75,7 +75,7 @@ class ChatBubble extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
                     child: Text(
-                      message.senderName,
+                      isBotRoom ? "IRental CSKH" : message.senderName,
                       style: TextStyle(
                         color: isBotRoom ? Colors.blue : const Color(0xFF8B0000),
                         fontWeight: FontWeight.bold,

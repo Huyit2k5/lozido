@@ -1,14 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/chat_room.dart';
 import '../models/chat_message.dart';
-import 'notification_service.dart';
+import '../datasources/notification_service.dart';
 
-class ChatService {
+class ChatRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final NotificationService _notificationService = NotificationService();
 
   // Collection reference
   CollectionReference get _chatRoomsRef => _firestore.collection('chatRooms');
+
+  Stream<QuerySnapshot> getChatRoomsStream(String userId) {
+    return _chatRoomsRef.where('userId', isEqualTo: userId).snapshots();
+  }
 
   // Create new chat room
   Future<String> createNewChatRoom(String roomName, {String? userId, String? houseId, String? roomId}) async {
@@ -126,6 +130,10 @@ class ChatService {
     return _chatRoomsRef.doc(roomId).snapshots().map((doc) {
       return ChatRoom.fromFirestore(doc);
     });
+  }
+
+  Stream<DocumentSnapshot> getRawRoomDetails(String roomId) {
+    return _chatRoomsRef.doc(roomId).snapshots();
   }
 
   // Find chatRoom by roomName and userId

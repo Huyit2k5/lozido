@@ -43,10 +43,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
     if (picked != null) {
       setState(() {
-        if (isStart)
+        if (isStart) {
           _startDate = picked;
-        else
+        } else {
           _endDate = picked;
+        }
       });
     }
   }
@@ -139,10 +140,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
               ),
               GestureDetector(
                 onTap: () => setState(() {
-                  if (isStart)
+                  if (isStart) {
                     _startDate = null;
-                  else
+                  } else {
                     _endDate = null;
+                  }
                 }),
                 child: Container(
                   padding: const EdgeInsets.all(4),

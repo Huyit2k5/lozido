@@ -9,7 +9,9 @@ import 'contract_detail_page.dart';
 import 'contract_pdf_preview_page.dart';
 import 'create_contract_page.dart';
 import 'contract_provider.dart';
-import '../../../services/chat_service.dart';
+import '../../../data/repositories/chat_repository.dart';
+import '../../../../viewmodels/contract_viewmodel.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 
 class ContractListPage extends StatefulWidget {
   final String houseId;
@@ -65,36 +67,19 @@ class _ContractListPageState extends State<ContractListPage> {
     if (act == true) {
       try {
         // 1. Update contract status
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('contracts')
-            .doc(contractId)
-            .update({
-          'status': 'Đã kết thúc',
-          'endedAt': FieldValue.serverTimestamp(),
-        });
+        await context.read<ContractViewModel>().endContract(widget.houseId, contractId);
 
         // 2. Update room status to "Đang trống"
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('rooms')
-            .doc(roomId)
-            .update({'status': 'Đang trống'});
+        await context.read<HouseViewModel>().updateRoom(widget.houseId, roomId, {'status': 'Đang trống'});
 
         // 3. Xoá toàn bộ lịch sử chat của phòng (giữ lại chatRoom)
         try {
-          final chatService = ChatService();
+          final chatService = ChatRepository();
           final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
           // Lấy tên phòng từ roomId
-          final roomDoc = await FirebaseFirestore.instance
-              .collection('houses')
-              .doc(widget.houseId)
-              .collection('rooms')
-              .doc(roomId)
-              .get();
-          final roomName = roomDoc.data()?['roomName'] ?? '';
+          final roomDoc = await context.read<HouseViewModel>().getRoom(widget.houseId, roomId);
+          final roomData = roomDoc.data() as Map<String, dynamic>?;
+          final roomName = roomData?['roomName'] ?? '';
           if (roomName.isNotEmpty) {
             final chatRoomId = await chatService.findChatRoomByName(roomName, userId);
             if (chatRoomId != null) {
@@ -118,19 +103,11 @@ class _ContractListPageState extends State<ContractListPage> {
 
   Future<void> _fetchRooms() async {
     try {
-      final qs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('rooms')
-          .get();
+      final qs = await context.read<HouseViewModel>().getRooms(widget.houseId);
           
       final Set<String> usedRoomIds = {};
       try {
-        final contractsQs = await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('contracts')
-            .get();
+        final contractsQs = await context.read<ContractViewModel>().getContracts(widget.houseId);
 
         for (var doc in contractsQs.docs) {
           try {
@@ -151,7 +128,7 @@ class _ContractListPageState extends State<ContractListPage> {
         setState(() {
           _roomsWithContracts = usedRoomIds;
           _rooms = qs.docs.map((d) {
-            final data = d.data();
+            final data = d.data() as Map<String, dynamic>;
             data['id'] = d.id;
             return data;
           }).toList();
@@ -366,39 +343,13 @@ class _ContractListPageState extends State<ContractListPage> {
   }
 
   Widget _buildContractList() {
-    Query query = FirebaseFirestore.instance
-        .collection('houses')
-        .doc(widget.houseId)
-        .collection('contracts');
-
-    // 1. Logic Filter: Floor
-    // NOTE: Old contracts might not have 'floor' saved in their Firestore document.
-    // If a floor is selected, we filter by it. Since we select the room via dropdown, 
-    // omitting the floor filter if a precise room is already selected makes it perfectly safe for old contracts!
-    if (_selectedFloor != 'Tất cả' && _selectedFloor != null && _selectedRoomId == null) {
-      query = query.where('floor', isEqualTo: _selectedFloor);
-    }
-
-    // 1. Logic Filter: Room
-    if (_selectedRoomId != null) {
-      query = query.where('roomId', isEqualTo: _selectedRoomId);
-    }
-
-    // 1. Logic Filter: Status
-    if (_selectedStatus != null && _selectedStatus != 'Tất cả') {
-      String dbStatus = _selectedStatus == 'Còn hạn' ? 'Active' : _selectedStatus!;
-      query = query.where('status', isEqualTo: dbStatus);
-    } else {
-      if (_selectedRoomId != null) {
-        // Lấy tất cả các hợp đồng (cả cũ và mới) nếu đã chọn đích danh một phòng
-      } else {
-        // Mặc định chỉ lấy các hợp đồng đang hoạt động
-        query = query.where('status', isEqualTo: 'Active');
-      }
-    }
-
     return StreamBuilder<QuerySnapshot>(
-      stream: query.snapshots(),
+      stream: context.read<ContractViewModel>().getFilteredContractsStream(
+        widget.houseId, 
+        floor: _selectedFloor, 
+        roomId: _selectedRoomId, 
+        status: _selectedStatus
+      ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));

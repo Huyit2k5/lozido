@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:lozido_app/presentation/provider/task_provider.dart';
-import 'package:lozido_app/models/task_model.dart';
+import 'package:lozido_app/viewmodels/task_viewmodel.dart';
+import 'package:lozido_app/data/models/task_model.dart';
 
 class CreateTaskSheet extends StatefulWidget {
   final TaskModel? taskToEdit;
@@ -154,7 +154,7 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
                         ),
                       )
                     : DropdownButtonFormField<String>(
-                        value: _selectedHouse,
+                        initialValue: _selectedHouse,
                         decoration: const InputDecoration(
                           labelText: "Chọn Nhà",
                           border: OutlineInputBorder(),
@@ -276,12 +276,12 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
           houseName: _selectedHouse,
           status: widget.taskToEdit!.status,
         );
-        context.read<TaskProvider>().updateTask(updatedTask);
+        context.read<TaskViewModel>().updateTask(updatedTask);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Đã cập nhật công việc thành công")),
         );
       } else {
-        context.read<TaskProvider>().createNewTask(
+        context.read<TaskViewModel>().createNewTask(
               title: _titleController.text,
               description: _descriptionController.text,
               taskType: _taskTypeController.text,

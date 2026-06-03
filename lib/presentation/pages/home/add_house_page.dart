@@ -3,9 +3,7 @@ import 'package:dvhcvn/dvhcvn.dart' as dvhcvn;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
-import '../room/room_list_page.dart';
 
 
 class AddHousePage extends StatefulWidget {
@@ -726,7 +724,7 @@ class _AddHousePageState extends State<AddHousePage> {
               Switch(
                 value: _isAutoGenerate,
                 onChanged: (val) => setState(() => _isAutoGenerate = val),
-                activeColor: const Color(0xFF28a745),
+                activeThumbColor: const Color(0xFF28a745),
               ),
             ],
           ),
@@ -1162,7 +1160,7 @@ class _AddHousePageState extends State<AddHousePage> {
                 const Divider(height: 1),
                 _buildFeatureTile(
                   "Tính năng đăng tin tiếp cận khách thuê",
-                  "Đăng tin tìm khách thuê, khách tiềm năng trên hệ thống LOZIDO",
+                  "Đăng tin tìm khách thuê, khách tiềm năng trên hệ thống IRental",
                   _featurePostListing,
                   (val) => setState(() => _featurePostListing = val),
                 ),
@@ -1235,7 +1233,7 @@ class _AddHousePageState extends State<AddHousePage> {
           Switch(
             value: isActive,
             onChanged: onChanged,
-            activeColor: const Color(0xFF8bc34a),
+            activeThumbColor: const Color(0xFF8bc34a),
           ),
         ],
       ),

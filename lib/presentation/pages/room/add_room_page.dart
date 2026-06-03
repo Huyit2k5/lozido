@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 import 'package:lozido_app/presentation/widgets/app_dialog.dart';
 import '../contracts/service_selection_page.dart';

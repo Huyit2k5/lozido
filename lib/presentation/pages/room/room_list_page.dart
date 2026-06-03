@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_room_page.dart';
 import 'room_detail_page.dart';
 import 'package:provider/provider.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 import '../contracts/contract_provider.dart';
 import '../contracts/create_contract_page.dart';
 import '../contracts/terminate_contract_page.dart';
@@ -167,7 +168,7 @@ class _RoomListPageState extends State<RoomListPage> {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('houses').doc(widget.houseId).collection('rooms').orderBy('createdAt', descending: false).snapshots(),
+        stream: context.read<HouseViewModel>().getRoomsStreamOrdered(widget.houseId, descending: false),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));

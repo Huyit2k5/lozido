@@ -314,7 +314,7 @@ class _MorePageState extends State<MorePage> {
                             ),
                             SizedBox(height: 3),
                             Text(
-                              "LOZIDO đang áp dụng quảng cáo để có chi phí duy trì phần mềm. Bạn muốn sử dụng APP không có quảng cáo?",
+                              "IRental đang áp dụng quảng cáo để có chi phí duy trì phần mềm. Bạn muốn sử dụng APP không có quảng cáo?",
                               style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
                             ),
                           ],
@@ -367,7 +367,7 @@ class _MorePageState extends State<MorePage> {
           _buildDivider(),
           _buildSettingItem(
             icon: Icons.card_giftcard_outlined,
-            title: "LOZIDO Plus+",
+            title: "IRental Plus+",
             badge: _buildBadge("PRO", Colors.orange),
           ),
           _buildDivider(),
@@ -432,7 +432,7 @@ class _MorePageState extends State<MorePage> {
           _buildSettingItem(
             icon: Icons.inventory_2_outlined,
             title: "Đánh giá phần mềm",
-            subtitle: "Một đánh giá tốt giúp LOZIDO thêm động lực hoàn thiện",
+            subtitle: "Một đánh giá tốt giúp IRental thêm động lực hoàn thiện",
             subtitleWidget: Row(
               children: List.generate(
                 5,
@@ -505,8 +505,24 @@ class _MorePageState extends State<MorePage> {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
+    final effectiveOnTap = onTap ?? () {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Thông báo", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text("Tính năng đang phát triển"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Đóng", style: TextStyle(color: Colors.grey)),
+            ),
+          ],
+        ),
+      );
+    };
+
     return InkWell(
-      onTap: onTap,
+      onTap: effectiveOnTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(

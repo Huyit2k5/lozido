@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 
 class AddServicePage extends StatefulWidget {
@@ -102,7 +101,7 @@ class _AddServicePageState extends State<AddServicePage> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: _unitOptions.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16),
+                      separatorBuilder: (_, _) => const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16),
                       itemBuilder: (_, i) {
                         final item = _unitOptions[i];
                         final unit = item['unit']!;

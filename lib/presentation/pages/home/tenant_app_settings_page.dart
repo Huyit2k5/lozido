@@ -29,7 +29,7 @@ class _TenantAppSettingsPageState extends State<TenantAppSettingsPage> {
   @override
   void initState() {
     super.initState();
-    _passwordController = TextEditingController(text: "lozido123");
+    _passwordController = TextEditingController(text: "irental123");
     _loadSettings();
   }
 
@@ -38,7 +38,7 @@ class _TenantAppSettingsPageState extends State<TenantAppSettingsPage> {
     if (settings != null) {
       setState(() {
         _autoCreateAccount = settings['autoCreateAccount'] ?? false;
-        _passwordController.text = settings['defaultPassword'] ?? "lozido123";
+        _passwordController.text = settings['defaultPassword'] ?? "irental123";
         _allowTenantMeterCheck = settings['allowTenantMeterCheck'] ?? false;
         _allowTenantUpdateInfo = settings['allowTenantUpdateInfo'] ?? true;
         _allowTenantUpdateVehicle = settings['allowTenantUpdateVehicle'] ?? true;
@@ -328,7 +328,7 @@ class _TenantAppSettingsPageState extends State<TenantAppSettingsPage> {
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: const Color(0xFF00A651),
+              activeThumbColor: const Color(0xFF00A651),
             ),
           ],
         ),

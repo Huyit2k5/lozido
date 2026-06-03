@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lozido_app/models/task_model.dart';
-import 'package:lozido_app/presentation/provider/task_provider.dart';
+import 'package:lozido_app/data/models/task_model.dart';
+import 'package:lozido_app/viewmodels/task_viewmodel.dart';
 
 class TenantContractPage extends StatelessWidget {
   final Map<String, dynamic> contractData;
@@ -31,13 +31,13 @@ class TenantContractPage extends StatelessWidget {
     final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
     // Đảm bảo dữ liệu được tải cho khách thuê
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TaskProvider>().loadTasks(
+      context.read<TaskViewModel>().loadTasks(
         uid: currentUserId,
         isLandlord: false,
       );
     });
 
-    final taskProvider = context.watch<TaskProvider>();
+    final taskProvider = context.watch<TaskViewModel>();
     final terminationTask = taskProvider.getTerminationTask(contractId);
     final isPending = terminationTask?.status == TaskStatus.pendingTermination;
     final isCompleted = terminationTask?.status == TaskStatus.terminationCompleted;
@@ -269,7 +269,7 @@ class TenantContractPage extends StatelessWidget {
   }
 
   void _handleTerminationReport(BuildContext context, String shortId) async {
-    final taskProvider = context.read<TaskProvider>();
+    final taskProvider = context.read<TaskViewModel>();
     
     if (taskProvider.hasPendingTermination(contractId)) {
       ScaffoldMessenger.of(context).showSnackBar(

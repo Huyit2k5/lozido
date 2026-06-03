@@ -22,7 +22,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isObscureNew = true;
   bool _isObscureConfirm = true;
   bool _isLoading = false;
-  String _verificationId = '';
+  final String _verificationId = '';
   ConfirmationResult? _confirmationResult;
 
 
@@ -227,10 +227,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.home_work_rounded,
-                color: Color(0xFF28A745),
-                size: 50,
+              Image.asset(
+                'assets/images/logo-only-no-bg.png',
+                width: 50,
+                height: 50,
               ),
               const SizedBox(width: 8),
               const Text(
