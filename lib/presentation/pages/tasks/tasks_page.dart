@@ -54,29 +54,31 @@ class _TasksPageState extends State<TasksPage> {
           Expanded(child: _buildTabContent()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          String? initialScope;
-          if (_selectedTabIndex == 1) {
-            initialScope = "Việc cá nhân";
-          } else if (_selectedTabIndex == 2) {
-            initialScope = "Hệ thống";
-          } else {
-            initialScope = "Việc quản lý nhà cho thuê";
-          }
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddTaskPage(
-                isLandlord: widget.isLandlord,
-                initialScope: initialScope,
-              ),
+      floatingActionButton: _selectedTabIndex == 2
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                String? initialScope;
+                if (_selectedTabIndex == 1) {
+                  initialScope = "Việc cá nhân";
+                } else if (_selectedTabIndex == 2) {
+                  initialScope = "Hệ thống";
+                } else {
+                  initialScope = "Việc quản lý nhà cho thuê";
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddTaskPage(
+                      isLandlord: widget.isLandlord,
+                      initialScope: initialScope,
+                    ),
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFF00A651),
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-          );
-        },
-        backgroundColor: const Color(0xFF00A651),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
