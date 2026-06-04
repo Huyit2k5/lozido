@@ -1,70 +1,55 @@
-📂 Cấu trúc thư mục (Clean Architecture)
-Dự án tuân thủ cấu trúc Clean Architecture để đảm bảo code dễ bảo trì, dễ kiểm thử và làm việc nhóm hiệu quả.
+# Lozido App - Cấu trúc dự án (MVVM Architecture)
 
-1. lib/core/ - Nền tảng dùng chung
-Chứa các thành phần không thuộc về một tính năng cụ thể nào mà được dùng cho toàn bộ ứng dụng.
+Dự án này được xây dựng dựa trên kiến trúc **MVVM (Model - View - ViewModel)** kết hợp với **Provider** để quản lý trạng thái, đảm bảo mã nguồn dễ bảo trì, dễ mở rộng và tách bạch rõ ràng giữa giao diện, logic nghiệp vụ và dữ liệu.
 
-constants/: Chứa màu sắc (app_colors.dart), chuỗi văn bản (app_strings.dart), cấu hình API (api_endpoints.dart).
+## 📂 Cấu trúc thư mục
 
-utils/: Các hàm tiện ích như format tiền tệ (currency_formatter.dart), định dạng ngày tháng, validate form.
+```text
+lib/
+├── core/                  # Các thành phần cốt lõi dùng chung
+│   ├── constants/         # Các hằng số (colors, strings, api endpoints)
+│   └── error/             # Xử lý lỗi (failures, exceptions)
+├── data/                  # Tầng dữ liệu (Data Layer)
+│   ├── models/            # Cấu trúc dữ liệu (Models) có hàm fromJson, toJson
+│   └── repositories/      # Chứa logic tương tác với Firebase (Firestore, Auth, Storage)
+├── presentation/          # Tầng giao diện (View Layer)
+│   ├── pages/             # Các trang (Màn hình), được chia theo từng module tính năng
+│   └── widgets/           # Các UI component có thể dùng chung (Dialog, Button, TextField)
+├── utils/                 # Các hàm tiện ích (format tiền, ngày tháng, helpers)
+└── viewmodels/            # Tầng logic nghiệp vụ (ViewModel Layer - ChangeNotifier)
+```
 
-widgets/: Các UI component dùng lại nhiều nơi như CustomButton, LoadingDialog, AppTextField.
+## 🏗️ Luồng hoạt động (Data Flow)
 
-error/: Định nghĩa các lớp xử lý lỗi và ngoại lệ (Failures, Exceptions).
+Ứng dụng tuân theo luồng luân chuyển dữ liệu một chiều (Unidirectional Data Flow):
 
-2. lib/domain/ - Tầng nghiệp vụ (Entities & Repositories Interface)
-Là "trái tim" của ứng dụng, không phụ thuộc vào bất kỳ thư viện ngoài hay framework nào.
+1. **View (Presentation)**: Các trang UI (`pages/`) không chứa logic kết nối database. Giao diện sử dụng `context.watch<T>()` hoặc `Consumer<T>` từ thư viện **Provider** để lắng nghe sự thay đổi trạng thái từ `ViewModel` và tự động cập nhật UI. Người dùng tương tác (nhấn nút, nhập form) sẽ gọi các hàm của `ViewModel` thông qua `context.read<T>()`.
+2. **ViewModel (ViewModels)**: Kế thừa `ChangeNotifier`. Chứa toàn bộ logic nghiệp vụ (business logic) và trạng thái hiển thị (`isLoading`, `tasks`, `houses`,...). `ViewModel` gọi các hàm từ `Repository` để lấy hoặc lưu dữ liệu, sau đó gọi `notifyListeners()` để báo cho `View` cập nhật.
+3. **Repository (Data/Repositories)**: Nơi duy nhất gọi trực tiếp tới Firebase (Firestore, Authentication, Storage). Trả về các đối tượng `Model` cho `ViewModel`.
+4. **Model (Data/Models)**: Các lớp định nghĩa cấu trúc dữ liệu thuần túy như `TaskModel`, `HouseModel`, `InvoiceModel`.
 
-entities/: Định nghĩa các đối tượng dữ liệu thuần túy như Room, Tenant, Bill, Contract.
+> **Ưu điểm của cấu trúc này:** UI chỉ biết về `ViewModel`, `ViewModel` chỉ biết về `Repository`. Nhờ đó, nếu sau này cần đổi database từ Firebase sang API REST, bạn chỉ cần sửa ở `Repository` mà không cần chạm vào `ViewModel` hay `View`.
 
-repositories/: Chứa các lớp trừu tượng (Abstract classes) định nghĩa các hàm cần thực hiện (ví dụ: getRooms()).
+## 📏 Nguyên tắc đặt tên (Naming Conventions)
 
-3. lib/data/ - Tầng dữ liệu (Implementation)
-Nơi triển khai thực tế việc lấy dữ liệu từ đâu (API, Firebase hay Database cục bộ).
-
-models/: Kế thừa từ entities, chứa các phương thức fromJson và toJson.
-
-datasources/: Chứa code gọi API (remote_datasource.dart) hoặc SQLite (local_datasource.dart).
-
-repositories/: Triển khai (Implement) các Repository interface đã định nghĩa ở tầng Domain.
-
-4. lib/presentation/ - Tầng giao diện (UI & State Management)
-Nơi chứa mọi thứ mà người dùng nhìn thấy và tương tác.
-
-pages/: Chia theo module tính năng (ví dụ: auth/, home/, room_management/, billing/).
-
-widgets/: Các widget chỉ dùng riêng cho một module cụ thể.
-
-state_management/ (hoặc bloc/provider): Quản lý logic xử lý giao diện cho từng màn hình.
-
-📏 Nguyên tắc đặt tên (Naming Conventions)
 Để code đồng bộ, chúng ta thống nhất:
+- **Thư mục & File**: Sử dụng `snake_case` (ví dụ: `room_detail_page.dart`, `task_viewmodel.dart`).
+- **Class (Lớp)**: Sử dụng `PascalCase` (ví dụ: `class TaskViewModel`, `class AuthRepository`).
+- **Biến & Hàm**: Sử dụng `camelCase` (ví dụ: `final String roomName;`, `void calculateTotalBill()`).
+- **Hằng số**: Sử dụng `camelCase` hoặc `UPPER_CASE` tùy theo thói quen (ưu tiên `camelCase` cho AppColors).
 
-Thư mục & File: Sử dụng snake_case (ví dụ: room_detail_page.dart, app_colors.dart).
+## 🌿 Quy trình làm việc trên GitHub (Git Flow)
 
-Class (Lớp): Sử dụng PascalCase (ví dụ: class RoomRepositoryImpl).
+Chúng ta không bao giờ code trực tiếp trên nhánh `main`. Quy trình như sau:
 
-Biến & Hàm: Sử dụng camelCase (ví dụ: final String roomName;, void calculateTotalBill()).
+1. **Quy tắc đặt tên nhánh (Branching)**
+   - `main`: Nhánh chính, chứa code ổn định nhất (chỉ dùng để demo/nộp bài).
+   - `develop`: Nhánh tập hợp code của mọi người để kiểm tra.
+   - `feature/tên-tính-năng`: Nhánh làm tính năng mới (ví dụ: `feature/login`, `feature/add-room`).
+   - `bugfix/tên-lỗi`: Nhánh để sửa lỗi.
 
-Hằng số: Sử dụng camelCase hoặc UPPER_CASE tùy theo thói quen (ưu tiên camelCase cho AppColors).
-
-🌿 Quy trình làm việc trên GitHub (Git Flow)
-Chúng ta không bao giờ code trực tiếp trên nhánh main. Quy trình như sau:
-
-1. Quy tắc đặt tên nhánh (Branching)
-main: Nhánh chính, chứa code ổn định nhất (chỉ dùng để demo/nộp bài).
-
-develop: Nhánh tập hợp code của mọi người để kiểm tra.
-
-feature/tên-tính-năng: Nhánh làm tính năng mới (ví dụ: feature/login, feature/add-room).
-
-bugfix/tên-lỗi: Nhánh để sửa lỗi.
-
-2. Các bước đẩy code
-Tạo nhánh mới từ develop: git checkout -b feature/manage-room
-
-Làm việc và commit: git commit -m "feat: thêm giao diện danh sách phòng"
-
-Đẩy lên GitHub: git push origin feature/manage-room
-
-Tạo Pull Request (PR) trên GitHub để nhóm trưởng review và merge vào develop
+2. **Các bước đẩy code**
+   - Tạo nhánh mới từ develop: `git checkout -b feature/manage-room`
+   - Làm việc và commit: `git commit -m "feat: thêm giao diện danh sách phòng"`
+   - Đẩy lên GitHub: `git push origin feature/manage-room`
+   - Tạo Pull Request (PR) trên GitHub để nhóm trưởng review và merge vào `develop`
