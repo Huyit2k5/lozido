@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../data/datasources/firebase_auth_service.dart';
-
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/auth_viewmodel.dart';
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -25,9 +25,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isObscure = true;
   bool _isConfirmObscure = true;
-  bool _isLoading = false;
-
-  final FirebaseAuthService _authService = FirebaseAuthService();
 
   @override
   void dispose() {
@@ -45,18 +42,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      ConfirmationResult result = await _authService.verifyPhoneForRegistration(
+      ConfirmationResult result = await context.read<AuthViewModel>().verifyPhoneForRegistration(
         phoneNumber: _phoneController.text.trim(),
       );
 
       setState(() {
         _confirmationResult = result;
-        _isLoading = false;
         _currentStep = 1; // Chuyển sang bước OTP
       });
     } catch (e) {
@@ -67,9 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: Colors.red,
         ),
       );
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -84,13 +73,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       if (_confirmationResult != null) {
-        await _authService.completeRegistration(
+        await context.read<AuthViewModel>().completeRegistration(
           confirmationResult: _confirmationResult!,
           smsCode: _otpController.text,
           name: _nameController.text.trim(),
@@ -107,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         
         // Đăng xuất ra để đảm bảo luồng login sạch sẽ (vì ta vừa dùng phone auth)
-        await FirebaseAuth.instance.signOut();
+        await context.read<AuthViewModel>().logout();
 
         if (mounted) {
           Navigator.pop(context); // Trở về trang đăng nhập
@@ -121,9 +106,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: Colors.red,
         ),
       );
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -160,16 +142,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 30),
                 child: Column(
                   children: [
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.home_work_rounded,
-                          color: Colors.green,
-                          size: 40,
+                        Image.asset(
+                          'assets/images/logo-only-no-bg.png',
+                          width: 40,
+                          height: 40,
                         ),
-                        SizedBox(width: 10),
-                        Text(
+                        const SizedBox(width: 10),
+                        const Text(
                           "IRental",
                           style: TextStyle(
                             fontSize: 32,
@@ -329,27 +311,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SizedBox(
             width: double.infinity,
             height: 50,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _sendOtp,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00A651),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      "Đăng ký bằng SĐT",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+            child: Consumer<AuthViewModel>(
+              builder: (context, authViewModel, child) {
+                return ElevatedButton(
+                  onPressed: authViewModel.isLoading ? null : _sendOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00A651),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                  ),
+                  child: authViewModel.isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Đăng ký bằng SĐT",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                );
+              },
             ),
           ),
 
@@ -435,50 +421,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
         SizedBox(
           width: double.infinity,
           height: 50,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _verifyAndCompleteRegistration,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00A651),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Text(
-                    "Xác nhận kích hoạt",
-                    style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+          child: Consumer<AuthViewModel>(
+            builder: (context, authViewModel, child) {
+              return ElevatedButton(
+                onPressed: authViewModel.isLoading ? null : _verifyAndCompleteRegistration,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00A651),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                ),
+                child: authViewModel.isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        "Xác nhận kích hoạt",
+                        style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+              );
+            },
           ),
         ),
         const SizedBox(height: 15),
         SizedBox(
           width: double.infinity,
           height: 50,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : () => setState(() => _currentStep = 0),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade200,
-              foregroundColor: Colors.black87,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              "Quay lại",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          child: Consumer<AuthViewModel>(
+            builder: (context, authViewModel, child) {
+              return ElevatedButton(
+                onPressed: authViewModel.isLoading ? null : () => setState(() => _currentStep = 0),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade200,
+                  foregroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  "Quay lại",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(height: 30),

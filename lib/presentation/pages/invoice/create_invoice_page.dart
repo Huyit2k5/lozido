@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:convert';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import '../../../services/gemini_service.dart';
-import '../../../services/notification_service.dart';
+import '../../../data/datasources/gemini_service.dart';
+import '../../../data/datasources/notification_service.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../widgets/app_dialog.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/invoice_viewmodel.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 
 class CreateInvoicePage extends StatefulWidget {
   final String houseId;
@@ -104,10 +105,10 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
   final _depositController = TextEditingController();
 
   // Services
-  List<InvoiceServiceItem> _serviceItems = [];
+  final List<InvoiceServiceItem> _serviceItems = [];
 
   // Adjustments
-  List<InvoiceAdjustment> _adjustments = [];
+  final List<InvoiceAdjustment> _adjustments = [];
 
   // Checkbox
   bool _sendZaloApp = true;
@@ -488,11 +489,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
       };
 
       // Ensure 'invoices' subcollection exists conceptually by just adding
-      final docRef = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('invoices')
-          .add(invoiceData);
+      final docRef = await context.read<InvoiceViewModel>().addInvoice(widget.houseId, invoiceData);
 
       // Also updates the room's services 'currentIndex' tracking if metered
       if (_serviceItems.isNotEmpty) {
@@ -512,12 +509,7 @@ class _CreateInvoicePageState extends State<CreateInvoicePage> {
             }
           }
         }
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('rooms')
-            .doc(widget.roomId)
-            .update({'services': updatedServices});
+        await context.read<HouseViewModel>().updateRoom(widget.houseId, widget.roomId, {'services': updatedServices});
       }
 
       // Gửi thông báo đến người thuê

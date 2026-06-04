@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lozido_app/presentation/provider/task_provider.dart';
+import 'package:lozido_app/viewmodels/task_viewmodel.dart';
 import 'package:lozido_app/presentation/pages/tasks/widgets/task_card.dart';
 import 'package:lozido_app/presentation/pages/tasks/add_task_page.dart';
 
@@ -21,7 +21,7 @@ class _TasksPageState extends State<TasksPage> {
     final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
     // Kích hoạt load data phù hợp với vai trò
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TaskProvider>().loadTasks(
+      context.read<TaskViewModel>().loadTasks(
         uid: currentUserId,
         isLandlord: widget.isLandlord,
       );
@@ -74,7 +74,7 @@ class _TasksPageState extends State<TasksPage> {
         color: const Color(0xFF1E88E5), // Nền xanh dương
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Consumer<TaskProvider>(
+      child: Consumer<TaskViewModel>(
         builder: (context, taskProvider, child) => Row(
           children: [
             _buildTabItem(
@@ -161,7 +161,7 @@ class _TasksPageState extends State<TasksPage> {
 
   Widget _buildTabContent() {
     if (_selectedTabIndex == 0) {
-      return Consumer<TaskProvider>(
+      return Consumer<TaskViewModel>(
         builder: (context, taskProvider, child) {
           if (taskProvider.isLoading) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));

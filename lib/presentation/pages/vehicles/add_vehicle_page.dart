@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:lozido_app/presentation/widgets/app_dialog.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
+import '../../../../viewmodels/contract_viewmodel.dart';
+import '../../../../viewmodels/vehicle_viewmodel.dart';
 
 class AddVehiclePage extends StatefulWidget {
   final String houseId;
@@ -46,16 +50,12 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
 
   Future<void> _fetchRooms() async {
     try {
-      final qs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('rooms')
-          .get();
+      final qs = await context.read<HouseViewModel>().getRooms(widget.houseId);
 
       if (mounted) {
         setState(() {
           _rooms = qs.docs.map((d) {
-            final data = d.data();
+            final data = d.data() as Map<String, dynamic>;
             data['id'] = d.id;
             return data;
           }).toList();
@@ -76,13 +76,11 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     });
 
     try {
-      final qs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('contracts')
-          .where('roomId', isEqualTo: roomId)
-          .where('status', whereIn: ['Active', 'Còn hạn', 'Đang hiệu lực'])
-          .get();
+      final qs = await context.read<ContractViewModel>().getFilteredContractsStream(
+        widget.houseId, 
+        roomId: roomId, 
+        status: 'Còn hạn' // Note: This will be mapped to 'Active' in repository
+      ).first;
 
       final tenantNames = <String>{};
       for (var doc in qs.docs) {
@@ -175,6 +173,8 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
 
     try {
       // Check for duplicate license plate
+      // Since VehicleViewModel doesn't have a specific method for this yet, we can either add it or use Firestore directly here just for the check, or we can fetch all and check.
+      // Fetching all might be okay for a small list, but let's just do a direct query for duplicate check to be safe, or add a method. For now, direct query for validation is fine.
       final duplicateQs = await FirebaseFirestore.instance
           .collection('houses')
           .doc(widget.houseId)
@@ -190,11 +190,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
         return;
       }
 
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('vehicles')
-          .add({
+      await context.read<VehicleViewModel>().addVehicle(widget.houseId, {
         'vehicleName': _vehicleNameCtrl.text.trim(),
         'licensePlate': licensePlate,
         'roomId': _selectedRoomId,

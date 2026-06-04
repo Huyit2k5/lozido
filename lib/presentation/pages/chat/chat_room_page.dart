@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../models/chat_room.dart';
-import '../../../models/chat_message.dart';
-import '../../../services/chat_service.dart';
+import 'package:provider/provider.dart';
+import '../../../../data/models/chat_message.dart';
+import '../../../../viewmodels/chat_viewmodel.dart';
 import '../../widgets/chat/chat_bubble.dart';
 import '../../widgets/chat/chat_input_field.dart';
 import 'chat_settings_page.dart';
@@ -28,36 +28,42 @@ class ChatRoomPage extends StatefulWidget {
 }
 
 class _ChatRoomPageState extends State<ChatRoomPage> {
-  final ChatService _chatService = ChatService();
-
   @override
   void initState() {
     super.initState();
-    // Đánh dấu đã đọc khi mở phòng chat
-    _chatService.markRoomAsRead(widget.roomId, widget.userId);
-    // Đánh dấu user đang active trong phòng (tránh nhận thông báo khi đang chat)
-    _chatService.joinRoom(widget.roomId, widget.userId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chatViewModel = context.read<ChatViewModel>();
+      chatViewModel.markRoomAsRead(widget.roomId, widget.userId);
+      chatViewModel.joinRoom(widget.roomId, widget.userId);
+    });
   }
 
   @override
   void dispose() {
-    // Xóa khỏi activeUsers khi thoát phòng chat
-    _chatService.leaveRoom(widget.roomId, widget.userId);
+    // We cannot use context.read in dispose easily, but we can store it or use Provider.of(context, listen: false) if we override didChangeDependencies, 
+    // or just call it directly if we cache the viewmodel. 
+    // To be safe, we'll cache it in initState.
     super.dispose();
+  }
+
+  ChatViewModel? _chatViewModel;
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _chatViewModel ??= context.read<ChatViewModel>();
+  }
+
+  @override
+  void deactivate() {
+    _chatViewModel?.leaveRoom(widget.roomId, widget.userId);
+    super.deactivate();
   }
 
   void _sendMessage(String text, bool isSticker) {
     if (text.isEmpty) return;
 
-    final message = ChatMessage(
-      senderId: widget.userId,
-      senderName: widget.userName,
-      text: text,
-      timestamp: Timestamp.now(),
-      isSticker: isSticker,
-    );
-
-    _chatService.sendMessage(widget.roomId, message);
+    context.read<ChatViewModel>().sendMessage(widget.roomId, widget.userId, widget.userName, text, isSticker);
   }
 
 
@@ -82,9 +88,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: widget.roomName.toLowerCase() == 'lozido cskh' ? Colors.blue : Colors.orange,
+              backgroundColor: (widget.roomName.toLowerCase() == 'lozido cskh' || widget.roomName.toLowerCase() == 'irental cskh') ? Colors.blue : Colors.orange,
               child: Icon(
-                widget.roomName.toLowerCase() == 'lozido cskh' ? Icons.smart_toy : Icons.home, 
+                (widget.roomName.toLowerCase() == 'lozido cskh' || widget.roomName.toLowerCase() == 'irental cskh') ? Icons.smart_toy : Icons.home, 
                 color: Colors.white, 
                 size: 20
               ),
@@ -95,7 +101,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.roomName,
+                    (widget.roomName.toLowerCase() == 'lozido cskh' || widget.roomName.toLowerCase() == 'irental cskh') ? 'IRental CSKH' : widget.roomName,
                     style: const TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.bold,
@@ -103,15 +109,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  StreamBuilder<int>(
-                    stream: FirebaseFirestore.instance
-                        .collection('chatRooms')
-                        .doc(widget.roomId)
-                        .snapshots()
-                        .map((doc) => (doc.data()?['memberCount'] ?? 0) as int),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: context.read<ChatViewModel>().getRawRoomDetails(widget.roomId),
                     builder: (context, snap) {
-                      final count = snap.data ?? 0;
-                      if (widget.roomName.toLowerCase() == 'lozido cskh') {
+                      final data = snap.data?.data() as Map<String, dynamic>? ?? {};
+                      final count = (data['memberCount'] as num?)?.toInt() ?? 0;
+                      if (widget.roomName.toLowerCase() == 'lozido cskh' || widget.roomName.toLowerCase() == 'irental cskh') {
                         return const Text(
                           'Hỗ trợ trực tuyến',
                           style: TextStyle(
@@ -138,10 +141,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         actions: [
           // Biểu tượng chuông gạch khi tắt thông báo phòng này
           StreamBuilder<DocumentSnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('chatRooms')
-                .doc(widget.roomId)
-                .snapshots(),
+            stream: context.read<ChatViewModel>().getRawRoomDetails(widget.roomId),
             builder: (context, snap) {
               if (!snap.hasData) return const SizedBox.shrink();
               final data = snap.data!.data() as Map<String, dynamic>? ?? {};
@@ -185,7 +185,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         children: [
           Expanded(
             child: StreamBuilder<List<ChatMessage>>(
-              stream: _chatService.getMessages(widget.roomId),
+              stream: context.read<ChatViewModel>().getMessages(widget.roomId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -205,7 +205,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     return ChatBubble(
                       message: message,
                       isMe: message.senderId == widget.userId,
-                      isBotRoom: widget.roomName.toLowerCase() == 'lozido cskh',
+                      isBotRoom: widget.roomName.toLowerCase() == 'lozido cskh' || widget.roomName.toLowerCase() == 'irental cskh',
                     );
                   },
                 );

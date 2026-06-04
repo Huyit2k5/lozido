@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'widgets/invoice_payment_sheet.dart';
 import 'invoice_image_export_page.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/invoice_viewmodel.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   final String houseId;
@@ -31,12 +33,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
   }
 
   void _refreshData() {
-    FirebaseFirestore.instance
-        .collection('houses')
-        .doc(widget.houseId)
-        .collection('invoices')
-        .doc(widget.invoiceId)
-        .get()
+    context.read<InvoiceViewModel>()
+        .getInvoiceDetails(widget.houseId, widget.invoiceId)
         .then((doc) {
       if (doc.exists) {
         setState(() {
@@ -502,12 +500,11 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context); // close dialog
-              await FirebaseFirestore.instance
-                  .collection('houses')
-                  .doc(widget.houseId)
-                  .collection('invoices')
-                  .doc(widget.invoiceId)
-                  .update({'status': 'Đã bị hủy'});
+              await context.read<InvoiceViewModel>().updateInvoice(
+                  widget.houseId,
+                  widget.invoiceId,
+                  {'status': 'Đã bị hủy'}
+              );
               
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

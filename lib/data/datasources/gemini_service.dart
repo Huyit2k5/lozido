@@ -21,10 +21,10 @@ class GeminiService {
 
     final model = GenerativeModel(model: 'gemini-flash-lite-latest', apiKey: apiKey);
     final prompt = "Extract all extra charges and discounts for invoicing. Return JSON ARRAY only. No explanation.\n"
-        + "Format: [{\"reason\":\"string\",\"price\":number}]\n\n"
-        + "Context:\n"
-        + "- Number of occupants in the room: $occupantsCount\n"
-        + "- Monthly Rent Price: ${rentPrice.toStringAsFixed(0)} VND\n\n"
+        "Format: [{\"reason\":\"string\",\"price\":number}]\n\n"
+        "Context:\n"
+        "- Number of occupants in the room: $occupantsCount\n"
+        "- Monthly Rent Price: ${rentPrice.toStringAsFixed(0)} VND\n\n"
         + "Rules:\n"
         + "1. Detect if the item is a surcharge or a discount:\n"
         + "   - Surcharge/Service (Positive): 'phí', 'thêm', 'sửa', 'thay', 'vệ sinh', 'cắt cỏ'...\n"

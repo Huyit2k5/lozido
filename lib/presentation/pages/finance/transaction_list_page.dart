@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/finance_viewmodel.dart';
 
 class TransactionListPage extends StatefulWidget {
   final String houseId;
@@ -72,7 +74,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
       case 'Tháng':
         return "Tháng ${DateFormat('MM, yyyy').format(_selectedMonth)}";
       case 'Quý':
-        return "${_currentQuarter}/${_selectedMonth.year}";
+        return "$_currentQuarter/${_selectedMonth.year}";
       case 'Năm':
         return "Năm ${_selectedMonth.year}";
       case 'Tùy chỉnh':
@@ -528,7 +530,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      "$q",
+                      q,
                       style: TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 12,
                         color: selected ? Colors.white : Colors.black87,
@@ -632,12 +634,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
 
   Widget _buildTransactionList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('transactions')
-          .orderBy('date', descending: true)
-          .snapshots(),
+      stream: context.read<FinanceViewModel>().getTransactionsStream(widget.houseId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -708,8 +705,11 @@ class _TransactionListPageState extends State<TransactionListPage> {
             for (var doc in dayDocs) {
               final d = doc.data() as Map<String, dynamic>;
               final amount = (d['amount'] ?? 0).toDouble();
-              if (d['type'] == 'Thu') dayTotal += amount;
-              else dayTotal -= amount;
+              if (d['type'] == 'Thu') {
+                dayTotal += amount;
+              } else {
+                dayTotal -= amount;
+              }
             }
 
             final parsedDate = DateFormat('dd/MM/yyyy').parse(dayKey);
@@ -786,7 +786,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                           const Divider(height: 1, color: Color(0xFFEEEEEE), indent: 16, endIndent: 16),
                       ],
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             );
@@ -1025,11 +1025,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                             );
                             return;
                           }
-                          await FirebaseFirestore.instance
-                              .collection('houses')
-                              .doc(widget.houseId)
-                              .collection('transactions')
-                              .add({
+                          await context.read<FinanceViewModel>().addTransaction(widget.houseId, {
                             'type': type,
                             'category': category,
                             'amount': amount,
@@ -1186,11 +1182,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
 
   Widget _buildSummaryBar() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('transactions')
-          .snapshots(),
+      stream: context.read<FinanceViewModel>().getTransactionsStream(widget.houseId),
       builder: (context, snapshot) {
         double totalIncome = 0;
         double totalExpense = 0;

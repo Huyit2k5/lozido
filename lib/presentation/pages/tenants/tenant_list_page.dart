@@ -506,7 +506,7 @@ class _TenantListPageState extends State<TenantListPage> {
                         ? Image.network(
                             tenant['avatarUrl'],
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildDefaultAvatar(name),
+                            errorBuilder: (_, _, _) => _buildDefaultAvatar(name),
                           )
                         : _buildDefaultAvatar(name),
                   ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../data/datasources/firebase_auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/auth_viewmodel.dart';
 import 'auth_wrapper.dart';
 import 'register_page.dart';
 import 'forgot_password_page.dart';
@@ -20,9 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isObscure = true;
   bool _isTenantMode = false;
-  bool _isLoading = false;
-
-  final FirebaseAuthService _authService = FirebaseAuthService();
 
   @override
   void dispose() {
@@ -36,48 +33,12 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final phoneNumber = _phoneController.text.trim();
       final password = _passwordController.text;
 
-      // Extra verification for Tenants
-      if (_isTenantMode) {
-        final tenantSnap = await FirebaseFirestore.instance
-            .collection('tenants')
-            .where('phoneNumber', isEqualTo: phoneNumber)
-            .get();
-
-        if (tenantSnap.docs.isEmpty) {
-          throw Exception('Tài khoản người thuê không tồn tại cho số điện thoại này.');
-        }
-
-        final tenantData = tenantSnap.docs.first.data();
-        final storedPassword = tenantData['password']?.toString();
-
-        if (storedPassword != password) {
-          throw Exception('Mật khẩu người thuê không chính xác.');
-        }
-
-        // Use the stored password from tenant document for Firebase Auth login
-        // because the Auth account was created with defaultPassword from settings,
-        // which may differ from what the user enters.
-        final tenantEmail = tenantData['email']?.toString() ?? '$phoneNumber@lozido.com';
-        final tenantAuthPassword = storedPassword ?? password;
-
-        await _authService.loginWithPhoneNumber(
-          phoneNumber: tenantEmail.replaceAll('@lozido.com', ''),
-          password: tenantAuthPassword,
-        );
-      } else {
-        await _authService.loginWithPhoneNumber(
-          phoneNumber: phoneNumber,
-          password: password,
-        );
-      }
+      final authViewModel = context.read<AuthViewModel>();
+      await authViewModel.login(phoneNumber, password, _isTenantMode);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,12 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -213,10 +168,10 @@ class _LoginScreenState extends State<LoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.home_work_rounded,
-                color: Color(0xFF28A745),
-                size: 50,
+              Image.asset(
+                'assets/images/logo-only-no-bg.png',
+                width: 50,
+                height: 50,
               ),
               const SizedBox(width: 8),
               const Text(
@@ -355,10 +310,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildMainLoginButton() {
+    final isLoading = context.watch<AuthViewModel>().isLoading;
     return SizedBox(
       height: 48,
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _login,
+        onPressed: isLoading ? null : _login,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF00A651),
           shape: RoundedRectangleBorder(
@@ -366,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           elevation: 0,
         ),
-        child: _isLoading
+        child: isLoading
             ? const SizedBox(
                 width: 20,
                 height: 20,

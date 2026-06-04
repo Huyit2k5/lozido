@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
+import '../../../../viewmodels/invoice_viewmodel.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
 import 'add_house_page.dart';
-import 'mail_page.dart';
 import '../room/room_list_page.dart';
 import '../deposit/deposit_room_list_page.dart';
-import 'empty_rooms_page.dart';
 import 'house_settings_page.dart';
 import '../service/service_management_page.dart';
 import 'tenant_app_settings_page.dart';
@@ -29,7 +30,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
+  final int _selectedIndex = 0;
   String? _selectedHouseId;
   bool _hasPushedToAdd = false;
 
@@ -73,10 +74,7 @@ class _HomePageState extends State<HomePage> {
     return DefaultTabController(
       length: 2,
       child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('houses')
-            .where('userId', isEqualTo: user.uid)
-            .snapshots(),
+        stream: context.read<HouseViewModel>().getHousesStream(user.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
@@ -557,11 +555,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('houses')
-                    .doc(houseId)
-                    .collection('rooms')
-                    .snapshots(),
+                stream: context.read<HouseViewModel>().getRoomsStream(houseId),
                 builder: (context, snapshot) {
                   final emptyRoomsCount = snapshot.data?.docs.where((doc) {
                         final status = (doc.data() as Map<String, dynamic>)['status'] ?? 'Đang trống';
@@ -653,11 +647,7 @@ class _HomePageState extends State<HomePage> {
             childAspectRatio: 0.95,
             children: [
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('houses')
-                    .doc(houseId)
-                    .collection('rooms')
-                    .snapshots(),
+                stream: context.read<HouseViewModel>().getRoomsStream(houseId),
                 builder: (context, roomSnapshot) {
                   int totalRooms = roomSnapshot.data?.docs.length ?? 0;
                   int rentedRooms = roomSnapshot.data?.docs
@@ -1595,11 +1585,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildDebtBanner(String houseId, Map<String, dynamic> houseData) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .doc(houseId)
-          .collection('invoices')
-          .snapshots(),
+      stream: context.read<InvoiceViewModel>().getInvoicesStream(houseId),
       builder: (context, snapshot) {
         int debtCount = 0;
         double totalDebt = 0;
@@ -2367,7 +2353,7 @@ class _HomePageState extends State<HomePage> {
                 _buildListStep(
                   icon: Icons.download_rounded,
                   title: "Tải xuống file excel mẫu",
-                  subtitle: "Tải file mẫu từ LOZIDO",
+                  subtitle: "Tải file mẫu từ IRental",
                 ),
                 const Divider(height: 1, color: Color(0xFFEEEEEE)),
 

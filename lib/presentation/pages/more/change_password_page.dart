@@ -186,7 +186,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.home_work_rounded, color: Color(0xFF28A745), size: 40),
+            Image.asset(
+              'assets/images/logo-only-no-bg.png',
+              width: 40,
+              height: 40,
+            ),
             const SizedBox(width: 8),
             const Text(
               "IRental",

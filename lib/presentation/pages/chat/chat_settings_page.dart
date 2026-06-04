@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/chat_viewmodel.dart';
 
 class ChatSettingsPage extends StatefulWidget {
   final String roomName;
@@ -21,18 +23,11 @@ class ChatSettingsPage extends StatefulWidget {
 }
 
 class _ChatSettingsPageState extends State<ChatSettingsPage> {
-  bool get isBotRoom => widget.roomName.toLowerCase() == 'lozido cskh';
+  bool get isBotRoom => widget.roomName.toLowerCase() == 'lozido cskh' || widget.roomName.toLowerCase() == 'irental cskh';
 
   // Cập nhật trường thông báo trong Firestore
   Future<void> _toggleNotification(String field, bool currentValue) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('chatRooms')
-          .doc(widget.roomId)
-          .update({field: !currentValue});
-    } catch (e) {
-      debugPrint('[ChatSettings] _toggleNotification error: $e');
-    }
+    await context.read<ChatViewModel>().toggleNotification(widget.roomId, field, currentValue);
   }
 
   @override
@@ -88,7 +83,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isBotRoom ? 'Hỗ trợ trực tuyến Lozido' : 'Trao đổi trong ${widget.roomName}',
+                    isBotRoom ? 'Hỗ trợ trực tuyến IRental' : 'Trao đổi trong ${widget.roomName}',
                     style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ],
@@ -98,10 +93,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage> {
 
             // Settings List — dùng StreamBuilder để đọc realtime từ Firestore
             StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('chatRooms')
-                  .doc(widget.roomId)
-                  .snapshots(),
+              stream: context.read<ChatViewModel>().getRawRoomDetails(widget.roomId),
               builder: (context, snapshot) {
                 // Hiển thị skeleton khi đang tải
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -207,7 +199,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage> {
                                     .doc(widget.roomId)
                                     .get()
                                     .then((chatDoc) async {
-                                  final cData = chatDoc.data() as Map<String, dynamic>? ?? {};
+                                  final cData = chatDoc.data() ?? {};
                                   String? physicalRoomId = cData['roomId'];
 
                                   if (physicalRoomId == null) {
@@ -239,7 +231,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage> {
                                       .get();
                                   return tenantsSnap.docs
                                       .map((doc) =>
-                                          doc.data() as Map<String, dynamic>)
+                                          doc.data())
                                       .toList();
                                 }),
                                 builder: (context, membersSnap) {
@@ -324,7 +316,7 @@ class _ChatSettingsPageState extends State<ChatSettingsPage> {
         ),
       ),
       value: value,
-      activeColor: Colors.green,
+      activeThumbColor: Colors.green,
       secondary: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(8),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:lozido_app/models/task_model.dart';
-import 'package:lozido_app/presentation/provider/task_provider.dart';
+import 'package:lozido_app/data/models/task_model.dart';
+import 'package:lozido_app/viewmodels/task_viewmodel.dart';
 import 'package:lozido_app/presentation/pages/tasks/widgets/create_task_sheet.dart';
 
 class TaskCard extends StatelessWidget {
@@ -241,11 +241,11 @@ class TaskCard extends StatelessWidget {
   }
 
   void _handleConfirm(BuildContext context) {
-    context.read<TaskProvider>().updateTaskStatus(task.id, TaskStatus.confirmed);
+    context.read<TaskViewModel>().updateTaskStatus(task.id, TaskStatus.confirmed);
   }
 
   void _handleIgnore(BuildContext context) {
-    context.read<TaskProvider>().updateTaskStatus(task.id, TaskStatus.ignored);
+    context.read<TaskViewModel>().updateTaskStatus(task.id, TaskStatus.ignored);
   }
 
   void _handleConfirmTermination(BuildContext context) async {
@@ -261,7 +261,7 @@ class TaskCard extends StatelessWidget {
       ),
     );
     if (confirm == true) {
-      context.read<TaskProvider>().confirmTermination(task.id);
+      context.read<TaskViewModel>().confirmTermination(task.id);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Chủ nhà đã xác nhận kết thúc hợp đồng."), backgroundColor: Color(0xFF00A651)),
       );
@@ -283,7 +283,7 @@ class TaskCard extends StatelessWidget {
     if (confirm == true) {
       try {
         // Cập nhật trạng thái thành 'cancelled' thay vì xóa
-        await context.read<TaskProvider>().updateTaskStatus(task.id, TaskStatus.cancelled);
+        await context.read<TaskViewModel>().updateTaskStatus(task.id, TaskStatus.cancelled);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Đã hủy yêu cầu kết thúc hợp đồng."), backgroundColor: Colors.black87),
@@ -332,7 +332,7 @@ class TaskCard extends StatelessWidget {
       ),
     );
     if (confirm == true) {
-      context.read<TaskProvider>().denyTermination(task.id, reasonController.text);
+      context.read<TaskViewModel>().denyTermination(task.id, reasonController.text);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Yêu cầu đã bị từ chối."), backgroundColor: Colors.red),
       );
@@ -366,7 +366,7 @@ class TaskCard extends StatelessWidget {
             leading: const Icon(Icons.delete_outline, color: Colors.red),
             title: const Text("Xóa", style: TextStyle(color: Colors.red)),
             onTap: () {
-              context.read<TaskProvider>().deleteTask(task.id);
+              context.read<TaskViewModel>().deleteTask(task.id);
               Navigator.pop(context);
             },
           ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import 'package:provider/provider.dart';
+import '../../../../../viewmodels/invoice_viewmodel.dart';
 
 class InvoicePaymentSheet extends StatefulWidget {
   final String houseId;
@@ -83,27 +84,13 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
         'createdAt': Timestamp.now(),
       };
 
-      final transactionRef = FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('transactions')
-          .doc();
-
-      final invoiceRef = FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('invoices')
-          .doc(widget.invoiceId);
-
-      final batch = FirebaseFirestore.instance.batch();
-
-      batch.update(invoiceRef, {
+      final invoiceUpdateData = {
         'paidAmount': newPaid,
         'status': newStatus,
         'payments': FieldValue.arrayUnion([newPaymentRecord]),
-      });
+      };
 
-      batch.set(transactionRef, {
+      final transactionData = {
         'type': 'Thu',
         'category': 'Thu tiền phòng',
         'amount': amount,
@@ -114,9 +101,14 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
         'createdAt': FieldValue.serverTimestamp(),
         'paymentMethod': _paymentMethod,
         'systemGenerated': true,
-      });
+      };
 
-      await batch.commit();
+      await context.read<InvoiceViewModel>().submitPayment(
+        widget.houseId, 
+        widget.invoiceId, 
+        invoiceUpdateData, 
+        transactionData
+      );
 
       if (mounted) {
         Navigator.pop(context, true); // Return true to signal refresh
@@ -224,7 +216,7 @@ class _InvoicePaymentSheetState extends State<InvoicePaymentSheet> {
                       ),
                       const SizedBox(height: 4),
                       DropdownButtonFormField<String>(
-                        value: _paymentMethod,
+                        initialValue: _paymentMethod,
                         decoration: InputDecoration(
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(

@@ -6,6 +6,8 @@ import 'package:lozido_app/core/utils/currency_formatter.dart';
 import 'invoice_detail_page.dart';
 import 'widgets/invoice_payment_sheet.dart';
 import 'invoice_image_export_page.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/invoice_viewmodel.dart';
 
 class OwedInvoiceListPage extends StatefulWidget {
   final String houseId;
@@ -154,12 +156,7 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
 
   Widget _buildInvoiceList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('invoices')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: context.read<InvoiceViewModel>().getInvoicesStream(widget.houseId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -226,7 +223,7 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: docs.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
+          separatorBuilder: (_, _) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>;

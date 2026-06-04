@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../data/datasources/notification_service.dart';
 import 'package:intl/intl.dart';
-import '../../../services/notification_service.dart';
 
 class TenantInvoicePaymentPage extends StatelessWidget {
   final String houseId;

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'create_invoice_page.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/invoice_viewmodel.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 
 class SelectRoomInvoicePage extends StatefulWidget {
   final String houseId;
@@ -44,16 +47,14 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
     });
 
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('invoices')
-          .where('billingMonth', isEqualTo: DateFormat('MM/yyyy').format(_selectedDate))
-          .get();
+      final snapshot = await context.read<InvoiceViewModel>().getInvoicesByMonth(
+        widget.houseId, 
+        DateFormat('MM/yyyy').format(_selectedDate)
+      );
 
       final existingInvoices = <String, bool>{};
       for (var doc in snapshot.docs) {
-        final data = doc.data();
+        final data = doc.data() as Map<String, dynamic>;
         if (data['roomId'] != null) {
           existingInvoices[data['roomId']] = true;
         }
@@ -292,11 +293,7 @@ class _SelectRoomInvoicePageState extends State<SelectRoomInvoicePage> {
           // Room List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('houses')
-                  .doc(widget.houseId)
-                  .collection('rooms')
-                  .snapshots(),
+              stream: context.read<HouseViewModel>().getRoomsStream(widget.houseId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting || _isLoadingCache) {
                   return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));

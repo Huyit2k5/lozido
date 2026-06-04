@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 import 'deposit_page.dart';
 
 class DepositRoomListPage extends StatefulWidget {
@@ -51,12 +53,7 @@ class _DepositRoomListPageState extends State<DepositRoomListPage> {
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('rooms')
-            .orderBy('createdAt', descending: false)
-            .snapshots(),
+        stream: context.read<HouseViewModel>().getRoomsStreamOrdered(widget.houseId, descending: false),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../services/pdf_contract_service.dart';
+import '../../../data/datasources/pdf_contract_service.dart';
 
 class ContractPdfPreviewPage extends StatefulWidget {
   final Map<String, dynamic> contractData;

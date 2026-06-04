@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:lozido_app/presentation/widgets/app_dialog.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
+import '../../../../viewmodels/contract_viewmodel.dart';
+import '../../../../viewmodels/vehicle_viewmodel.dart';
 
 class EditVehiclePage extends StatefulWidget {
   final String houseId;
@@ -57,16 +61,12 @@ class _EditVehiclePageState extends State<EditVehiclePage> {
 
   Future<void> _fetchRooms() async {
     try {
-      final qs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('rooms')
-          .get();
+      final qs = await context.read<HouseViewModel>().getRooms(widget.houseId);
 
       if (mounted) {
         setState(() {
           _rooms = qs.docs.map((d) {
-            final data = d.data();
+            final data = d.data() as Map<String, dynamic>;
             data['id'] = d.id;
             return data;
           }).toList();
@@ -91,13 +91,11 @@ class _EditVehiclePageState extends State<EditVehiclePage> {
     });
 
     try {
-      final qs = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('contracts')
-          .where('roomId', isEqualTo: roomId)
-          .where('status', whereIn: ['Active', 'Còn hạn', 'Đang hiệu lực'])
-          .get();
+      final qs = await context.read<ContractViewModel>().getFilteredContractsStream(
+        widget.houseId, 
+        roomId: roomId, 
+        status: 'Còn hạn' // Note: This will be mapped to 'Active' in repository
+      ).first;
 
       final tenantNames = <String>{};
       for (var doc in qs.docs) {
@@ -216,18 +214,17 @@ class _EditVehiclePageState extends State<EditVehiclePage> {
         return;
       }
 
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('vehicles')
-          .doc(widget.vehicleId)
-          .update({
-        'vehicleName': _vehicleNameCtrl.text.trim(),
-        'licensePlate': licensePlate,
-        'roomId': _selectedRoomId,
-        'roomName': _selectedRoomName ?? '',
-        'tenantName': _selectedTenantName ?? '',
-      });
+      await context.read<VehicleViewModel>().updateVehicle(
+        widget.houseId, 
+        widget.vehicleId, 
+        {
+          'vehicleName': _vehicleNameCtrl.text.trim(),
+          'licensePlate': licensePlate,
+          'roomId': _selectedRoomId,
+          'roomName': _selectedRoomName ?? '',
+          'tenantName': _selectedTenantName ?? '',
+        }
+      );
 
       if (mounted) {
         AppDialog.show(context, title: "Thành công", message: "Cập nhật phương tiện thành công!", type: AppDialogType.success, onConfirm: () {

@@ -8,6 +8,10 @@ import '../tasks/tasks_page.dart';
 import 'tenant_contract_page.dart';
 import 'tenant_invoice_list_page.dart';
 import 'tenant_profile_page.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/tenant_viewmodel.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
+import '../../../../viewmodels/contract_viewmodel.dart';
 
 
 class TenantMainPage extends StatefulWidget {
@@ -46,10 +50,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('tenants')
-            .where('uid', isEqualTo: currentUser!.uid)
-            .snapshots(),
+        stream: context.read<TenantViewModel>().getTenantByUidStream(currentUser!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -111,21 +112,17 @@ class _TenantMainPageState extends State<TenantMainPage> {
     Map<String, dynamic> userData,
   ) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: _firestore
-          .collection('houses')
-          .doc(houseId)
-          .collection('rooms')
-          .doc(roomId)
-          .snapshots(),
+      stream: context.read<HouseViewModel>().getRoomDetailsStream(houseId, roomId),
       builder: (context, roomSnapshot) {
-        if (!roomSnapshot.hasData)
+        if (!roomSnapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
+        }
         final roomData =
             roomSnapshot.data?.data() as Map<String, dynamic>? ?? {};
         final roomName = roomData['roomName'] ?? 'Phòng';
 
         return StreamBuilder<DocumentSnapshot>(
-          stream: _firestore.collection('houses').doc(houseId).snapshots(),
+          stream: context.read<HouseViewModel>().getHouseStream(houseId),
           builder: (context, houseSnapshot) {
             final houseData =
                 houseSnapshot.data?.data() as Map<String, dynamic>? ?? {};
@@ -348,14 +345,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
                   ],
                 ),
                 StreamBuilder<QuerySnapshot>(
-                  stream: _firestore
-                      .collection('houses')
-                      .doc(houseId)
-                      .collection('rooms')
-                      .doc(roomId)
-                      .collection('members')
-                      .where('uid', isEqualTo: currentUser!.uid)
-                      .snapshots(),
+                  stream: context.read<TenantViewModel>().getMemberStream(houseId, roomId, currentUser!.uid),
                   builder: (context, snapshot) {
                     String role = 'Thành viên';
                     if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
@@ -406,12 +396,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
 
   Widget _buildProgressCard(String houseId, String roomId) {
     return FutureBuilder<QuerySnapshot>(
-      future: _firestore
-          .collection('houses')
-          .doc(houseId)
-          .collection('contracts')
-          .where('roomId', isEqualTo: roomId)
-          .get(),
+      future: context.read<ContractViewModel>().getActiveContracts(houseId, roomId),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return _buildEmptyProgressCard();
@@ -756,13 +741,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
               );
               
               try {
-                final snapshot = await _firestore
-                    .collection('houses')
-                    .doc(houseId)
-                    .collection('contracts')
-                    .where('roomId', isEqualTo: roomId)
-                    .limit(1)
-                    .get();
+                final snapshot = await context.read<ContractViewModel>().getActiveContracts(houseId, roomId);
 
                 if (context.mounted) Navigator.pop(context); // Close dialog
 
@@ -915,13 +894,7 @@ class _TenantMainPageState extends State<TenantMainPage> {
           const Divider(height: 1),
 
           StreamBuilder<QuerySnapshot>(
-            stream: _firestore
-                .collection('houses')
-                .doc(houseId)
-                .collection('contracts')
-                .where('roomId', isEqualTo: roomId)
-                .limit(1)
-                .snapshots(),
+            stream: context.read<ContractViewModel>().getActiveContractsStream(houseId, roomId),
             builder: (context, contractSnapshot) {
               // Priority: Contract > Room > House > 0
               double rentPrice = (roomData['rentPrice'] as num?)?.toDouble() ?? 0;
@@ -1300,16 +1273,11 @@ class _TenantMainPageState extends State<TenantMainPage> {
 
   Widget _buildMembersSection(String houseId, String roomId, Map<String, dynamic> roomData) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('houses')
-          .doc(houseId)
-          .collection('rooms')
-          .doc(roomId)
-          .collection('members')
-          .snapshots(),
+      stream: context.read<TenantViewModel>().getMembersStream(houseId, roomId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting)
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
+        }
 
         List<Map<String, dynamic>> memberDocs = [];
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {

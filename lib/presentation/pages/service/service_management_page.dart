@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'add_service_page.dart';
+import '../../../../viewmodels/service_viewmodel.dart';
+import '../../../../viewmodels/house_viewmodel.dart';
 
 class ServiceManagementPage extends StatefulWidget {
   final String houseId;
@@ -27,47 +30,14 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
   /// Tự động tạo 2 dịch vụ mặc định nếu collection services rỗng
   Future<void> _ensureDefaultServices() async {
-    final servicesRef = FirebaseFirestore.instance
-        .collection('houses')
-        .doc(widget.houseId)
-        .collection('services');
-
-    final snapshot = await servicesRef.limit(1).get();
-
-    if (snapshot.docs.isEmpty && !_hasInitializedDefaults) {
+    if (!_hasInitializedDefaults) {
       _hasInitializedDefaults = true;
 
       // Lấy tất cả roomIds hiện có
-      final roomsSnapshot = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('rooms')
-          .get();
+      final roomsSnapshot = await context.read<HouseViewModel>().getRooms(widget.houseId);
       final allRoomIds = roomsSnapshot.docs.map((d) => d.id).toList();
 
-      final batch = FirebaseFirestore.instance.batch();
-
-      // Tiền điện
-      batch.set(servicesRef.doc(), {
-        'serviceName': 'Tiền điện',
-        'price': 1700,
-        'unit': 'KWh',
-        'isMetered': true,
-        'appliedRooms': allRoomIds,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      // Tiền nước
-      batch.set(servicesRef.doc(), {
-        'serviceName': 'Tiền nước',
-        'price': 18000,
-        'unit': 'Khối',
-        'isMetered': true,
-        'appliedRooms': allRoomIds,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      await batch.commit();
+      await context.read<ServiceViewModel>().ensureDefaultServices(widget.houseId, allRoomIds);
     }
   }
 
@@ -96,12 +66,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await FirebaseFirestore.instance
-                  .collection('houses')
-                  .doc(widget.houseId)
-                  .collection('services')
-                  .doc(serviceId)
-                  .delete();
+              await context.read<ServiceViewModel>().deleteService(widget.houseId, serviceId);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -160,12 +125,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
   Widget _buildServiceList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('services')
-          .orderBy('createdAt', descending: false)
-          .snapshots(),
+      stream: context.read<ServiceViewModel>().getServicesStream(widget.houseId),
       builder: (context, serviceSnapshot) {
         if (serviceSnapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -201,11 +161,7 @@ class _ServiceManagementPageState extends State<ServiceManagementPage> {
 
         // Also stream the total room count to determine "all rooms applied" status
         return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('houses')
-              .doc(widget.houseId)
-              .collection('rooms')
-              .snapshots(),
+          stream: context.read<HouseViewModel>().getRoomsStream(widget.houseId),
           builder: (context, roomSnapshot) {
             final totalRooms = roomSnapshot.data?.docs.length ?? 0;
 

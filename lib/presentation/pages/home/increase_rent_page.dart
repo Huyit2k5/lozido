@@ -347,7 +347,7 @@ class _IncreaseRentPageState extends State<IncreaseRentPage> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                         const SizedBox(height: 24),
                       ],
                     ),

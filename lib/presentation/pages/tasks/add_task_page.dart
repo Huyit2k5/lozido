@@ -5,8 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:lozido_app/models/task_model.dart';
-import 'package:lozido_app/presentation/provider/task_provider.dart';
+import 'package:lozido_app/data/models/task_model.dart';
+import 'package:lozido_app/viewmodels/task_viewmodel.dart';
 
 class AddTaskPage extends StatefulWidget {
   final bool isLandlord;
@@ -699,7 +699,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     setState(() => _isSaving = true);
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) {
-      context.read<TaskProvider>().createNewTask(
+      context.read<TaskViewModel>().createNewTask(
         title: _titleController.text,
         description: _descriptionController.text,
         taskType: _taskTypeController.text,

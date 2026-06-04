@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/vehicle_viewmodel.dart';
 
 import 'add_vehicle_page.dart';
 import 'edit_vehicle_page.dart';
@@ -49,12 +51,7 @@ class _VehicleListPageState extends State<VehicleListPage> {
 
     if (confirm == true) {
       try {
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('vehicles')
-            .doc(vehicleId)
-            .delete();
+        await context.read<VehicleViewModel>().deleteVehicle(widget.houseId, vehicleId);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Đã xóa phương tiện')),
@@ -168,12 +165,7 @@ class _VehicleListPageState extends State<VehicleListPage> {
 
   Widget _buildVehicleStream() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('vehicles')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: context.read<VehicleViewModel>().getVehiclesStream(widget.houseId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(

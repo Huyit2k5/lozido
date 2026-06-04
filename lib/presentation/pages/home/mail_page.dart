@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_page.dart';
-import '../../../services/chat_service.dart';
-import '../../../services/notification_service.dart';
+import '../../../data/repositories/chat_repository.dart';
+import '../../../data/datasources/notification_service.dart';
 import '../../pages/chat/chat_room_page.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/chat_viewmodel.dart';
 
 // ==========================================================
 // MODELS (Chuẩn bị cho Firestore Realtime Message/Notification)
@@ -69,12 +71,12 @@ class MailPage extends StatefulWidget {
   final String? tenantName;
 
   const MailPage({
-    Key? key,
+    super.key,
     this.tenantRoomName,
     this.landlordId,
     this.tenantUid,
     this.tenantName,
-  }) : super(key: key);
+  });
 
   @override
   State<MailPage> createState() => _MailPageState();
@@ -122,7 +124,7 @@ class _MailPageState extends State<MailPage> {
             child: ListView.separated(
               shrinkWrap: true,
               itemCount: housesSnapshot.docs.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final doc = housesSnapshot.docs[index];
                 final data = doc.data();
@@ -137,7 +139,7 @@ class _MailPageState extends State<MailPage> {
                   title: Text(roomName, style: const TextStyle(fontWeight: FontWeight.w600)),
                   onTap: () async {
                     Navigator.pop(context); // Đóng dialog
-                    final chatService = ChatService();
+                    final chatService = ChatRepository();
                     await chatService.createNewChatRoom(roomName, userId: currentUserId);
 
                     if (!context.mounted) return;
@@ -188,7 +190,7 @@ class _MailPageState extends State<MailPage> {
                     });
                   },
                   onAddPressed: () async {
-                    final ChatService chatService = ChatService();
+                    final ChatRepository chatService = ChatRepository();
                     final user = FirebaseAuth.instance.currentUser;
                     final String currentUserId = user?.uid ?? "anonymous";
                     final String currentUserName = user?.displayName ?? "Người dùng";
@@ -238,7 +240,7 @@ class _MailPageState extends State<MailPage> {
         // 1. Pinned Chatbot CSKH (Luôn ở trên cùng)
         _buildChatRoomTile(
           roomId: 'bot_$currentUserId', 
-          roomName: 'Lozido CSKH', 
+          roomName: 'IRental CSKH', 
           isBot: true,
           currentUserId: currentUserId,
           currentUserName: currentUserName,
@@ -248,10 +250,7 @@ class _MailPageState extends State<MailPage> {
 
         // 2. Danh sách Phòng chat từ Firestore 'chatRooms'
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('chatRooms')
-              .where('userId', isEqualTo: widget.landlordId ?? user?.uid)
-              .snapshots(),
+          stream: context.read<ChatViewModel>().getChatRoomsStream(widget.landlordId ?? user?.uid ?? ''),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox.shrink(); // Silent loading for dynamic rooms
@@ -272,7 +271,8 @@ class _MailPageState extends State<MailPage> {
               // Nếu là chủ nhà, lọc bỏ CSKH (vì đã có pinned) và sắp xếp
               docs = docs.where((doc) {
                 final name = (doc.data() as Map<String, dynamic>)['roomName'] ?? '';
-                return name.toString().toLowerCase() != 'lozido cskh';
+                final nameLower = name.toString().toLowerCase();
+                return nameLower != 'irental cskh' && nameLower != 'lozido cskh';
               }).toList();
               
               docs.sort((a, b) {
@@ -290,7 +290,7 @@ class _MailPageState extends State<MailPage> {
                 final data = doc.data() as Map<String, dynamic>;
                 final String roomName = data['roomName'] ?? 'Không tên';
                 final String roomId = doc.id;
-                final bool isBot = roomName.toLowerCase() == 'lozido cskh';
+                final bool isBot = roomName.toLowerCase() == 'irental cskh' || roomName.toLowerCase() == 'lozido cskh';
                 final int unreadCount = (data['unreadCounts']?[currentUserId] as num?)?.toInt() ?? 0;
                 final String lastMessage = data['lastMessage'] as String? ?? "Nhấn để xem chi tiết";
 
@@ -367,7 +367,7 @@ class _MailPageState extends State<MailPage> {
             child: Icon(isBot ? Icons.smart_toy : Icons.home, color: isBot ? Colors.blue : const Color(0xFFFF5722), size: 28),
           ),
           title: Text(
-            roomName,
+            isBot ? "IRental CSKH" : roomName,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           subtitle: Column(
@@ -457,11 +457,16 @@ class _MailPageState extends State<MailPage> {
             
             // Nếu là bot room pinned, ta cần check/tạo room thật trong Firestore
             if (isBot && isPinned) {
-              final chatService = ChatService();
-              // Tìm room 'Lozido CSKH' của user này
-              String? existingRoomId = await chatService.findChatRoomByName('Lozido CSKH', currentUserId);
+              final chatService = ChatRepository();
+              // Tìm room 'IRental CSKH' của user này
+              String? existingRoomId = await chatService.findChatRoomByName('IRental CSKH', currentUserId);
               if (existingRoomId == null) {
-                finalRoomId = await chatService.createNewChatRoom('Lozido CSKH', userId: currentUserId);
+                existingRoomId = await chatService.findChatRoomByName('Lozido CSKH', currentUserId);
+              }
+              
+              if (existingRoomId == null) {
+                // Tạo mới nếu chưa có
+                finalRoomId = await chatService.createNewChatRoom('IRental CSKH', userId: currentUserId);
               } else {
                 finalRoomId = existingRoomId;
               }
@@ -548,12 +553,12 @@ class CustomHeader extends StatelessWidget {
   final int unreadNotiCount;
 
   const CustomHeader({
-    Key? key,
+    super.key,
     required this.selectedIndex,
     required this.onTabChanged,
     required this.onAddPressed,
     this.unreadNotiCount = 0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -635,14 +640,14 @@ class BounceTabItem extends StatefulWidget {
   final VoidCallback onTap;
 
   const BounceTabItem({
-    Key? key,
+    super.key,
     required this.title,
     required this.subtitle,
     required this.iconPath,
     required this.isSelected,
     required this.onTap,
     this.showSmallBell = false,
-  }) : super(key: key);
+  });
 
   @override
   State<BounceTabItem> createState() => _BounceTabItemState();
@@ -776,7 +781,7 @@ class NotificationItemWidget extends StatelessWidget {
   final NotificationModel model;
   final VoidCallback? onTap;
 
-  const NotificationItemWidget({Key? key, required this.model, this.onTap}) : super(key: key);
+  const NotificationItemWidget({super.key, required this.model, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -885,7 +890,7 @@ class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int)? onTap;
 
-  const CustomBottomNavBar({Key? key, this.currentIndex = 1, this.onTap}) : super(key: key);
+  const CustomBottomNavBar({super.key, this.currentIndex = 1, this.onTap});
 
   @override
   Widget build(BuildContext context) {

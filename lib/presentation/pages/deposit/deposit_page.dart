@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:lozido_app/core/utils/currency_formatter.dart';
+import 'package:provider/provider.dart';
+import '../../../../viewmodels/deposit_viewmodel.dart';
 
 class DepositPage extends StatefulWidget {
   final String houseId;
@@ -57,17 +59,11 @@ class _DepositPageState extends State<DepositPage> {
 
   Future<void> _loadActiveDeposit() async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('deposits')
-          .where('roomId', isEqualTo: widget.roomId)
-          .where('status', isEqualTo: 'Active')
-          .get();
+      final snapshot = await context.read<DepositViewModel>().getActiveDeposit(widget.houseId, widget.roomId);
 
       if (snapshot.docs.isNotEmpty) {
         final doc = snapshot.docs.first;
-        final data = doc.data();
+        final data = doc.data() as Map<String, dynamic>;
         _activeDepositDocId = doc.id;
         
         setState(() {
@@ -135,12 +131,11 @@ class _DepositPageState extends State<DepositPage> {
   Future<void> _extendMoveInDate() async {
     if (_activeDepositDocId == null || _moveInDate == null) return;
     try {
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('deposits')
-          .doc(_activeDepositDocId)
-          .update({'expectedMoveInDate': Timestamp.fromDate(_moveInDate!)});
+      await context.read<DepositViewModel>().updateDeposit(
+        widget.houseId, 
+        _activeDepositDocId!, 
+        {'expectedMoveInDate': Timestamp.fromDate(_moveInDate!)}
+      );
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đã gia hạn ngày vào thành công!")));
@@ -215,12 +210,7 @@ class _DepositPageState extends State<DepositPage> {
     try {
       final double depositAmount = double.tryParse(_depositAmountController.text.replaceAll('.', '')) ?? 0;
       
-      // Save deposit record
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('deposits')
-          .add({
+      final depositData = {
         'roomId': widget.roomId,
         'tenantName': _tenantNameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
@@ -230,32 +220,24 @@ class _DepositPageState extends State<DepositPage> {
         'paymentMethod': _paymentMethod,
         'status': 'Active',
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
 
-      // Update room status
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('rooms')
-          .doc(widget.roomId)
-          .update({
-        'status': 'Đang cọc giữ chỗ',
-        'depositAmount': depositAmount, // cache for easy UI display in lists
-      });
-
-      // Thêm vào collection transactions
-      await FirebaseFirestore.instance
-          .collection('houses')
-          .doc(widget.houseId)
-          .collection('transactions')
-          .add({
+      final transactionData = {
         'type': 'Thu',
         'category': 'Thu cọc',
         'amount': depositAmount,
         'date': Timestamp.fromDate(_depositDate!),
         'note': 'Cọc giữ chỗ - ${_tenantNameController.text.trim()} - Phòng ${widget.roomData['roomName'] ?? ''}',
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      await context.read<DepositViewModel>().submitDeposit(
+        widget.houseId, 
+        widget.roomId, 
+        depositData, 
+        transactionData,
+        depositAmount
+      );
 
       _showSuccessModal();
     } catch (e) {
@@ -280,19 +262,7 @@ class _DepositPageState extends State<DepositPage> {
 
     if (confirm == true && _activeDepositDocId != null) {
       try {
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('deposits')
-            .doc(_activeDepositDocId)
-            .update({'status': 'Canceled', 'canceledAt': FieldValue.serverTimestamp()});
-            
-        await FirebaseFirestore.instance
-            .collection('houses')
-            .doc(widget.houseId)
-            .collection('rooms')
-            .doc(widget.roomId)
-            .update({'status': 'Đang trống', 'depositAmount': FieldValue.delete()});
+        await context.read<DepositViewModel>().cancelDeposit(widget.houseId, widget.roomId, _activeDepositDocId!);
 
         if (mounted) {
           Navigator.pop(context); // go back

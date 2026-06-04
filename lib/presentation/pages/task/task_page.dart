@@ -264,15 +264,11 @@ class _TaskPageState extends State<TaskPage>
                       Icons.event_outlined,
                       'Hạn công việc',
                       data['endDate'] != null
-                          ? DateTime.parse(
+                          ? '${DateTime.parse(
                                   data['endDate'],
-                                ).day.toString().padLeft(2, '0') +
-                                '/' +
-                                DateTime.parse(
+                                ).day.toString().padLeft(2, '0')}/${DateTime.parse(
                                   data['endDate'],
-                                ).month.toString().padLeft(2, '0') +
-                                '/' +
-                                DateTime.parse(data['endDate']).year.toString()
+                                ).month.toString().padLeft(2, '0')}/${DateTime.parse(data['endDate']).year}'
                           : 'Không có',
                     ),
                     _buildInfoRow(
@@ -405,7 +401,7 @@ class _TaskPageState extends State<TaskPage>
           Image.asset(
             'assets/images/empty_box.png',
             width: 200,
-            errorBuilder: (_, __, ___) => const Icon(
+            errorBuilder: (_, _, _) => const Icon(
               Icons.assignment_outlined,
               size: 120,
               color: Colors.grey,
@@ -420,7 +416,7 @@ class _TaskPageState extends State<TaskPage>
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'LOZIDO giúp bạn quản lý các công việc cá nhân của bạn hiệu quả. Bất cứ công việc cá nhân nào bạn cũng có thể tạo và quản lý',
+              'IRental giúp bạn quản lý các công việc cá nhân của bạn hiệu quả. Bất cứ công việc cá nhân nào bạn cũng có thể tạo và quản lý',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
