@@ -101,7 +101,9 @@ class TaskCard extends StatelessWidget {
                   _buildInfoRow(
                     Icons.home_outlined,
                     "Vị trí", 
-                    "${task.houseName ?? 'Chưa xác định'}${task.scope != null ? ' - ${task.scope}' : ''}", 
+                    task.taskType == "Việc cá nhân"
+                        ? "Cá nhân"
+                        : "${task.houseName ?? 'Chưa xác định'}${task.scope != null ? ' - ${task.scope}' : ''}", 
                     valueBold: true,
                     isLocation: true,
                   ),
@@ -398,7 +400,12 @@ class TaskCard extends StatelessWidget {
                 if (task.status == TaskStatus.terminationDenied)
                   _detailRow("Lý do từ chối:", task.denialReason ?? "Không có", valueColor: Colors.red),
               ],
-              _detailRow("Vị trí:", "${task.houseName ?? 'Chưa xác định'}${task.scope != null ? ' - ${task.scope}' : ''}"),
+              _detailRow(
+                "Vị trí:",
+                task.taskType == "Việc cá nhân"
+                    ? "Cá nhân"
+                    : "${task.houseName ?? 'Chưa xác định'}${task.scope != null ? ' - ${task.scope}' : ''}",
+              ),
               _detailRow("Tiêu đề:", task.title),
               _detailRow("Mô tả:", task.description),
               _detailRow("Trạng thái:", task.statusText, valueColor: task.statusColor),
