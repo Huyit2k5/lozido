@@ -38,6 +38,9 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
     _descriptionController = TextEditingController(text: task?.description ?? '');
     _selectedDate = task?.deadline ?? DateTime.now().add(const Duration(days: 7));
     _selectedHouse = task?.houseName;
+    _taskTypeController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _fetchHouses();
   }
 
@@ -137,44 +140,46 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
               const SizedBox(height: 20),
               
               // Dropdown chọn Nhà
-              (() {
-                final houseNames = _firebaseHouses.map((h) => h['name'] as String).toList();
-                if (_selectedHouse != null && !houseNames.contains(_selectedHouse)) {
-                  houseNames.add(_selectedHouse!);
-                }
-                return _isLoadingHouses
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A651)),
+              if (_taskTypeController.text != "Việc cá nhân") ...[
+                (() {
+                  final houseNames = _firebaseHouses.map((h) => h['name'] as String).toList();
+                  if (_selectedHouse != null && !houseNames.contains(_selectedHouse)) {
+                    houseNames.add(_selectedHouse!);
+                  }
+                  return _isLoadingHouses
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A651)),
+                            ),
                           ),
-                        ),
-                      )
-                    : DropdownButtonFormField<String>(
-                        initialValue: _selectedHouse,
-                        decoration: const InputDecoration(
-                          labelText: "Chọn Nhà",
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.home_outlined),
-                        ),
-                        items: houseNames.map((String house) {
-                          return DropdownMenuItem<String>(
-                            value: house,
-                            child: Text(house),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedHouse = value;
-                          });
-                        },
-                        hint: const Text("Chọn căn nhà"),
-                      );
-              })(),
-              const SizedBox(height: 16),
+                        )
+                      : DropdownButtonFormField<String>(
+                          initialValue: _selectedHouse,
+                          decoration: const InputDecoration(
+                            labelText: "Chọn Nhà",
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.home_outlined),
+                          ),
+                          items: houseNames.map((String house) {
+                            return DropdownMenuItem<String>(
+                              value: house,
+                              child: Text(house),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedHouse = value;
+                            });
+                          },
+                          hint: const Text("Chọn căn nhà"),
+                        );
+                })(),
+                const SizedBox(height: 16),
+              ],
 
               TextFormField(
                 controller: _titleController,
@@ -263,6 +268,7 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
+      final isPersonal = _taskTypeController.text == "Việc cá nhân";
       if (widget.taskToEdit != null) {
         final updatedTask = TaskModel(
           id: widget.taskToEdit!.id,
@@ -273,8 +279,16 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
           createdAt: widget.taskToEdit!.createdAt,
           deadline: _selectedDate,
           contractEndDate: widget.taskToEdit!.contractEndDate,
-          houseName: _selectedHouse,
+          houseName: isPersonal ? null : _selectedHouse,
+          scope: isPersonal ? null : widget.taskToEdit!.scope,
           status: widget.taskToEdit!.status,
+          creatorId: widget.taskToEdit!.creatorId,
+          contractId: widget.taskToEdit!.contractId,
+          sender: widget.taskToEdit!.sender,
+          denialReason: widget.taskToEdit!.denialReason,
+          contractValue: widget.taskToEdit!.contractValue,
+          deposit: widget.taskToEdit!.deposit,
+          imagePaths: widget.taskToEdit!.imagePaths,
         );
         context.read<TaskViewModel>().updateTask(updatedTask);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -288,7 +302,8 @@ class _CreateTaskSheetState extends State<CreateTaskSheet> {
               performer: _performerController.text,
               deadline: _selectedDate,
               createdAt: DateTime.now(),
-              houseName: _selectedHouse,
+              houseName: isPersonal ? null : _selectedHouse,
+              scope: isPersonal ? null : null,
               creatorId: FirebaseAuth.instance.currentUser?.uid,
             );
         ScaffoldMessenger.of(context).showSnackBar(

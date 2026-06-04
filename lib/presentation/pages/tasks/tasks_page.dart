@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lozido_app/viewmodels/task_viewmodel.dart';
 import 'package:lozido_app/presentation/pages/tasks/widgets/task_card.dart';
 import 'package:lozido_app/presentation/pages/tasks/add_task_page.dart';
+import 'package:lozido_app/data/models/task_model.dart';
 
 class TasksPage extends StatefulWidget {
   final bool isLandlord;
@@ -55,9 +56,22 @@ class _TasksPageState extends State<TasksPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          String? initialScope;
+          if (_selectedTabIndex == 1) {
+            initialScope = "Việc cá nhân";
+          } else if (_selectedTabIndex == 2) {
+            initialScope = "Hệ thống";
+          } else {
+            initialScope = "Việc quản lý nhà cho thuê";
+          }
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddTaskPage(isLandlord: widget.isLandlord)),
+            MaterialPageRoute(
+              builder: (context) => AddTaskPage(
+                isLandlord: widget.isLandlord,
+                initialScope: initialScope,
+              ),
+            ),
           );
         },
         backgroundColor: const Color(0xFF00A651),
@@ -66,7 +80,21 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
+  int _getUncompletedCountForTab(int tabIndex, TaskViewModel provider, String? currentUserId) {
+    final allTasks = widget.isLandlord 
+        ? provider.tasks 
+        : provider.getTasksByCreator(currentUserId ?? "");
+    return allTasks.where((t) {
+      final isUncompleted = t.status == TaskStatus.newRequest || t.status == TaskStatus.pendingTermination;
+      if (!isUncompleted) return false;
+      if (tabIndex == 0) return t.taskType != "Việc cá nhân" && t.taskType != "Hệ thống";
+      if (tabIndex == 1) return t.taskType == "Việc cá nhân";
+      return t.taskType == "Hệ thống";
+    }).length;
+  }
+
   Widget _buildTabBar() {
+    final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(4),
@@ -81,21 +109,19 @@ class _TasksPageState extends State<TasksPage> {
               index: 0,
               icon: Icons.home_outlined,
               title: widget.isLandlord ? "Nhà cho thuê" : "Nhà đang thuê",
-              badgeCount: widget.isLandlord 
-                  ? taskProvider.uncompletedTasksCount 
-                  : taskProvider.getUncompletedCountForCreator(FirebaseAuth.instance.currentUser?.uid ?? ""),
+              badgeCount: _getUncompletedCountForTab(0, taskProvider, currentUserId),
             ),
             _buildTabItem(
               index: 1,
               icon: Icons.person_outline,
               title: "Cá nhân",
-              badgeCount: 0,
+              badgeCount: _getUncompletedCountForTab(1, taskProvider, currentUserId),
             ),
             _buildTabItem(
               index: 2,
               icon: Icons.settings_outlined,
               title: "Hệ thống",
-              badgeCount: 0,
+              badgeCount: _getUncompletedCountForTab(2, taskProvider, currentUserId),
             ),
           ],
         ),
@@ -160,36 +186,46 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   Widget _buildTabContent() {
-    if (_selectedTabIndex == 0) {
-      return Consumer<TaskViewModel>(
-        builder: (context, taskProvider, child) {
-          if (taskProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
-          }
-          
-          final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
-          final tasks = widget.isLandlord 
-              ? taskProvider.tasks 
-              : taskProvider.getTasksByCreator(currentUserId ?? "");
+    return Consumer<TaskViewModel>(
+      builder: (context, taskProvider, child) {
+        if (taskProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF00A651)));
+        }
+        
+        final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
+        final allTasks = widget.isLandlord 
+            ? taskProvider.tasks 
+            : taskProvider.getTasksByCreator(currentUserId ?? "");
 
-          if (tasks.isEmpty) {
-            return const Center(
-              child: Text("Không có công việc nào", style: TextStyle(color: Colors.grey)),
-            );
+        List<TaskModel> filteredTasks = [];
+        if (_selectedTabIndex == 0) {
+          filteredTasks = allTasks.where((t) => t.taskType != "Việc cá nhân" && t.taskType != "Hệ thống").toList();
+        } else if (_selectedTabIndex == 1) {
+          filteredTasks = allTasks.where((t) => t.taskType == "Việc cá nhân").toList();
+        } else if (_selectedTabIndex == 2) {
+          filteredTasks = allTasks.where((t) => t.taskType == "Hệ thống").toList();
+        }
+
+        if (filteredTasks.isEmpty) {
+          String emptyMsg = "Không có công việc nào";
+          if (_selectedTabIndex == 1) {
+            emptyMsg = "Chưa có việc cá nhân";
+          } else if (_selectedTabIndex == 2) {
+            emptyMsg = "Chưa có việc hệ thống";
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: tasks.length,
-            itemBuilder: (context, index) => TaskCard(
-              task: tasks[index],
-              isLandlord: widget.isLandlord,
-            ),
+          return Center(
+            child: Text(emptyMsg, style: const TextStyle(color: Colors.grey)),
           );
-        },
-      );
-    }
-    return const Center(
-      child: Text("Chức năng đang phát triển", style: TextStyle(color: Colors.grey)),
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: filteredTasks.length,
+          itemBuilder: (context, index) => TaskCard(
+            task: filteredTasks[index],
+            isLandlord: widget.isLandlord,
+          ),
+        );
+      },
     );
   }
 }

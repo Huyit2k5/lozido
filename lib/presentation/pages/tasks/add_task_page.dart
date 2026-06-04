@@ -10,7 +10,8 @@ import 'package:lozido_app/viewmodels/task_viewmodel.dart';
 
 class AddTaskPage extends StatefulWidget {
   final bool isLandlord;
-  const AddTaskPage({super.key, this.isLandlord = true});
+  final String? initialScope;
+  const AddTaskPage({super.key, this.isLandlord = true, this.initialScope});
 
   @override
   State<AddTaskPage> createState() => _AddTaskPageState();
@@ -38,10 +39,12 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   final Color _primaryGreen = const Color(0xFF00A651);
   final Color _bgGrey = const Color(0xFFF2F5F8);
+  late String _scope;
 
   @override
   void initState() {
     super.initState();
+    _scope = widget.initialScope ?? "Việc quản lý nhà cho thuê";
     _fetchHouses();
   }
 
@@ -206,7 +209,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
-                "Việc quản lý nhà cho thuê",
+                _scope,
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
             ],
@@ -279,7 +282,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                              child: const Icon(Icons.home, color: Colors.black, size: 20),
+                              child: Icon(
+                                _scope == "Việc cá nhân" ? Icons.person : Icons.home,
+                                color: Colors.black,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -287,52 +294,57 @@ class _AddTaskPageState extends State<AddTaskPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text("Phạm vi công việc *", style: TextStyle(fontSize: 12, color: Colors.red)),
-                                  const Text("Việc quản lý nhà cho thuê", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    _scope,
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDropdownField(
-                              label: "Nhà cho thuê",
-                              value: _selectedHouse,
-                              items: _firebaseHouses.map((h) => h['name'] as String).toList(),
-                              isLoading: _isLoadingHouses,
-                              onChanged: (val) {
-                                setState(() {
-                                  _selectedHouse = val;
-                                  _selectedScope = null;
-                                  _firebaseRooms = [];
-                                });
-                                if (val != null) {
-                                  final selectedHouseObj = _firebaseHouses.firstWhere(
-                                    (h) => h['name'] == val,
-                                    orElse: () => <String, dynamic>{},
-                                  );
-                                  if (selectedHouseObj['id'] != null && selectedHouseObj['id'].toString().isNotEmpty) {
-                                    _fetchRooms(selectedHouseObj['id']!);
+                      if (_scope != "Việc cá nhân") ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDropdownField(
+                                label: "Nhà cho thuê",
+                                value: _selectedHouse,
+                                items: _firebaseHouses.map((h) => h['name'] as String).toList(),
+                                isLoading: _isLoadingHouses,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _selectedHouse = val;
+                                    _selectedScope = null;
+                                    _firebaseRooms = [];
+                                  });
+                                  if (val != null) {
+                                    final selectedHouseObj = _firebaseHouses.firstWhere(
+                                      (h) => h['name'] == val,
+                                      orElse: () => <String, dynamic>{},
+                                    );
+                                    if (selectedHouseObj['id'] != null && selectedHouseObj['id'].toString().isNotEmpty) {
+                                      _fetchRooms(selectedHouseObj['id']!);
+                                    }
                                   }
-                                }
-                              },
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildDropdownField(
-                              label: "Phòng/giường/căn hộ",
-                              value: _selectedScope,
-                              items: _firebaseRooms.map((r) => r['name'] as String).toList(),
-                              isLoading: _isLoadingRooms,
-                              onChanged: (val) => setState(() => _selectedScope = val),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildDropdownField(
+                                label: "Phòng/giường/căn hộ",
+                                value: _selectedScope,
+                                items: _firebaseRooms.map((r) => r['name'] as String).toList(),
+                                isLoading: _isLoadingRooms,
+                                onChanged: (val) => setState(() => _selectedScope = val),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -699,16 +711,17 @@ class _AddTaskPageState extends State<AddTaskPage> {
     setState(() => _isSaving = true);
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) {
+      final isPersonalOrSystem = _scope == "Việc cá nhân" || _scope == "Hệ thống";
       context.read<TaskViewModel>().createNewTask(
         title: _titleController.text,
         description: _descriptionController.text,
-        taskType: _taskTypeController.text,
+        taskType: isPersonalOrSystem ? _scope : _taskTypeController.text,
         performer: _performerController.text,
         deadline: _deadline ?? DateTime.now(),
         executionDate: _executionDate,
         createdAt: DateTime.now(),
-        houseName: _selectedHouse,
-        scope: _selectedScope,
+        houseName: isPersonalOrSystem ? null : _selectedHouse,
+        scope: isPersonalOrSystem ? null : _selectedScope,
         priority: _priority,
         imagePaths: _imagePaths,
         creatorId: FirebaseAuth.instance.currentUser?.uid,
