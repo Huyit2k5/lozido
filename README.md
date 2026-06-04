@@ -1,4 +1,4 @@
-# Lozido App - Cấu trúc dự án (MVVM Architecture)
+# IRental App - Cấu trúc dự án (MVVM Architecture)
 
 Dự án này được xây dựng dựa trên kiến trúc **MVVM (Model - View - ViewModel)** kết hợp với **Provider** để quản lý trạng thái, đảm bảo mã nguồn dễ bảo trì, dễ mở rộng và tách bạch rõ ràng giữa giao diện, logic nghiệp vụ và dữ liệu.
 
@@ -33,6 +33,7 @@ lib/
 ## 📏 Nguyên tắc đặt tên (Naming Conventions)
 
 Để code đồng bộ, chúng ta thống nhất:
+
 - **Thư mục & File**: Sử dụng `snake_case` (ví dụ: `room_detail_page.dart`, `task_viewmodel.dart`).
 - **Class (Lớp)**: Sử dụng `PascalCase` (ví dụ: `class TaskViewModel`, `class AuthRepository`).
 - **Biến & Hàm**: Sử dụng `camelCase` (ví dụ: `final String roomName;`, `void calculateTotalBill()`).
