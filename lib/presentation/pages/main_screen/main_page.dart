@@ -18,7 +18,7 @@ class _MainPageState extends State<MainPage> {
     const HomePage(),
     const MailPage(),
     const TasksPage(isLandlord: true),
-    const Center(child: Text("Màn hình Tìm khách", style: TextStyle(fontSize: 18))),
+    const Center(child: Text("Tính năng đang phát triển", style: TextStyle(fontSize: 18))),
     const MorePage(),
   ];
 

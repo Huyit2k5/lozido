@@ -295,24 +295,30 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                       Container(
                         width: double.infinity,
                         color: statusColor,
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(
-                          "T.${billingMonth.split('/').first}",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13),
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            "T.${billingMonth.split('/').first}",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13),
+                          ),
                         ),
                       ),
                       Expanded(
                         child: Center(
-                          child: Text(
-                            billingMonth.split('/').last,
-                            style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              billingMonth.split('/').last,
+                              style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500),
+                            ),
                           ),
                         ),
                       ),
@@ -325,17 +331,11 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              "$roomName ($dateStr)",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 15),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        "$roomName ($dateStr)",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(reason,
@@ -348,16 +348,20 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                             Icon(Icons.warning_amber_rounded,
                                 color: Colors.orange.shade700, size: 16),
                             const SizedBox(width: 4),
-                            const Text("Khách chưa cài APP",
-                                style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500)),
+                            const Expanded(
+                              child: Text("Khách chưa cài APP",
+                                  style: TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500)),
+                            ),
                           ],
                         ),
                       ],
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
                         children: [
                           // Badge trạng thái
                           Container(
@@ -387,7 +391,6 @@ class _OwedInvoiceListPageState extends State<OwedInvoiceListPage> {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
                           // Badge gửi phiếu
                           Container(
                             padding: const EdgeInsets.symmetric(
