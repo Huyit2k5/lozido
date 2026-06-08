@@ -16,6 +16,15 @@ class TasksPage extends StatefulWidget {
 
 class _TasksPageState extends State<TasksPage> {
   int _selectedTabIndex = 0;
+  bool _isSearching = false;
+  String _searchQuery = "";
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,21 +40,57 @@ class _TasksPageState extends State<TasksPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text(
-          widget.isLandlord ? "Quản lý công việc" : "Danh sách công việc",
-          style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: "Tìm kiếm công việc...",
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.black38),
+                ),
+                style: const TextStyle(color: Colors.black, fontSize: 16),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              )
+            : Text(
+                widget.isLandlord ? "Quản lý công việc" : "Danh sách công việc",
+                style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black54),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black54),
-            onPressed: () {},
-          ),
+          if (_isSearching)
+            IconButton(
+              icon: const Icon(Icons.clear, color: Colors.black54),
+              onPressed: () {
+                setState(() {
+                  if (_searchController.text.isNotEmpty) {
+                    _searchController.clear();
+                    _searchQuery = "";
+                  } else {
+                    _isSearching = false;
+                  }
+                });
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.black54),
+              onPressed: () {
+                setState(() {
+                  _isSearching = true;
+                });
+              },
+            ),
+          if (widget.isLandlord)
+            IconButton(
+              icon: const Icon(Icons.notifications_none, color: Colors.black54),
+              onPressed: () {},
+            ),
         ],
       ),
       body: Column(
@@ -54,29 +99,31 @@ class _TasksPageState extends State<TasksPage> {
           Expanded(child: _buildTabContent()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          String? initialScope;
-          if (_selectedTabIndex == 1) {
-            initialScope = "Việc cá nhân";
-          } else if (_selectedTabIndex == 2) {
-            initialScope = "Hệ thống";
-          } else {
-            initialScope = "Việc quản lý nhà cho thuê";
-          }
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddTaskPage(
-                isLandlord: widget.isLandlord,
-                initialScope: initialScope,
-              ),
+      floatingActionButton: _selectedTabIndex == 2
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                String? initialScope;
+                if (_selectedTabIndex == 1) {
+                  initialScope = "Việc cá nhân";
+                } else if (_selectedTabIndex == 2) {
+                  initialScope = "Hệ thống";
+                } else {
+                  initialScope = "Việc quản lý nhà cho thuê";
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddTaskPage(
+                      isLandlord: widget.isLandlord,
+                      initialScope: initialScope,
+                    ),
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFF00A651),
+              child: const Icon(Icons.add, color: Colors.white),
             ),
-          );
-        },
-        backgroundColor: const Color(0xFF00A651),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
@@ -206,7 +253,46 @@ class _TasksPageState extends State<TasksPage> {
           filteredTasks = allTasks.where((t) => t.taskType == "Hệ thống").toList();
         }
 
+        if (_searchQuery.isNotEmpty) {
+          final query = _searchQuery.toLowerCase();
+          filteredTasks = filteredTasks.where((t) {
+            final titleMatch = t.title.toLowerCase().contains(query);
+            final descMatch = t.description.toLowerCase().contains(query);
+            final performerMatch = t.performer.toLowerCase().contains(query);
+            final typeMatch = t.taskType.toLowerCase().contains(query);
+            final houseMatch = t.houseName?.toLowerCase().contains(query) ?? false;
+            final scopeMatch = t.scope?.toLowerCase().contains(query) ?? false;
+            return titleMatch || descMatch || performerMatch || typeMatch || houseMatch || scopeMatch;
+          }).toList();
+        }
+
         if (filteredTasks.isEmpty) {
+          if (_searchQuery.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Không tìm thấy công việc cho "$_searchQuery"',
+                    style: const TextStyle(color: Colors.black54, fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _searchController.clear();
+                        _searchQuery = "";
+                      });
+                    },
+                    child: const Text('Xóa tìm kiếm', style: TextStyle(color: Color(0xFF00A651))),
+                  ),
+                ],
+              ),
+            );
+          }
+
           String emptyMsg = "Không có công việc nào";
           if (_selectedTabIndex == 1) {
             emptyMsg = "Chưa có việc cá nhân";
